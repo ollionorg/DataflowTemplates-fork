@@ -54,7 +54,7 @@ public class CassandraDaoTest {
         doNothing().when(mockCassandraConnection).close();
 
         // Initialize CassandraDao with mock parameters
-        cassandraDao = new CassandraDao(host, port, datacenter, username, password);
+        cassandraDao = new CassandraDao(host, port, datacenter, username, "password");
     }
 
     @Test(expected = RuntimeException.class)
@@ -68,5 +68,16 @@ public class CassandraDaoTest {
         cassandraDao.write("INSERT INTO test_table (id, value) VALUES (1, 'test')");
     }
 
-
+    @Test
+    public void testWriteSuccess() throws Exception {
+        try (MockedStatic<CassandraConnection> mockedStatic = Mockito.mockStatic(CassandraConnection.class)) {
+            mockedStatic
+                    .when(() -> CassandraConnection.getInstance(
+                            host, port, datacenter, username, password))
+                    .thenReturn(mockCassandraConnection);
+            cassandraDao.write("INSERT INTO test_table (id, value) VALUES (1, 'test')");
+            verify(mockCqlSession, times(1)).execute("INSERT INTO test_table (id, value) VALUES (1, 'test')");
+            verify(mockCassandraConnection, times(1)).close();
+        }
+    }
 }

@@ -320,7 +320,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             SourceColumnDefinition sourceColDef,
             JSONObject valuesJson,
             String sourceDbTimezoneOffset) {
-        return TypeHandler.getColumnValueByType(
+        return (String) TypeHandler.getColumnValueByType(
                 spannerColDef,
                 sourceColDef,
                 valuesJson,

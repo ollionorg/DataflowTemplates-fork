@@ -38,15 +38,14 @@ class TypeHandler {
 
     }
 
-    private static ByteBuffer parseBlobType(String colName, Object colValue){
+    private static ByteBuffer parseBlobType(String colName, Object colValue) {
         byte[] byteArray;
 
         if (colValue instanceof byte[]) {
             byteArray = (byte[]) colValue;
         } else if (colValue instanceof String) {
             byteArray = java.util.Base64.getDecoder().decode((String) colValue);
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("Unsupported type for column " + colName);
         }
 
@@ -67,14 +66,14 @@ class TypeHandler {
             return null;
         }
 
-        if(formatter == null){
+        if (formatter == null) {
             formatter = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
         }
 
         return parseDate(colName, colValue, formatter);
     }
 
-    private static  Date parseDate(String colName, Object colValue, String formatter){
+    private static Date parseDate(String colName, Object colValue, String formatter) {
         Date date;
 
         if (colValue instanceof String) {
@@ -210,7 +209,6 @@ class TypeHandler {
         return handleFloat64SetType(colName, valuesJson).stream().map(Double::floatValue).collect(Collectors.toSet());
     }
 
-    // Handler for ARRAY<Date> (also serves as Set<Date>)
     private static List<Date> handleDateArrayType(String colName, JSONObject valuesJson) {
         return valuesJson.getJSONArray(colName).toList().stream()
                 .map(obj -> parseDate(colName, obj, "yyyy-MM-dd"))
@@ -221,7 +219,6 @@ class TypeHandler {
         return new HashSet<>(handleDateArrayType(colName, valuesJson));
     }
 
-    // Handler for ARRAY<Timestamp> (also serves as Set<Timestamp>)
     private static List<Timestamp> handleTimestampArrayType(String colName, JSONObject valuesJson) {
         return valuesJson.getJSONArray(colName).toList().stream()
                 .map(value -> {
@@ -307,14 +304,14 @@ class TypeHandler {
             case "decimal":
             case "blob":
             case "boolean":
-               response = colValue;
+                response = colValue;
                 break;
             case "date":
                 response = convertToCassandraDate((Date) colValue);
                 break;
 
             default:
-                throw new IllegalArgumentException("Invalid column " + colName + " do not have mapping created for "+columnType);
+                throw new IllegalArgumentException("Invalid column " + colName + " do not have mapping created for " + columnType);
         }
 
         return response;

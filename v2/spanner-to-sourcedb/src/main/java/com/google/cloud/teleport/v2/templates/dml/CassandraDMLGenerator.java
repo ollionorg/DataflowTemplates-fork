@@ -3,28 +3,20 @@ package com.google.cloud.teleport.v2.templates.dml;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.*;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorRequest;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
-import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.google.cloud.spanner.Struct;
-import com.google.gson.Gson;
-import java.nio.ByteBuffer;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.util.stream.Collectors;
-
-/** Creates DML statements For Cassandra */
-public class CassandraDMLGenerator implements IDMLGenerator{
+/**
+ * Creates DML statements For Cassandra
+ */
+public class CassandraDMLGenerator implements IDMLGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(CassandraDMLGenerator.class);
+
     /**
      * @param dmlGeneratorRequest the request containing necessary information to construct the DML
      *                            statement, including modification type, table schema, new values, and key values.
@@ -84,6 +76,173 @@ public class CassandraDMLGenerator implements IDMLGenerator{
                     sourceTable.getName());
             return new DMLGeneratorResponse("");
         }
+
+        if ("INSERT".equals(dmlGeneratorRequest.getModType())
+                || "UPDATE".equals(dmlGeneratorRequest.getModType())) {
+            return generateUpsertStatement(
+                    spannerTable,
+                    sourceTable,
+                    dmlGeneratorRequest,
+                    pkColumnNameValues
+            );
+
+        } else if ("DELETE".equals(dmlGeneratorRequest.getModType())) {
+            return new DMLGeneratorResponse(
+                    getDeleteStatementCQL(sourceTable.getName(), pkColumnNameValues)
+            );
+        } else {
+            LOG.warn("Unsupported modType: " + dmlGeneratorRequest.getModType());
+            return new DMLGeneratorResponse("");
+        }
+    }
+
+    private static DMLGeneratorResponse generateUpsertStatement(
+            SpannerTable spannerTable,
+            SourceTable sourceTable,
+            DMLGeneratorRequest dmlGeneratorRequest,
+            Map<String, String> pkColumnNameValues) {
+        Map<String, String> columnNameValues =
+                getColumnValues(
+                        spannerTable,
+                        sourceTable,
+                        dmlGeneratorRequest.getNewValuesJson(),
+                        dmlGeneratorRequest.getKeyValuesJson(),
+                        dmlGeneratorRequest.getSourceDbTimezoneOffset());
+        return new DMLGeneratorResponse(
+                getUpsertStatementCQL(
+                        sourceTable.getName(),
+                        sourceTable.getPrimaryKeySet(),
+                        columnNameValues,
+                        pkColumnNameValues
+                )
+        );
+    }
+
+    private static String getUpsertStatementCQL(
+            String tableName,
+            Set<String> primaryKeys,
+            Map<String, String> columnNameValues,
+            Map<String, String> pkcolumnNameValues) {
+
+        StringBuilder allColumns = new StringBuilder();
+        StringBuilder allValues = new StringBuilder();
+
+        // Process primary key columns
+        for (Map.Entry<String, String> entry : pkcolumnNameValues.entrySet()) {
+            String colName = entry.getKey();
+            String colValue = entry.getValue();
+
+            allColumns.append(colName).append(", ");
+            allValues.append(colValue).append(", ");
+        }
+
+        // Process additional columns
+        for (Map.Entry<String, String> entry : columnNameValues.entrySet()) {
+            String colName = entry.getKey();
+            String colValue = entry.getValue();
+
+            allColumns.append(colName).append(", ");
+            allValues.append(colValue).append(", ");
+        }
+
+        // Remove trailing comma and space
+        if (allColumns.length() > 0) {
+            allColumns.setLength(allColumns.length() - 2);
+        }
+        if (allValues.length() > 0) {
+            allValues.setLength(allValues.length() - 2);
+        }
+
+        // Construct the CQL INSERT statement
+        return "INSERT INTO " + tableName + " (" + allColumns + ") VALUES (" + allValues + ");";
+    }
+
+    private static String getDeleteStatementCQL(
+            String tableName, Map<String, String> pkcolumnNameValues) {
+
+        StringBuilder deleteConditions = new StringBuilder();
+
+        // Process primary key columns for the WHERE clause
+        int index = 0;
+        for (Map.Entry<String, String> entry : pkcolumnNameValues.entrySet()) {
+            String colName = entry.getKey();
+            String colValue = entry.getValue();
+
+            deleteConditions.append(colName).append(" = ").append(colValue);
+            if (index + 1 < pkcolumnNameValues.size()) {
+                deleteConditions.append(" AND ");
+            }
+            index++;
+        }
+
+        // Construct the CQL DELETE statement
+        return "DELETE FROM " + tableName + " WHERE " + deleteConditions + ";";
+    }
+
+    private static Map<String, String> getColumnValues(
+            SpannerTable spannerTable,
+            SourceTable sourceTable,
+            JSONObject newValuesJson,
+            JSONObject keyValuesJson,
+            String sourceDbTimezoneOffset
+    ) {
+        Map<String, String> response = new HashMap<>();
+
+    /*
+    Get all non-primary key col ids from source table
+    For each - get the corresponding column name from spanner Schema
+    if the column cannot be found in spanner schema - continue to next,
+      as the column will be stored with default/null values
+    check if the column name found in Spanner schema exists in keyJson -
+      if so, get the string value
+    else
+    check if the column name found in Spanner schema exists in valuesJson -
+      if so, get the string value
+    if the column does not exist in any of the JSON - continue to next,
+      as the column will be stored with default/null values
+    */
+        Set<String> sourcePKs = sourceTable.getPrimaryKeySet();
+        for (Map.Entry<String, SourceColumnDefinition> entry : sourceTable.getColDefs().entrySet()) {
+            SourceColumnDefinition sourceColDef = entry.getValue();
+
+            String colName = sourceColDef.getName();
+            if (sourcePKs.contains(colName)) {
+                continue; // we only need non-primary keys
+            }
+
+            String colId = entry.getKey();
+            SpannerColumnDefinition spannerColDef = spannerTable.getColDefs().get(colId);
+            if (spannerColDef == null) {
+                continue;
+            }
+            String spannerColumnName = spannerColDef.getName();
+            String columnValue = "";
+            if (keyValuesJson.has(spannerColumnName)) {
+                // get the value based on Spanner and Source type
+                if (keyValuesJson.isNull(spannerColumnName)) {
+                    response.put(sourceColDef.getName(), "NULL");
+                    continue;
+                }
+                columnValue =
+                        getMappedColumnValue(
+                                spannerColDef, sourceColDef, keyValuesJson, sourceDbTimezoneOffset);
+            } else if (newValuesJson.has(spannerColumnName)) {
+                // get the value based on Spanner and Source type
+                if (newValuesJson.isNull(spannerColumnName)) {
+                    response.put(sourceColDef.getName(), "NULL");
+                    continue;
+                }
+                columnValue =
+                        getMappedColumnValue(
+                                spannerColDef, sourceColDef, newValuesJson, sourceDbTimezoneOffset);
+            } else {
+                continue;
+            }
+
+            response.put(sourceColDef.getName(), columnValue);
+        }
+
+        return response;
     }
 
     private static Map<String, String> getPkColumnValues(
@@ -162,7 +321,7 @@ public class CassandraDMLGenerator implements IDMLGenerator{
             JSONObject valuesJson,
             String sourceDbTimezoneOffset) {
         return TypeHandler.getColumnValueByType(
-                spannerColDef ,
+                spannerColDef,
                 sourceColDef,
                 valuesJson,
                 sourceDbTimezoneOffset

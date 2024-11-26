@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.PreparedStatement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -63,7 +64,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             return new DMLGeneratorResponse("");
         }
 
-        Map<String, String> pkColumnNameValues =
+        Map<String, Object> pkColumnNameValues =
                 getPkColumnValues(
                         spannerTable,
                         sourceTable,
@@ -100,8 +101,8 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             SpannerTable spannerTable,
             SourceTable sourceTable,
             DMLGeneratorRequest dmlGeneratorRequest,
-            Map<String, String> pkColumnNameValues) {
-        Map<String, String> columnNameValues =
+            Map<String, Object> pkColumnNameValues) {
+        Map<String, Object> columnNameValues =
                 getColumnValues(
                         spannerTable,
                         sourceTable,
@@ -121,25 +122,25 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     private static String getUpsertStatementCQL(
             String tableName,
             Set<String> primaryKeys,
-            Map<String, String> columnNameValues,
-            Map<String, String> pkcolumnNameValues) {
+            Map<String, Object> columnNameValues,
+            Map<String, Object> pkColumnNameValues) {
 
         StringBuilder allColumns = new StringBuilder();
         StringBuilder allValues = new StringBuilder();
 
         // Process primary key columns
-        for (Map.Entry<String, String> entry : pkcolumnNameValues.entrySet()) {
+        for (Map.Entry<String, Object> entry : pkColumnNameValues.entrySet()) {
             String colName = entry.getKey();
-            String colValue = entry.getValue();
+            Object colValue = entry.getValue();
 
             allColumns.append(colName).append(", ");
             allValues.append(colValue).append(", ");
         }
 
         // Process additional columns
-        for (Map.Entry<String, String> entry : columnNameValues.entrySet()) {
+        for (Map.Entry<String, Object> entry : columnNameValues.entrySet()) {
             String colName = entry.getKey();
-            String colValue = entry.getValue();
+            Object colValue = entry.getValue();
 
             allColumns.append(colName).append(", ");
             allValues.append(colValue).append(", ");
@@ -158,18 +159,18 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     }
 
     private static String getDeleteStatementCQL(
-            String tableName, Map<String, String> pkcolumnNameValues) {
+            String tableName, Map<String, Object> pkColumnNameValues) {
 
         StringBuilder deleteConditions = new StringBuilder();
 
         // Process primary key columns for the WHERE clause
         int index = 0;
-        for (Map.Entry<String, String> entry : pkcolumnNameValues.entrySet()) {
+        for (Map.Entry<String, Object> entry : pkColumnNameValues.entrySet()) {
             String colName = entry.getKey();
-            String colValue = entry.getValue();
+            Object colValue = entry.getValue();
 
             deleteConditions.append(colName).append(" = ").append(colValue);
-            if (index + 1 < pkcolumnNameValues.size()) {
+            if (index + 1 < pkColumnNameValues.size()) {
                 deleteConditions.append(" AND ");
             }
             index++;
@@ -179,14 +180,14 @@ public class CassandraDMLGenerator implements IDMLGenerator {
         return "DELETE FROM " + tableName + " WHERE " + deleteConditions + ";";
     }
 
-    private static Map<String, String> getColumnValues(
+    private static Map<String, Object> getColumnValues(
             SpannerTable spannerTable,
             SourceTable sourceTable,
             JSONObject newValuesJson,
             JSONObject keyValuesJson,
             String sourceDbTimezoneOffset
     ) {
-        Map<String, String> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
 
     /*
     Get all non-primary key col ids from source table
@@ -216,7 +217,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
                 continue;
             }
             String spannerColumnName = spannerColDef.getName();
-            String columnValue = "";
+            Object columnValue;
             if (keyValuesJson.has(spannerColumnName)) {
                 // get the value based on Spanner and Source type
                 if (keyValuesJson.isNull(spannerColumnName)) {
@@ -245,14 +246,14 @@ public class CassandraDMLGenerator implements IDMLGenerator {
         return response;
     }
 
-    private static Map<String, String> getPkColumnValues(
+    private static Map<String, Object> getPkColumnValues(
             SpannerTable spannerTable,
             SourceTable sourceTable,
             JSONObject newValuesJson,
             JSONObject keyValuesJson,
             String sourceDbTimezoneOffset
     ) {
-        Map<String, String> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         /*
         Get all primary key col ids from source table
         For each - get the corresponding column name from spanner Schema
@@ -277,7 +278,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
                 return null;
             }
             String spannerColumnName = spannerColDef.getName();
-            String columnValue = "";
+            Object columnValue;
             if (keyValuesJson.has(spannerColumnName)) {
                 // get the value based on Spanner and Source type
                 if (keyValuesJson.isNull(spannerColumnName)) {
@@ -315,12 +316,12 @@ public class CassandraDMLGenerator implements IDMLGenerator {
         return response;
     }
 
-    private static String getMappedColumnValue(
+    private static Object getMappedColumnValue(
             SpannerColumnDefinition spannerColDef,
             SourceColumnDefinition sourceColDef,
             JSONObject valuesJson,
             String sourceDbTimezoneOffset) {
-        return (String) TypeHandler.getColumnValueByType(
+        return TypeHandler.getColumnValueByType(
                 spannerColDef,
                 sourceColDef,
                 valuesJson,

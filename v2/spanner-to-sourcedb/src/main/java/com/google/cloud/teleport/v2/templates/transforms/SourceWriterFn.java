@@ -15,6 +15,8 @@
  */
 package com.google.cloud.teleport.v2.templates.transforms;
 
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,6 +25,7 @@ import com.google.cloud.spanner.SpannerException;
 import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
 import com.google.cloud.teleport.v2.spanner.ddl.IndexColumn;
 import com.google.cloud.teleport.v2.spanner.ddl.Table;
+import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
 import com.google.cloud.teleport.v2.spanner.migrations.convertors.ChangeEventSpannerConvertor;
 import com.google.cloud.teleport.v2.spanner.migrations.exceptions.ChangeEventConvertorException;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
@@ -86,6 +89,10 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
   private final int maxThreadPerDataflowWorker;
   private final String source;
   private SourceProcessor sourceProcessor;
+  private CassandraConfig cassandraConfig;
+  private transient Cluster cluster;
+  private transient Session session;
+
 
   public SourceWriterFn(
       List<Shard> shards,
@@ -96,7 +103,9 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
       String shadowTablePrefix,
       String skipDirName,
       int maxThreadPerDataflowWorker,
-      String source) {
+      String source,
+      CassandraConfig cassandraConfig
+  ) {
 
     this.schema = schema;
     this.sourceDbTimezoneOffset = sourceDbTimezoneOffset;
@@ -107,6 +116,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
     this.skipDirName = skipDirName;
     this.maxThreadPerDataflowWorker = maxThreadPerDataflowWorker;
     this.source = source;
+    this.cassandraConfig = cassandraConfig;
   }
 
   // for unit testing purposes

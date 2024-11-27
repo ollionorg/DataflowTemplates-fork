@@ -26,6 +26,7 @@ import com.google.cloud.teleport.v2.spanner.ddl.Column;
 import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
 import com.google.cloud.teleport.v2.spanner.ddl.IndexColumn;
 import com.google.cloud.teleport.v2.spanner.ddl.Table;
+import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerTable;
 import com.google.cloud.teleport.v2.spanner.type.Type;
@@ -37,6 +38,7 @@ import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataCha
 import com.google.cloud.teleport.v2.templates.constants.Constants;
 import com.google.cloud.teleport.v2.templates.utils.ShardingLogicImplFetcher;
 import com.google.common.collect.ImmutableList;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
@@ -44,6 +46,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.apache.beam.sdk.io.gcp.spanner.SpannerAccessor;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
 import org.apache.beam.sdk.io.gcp.spanner.changestreams.model.ModType;
@@ -56,12 +59,16 @@ import org.joda.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** This DoFn assigns the shardId as key to the record. */
+/**
+ * This DoFn assigns the shardId as key to the record.
+ */
 public class AssignShardIdFn
     extends DoFn<TrimmedShardedDataChangeRecord, KV<Long, TrimmedShardedDataChangeRecord>> {
   private static final Logger LOG = LoggerFactory.getLogger(AssignShardIdFn.class);
 
   private final SpannerConfig spannerConfig;
+
+  private final CassandraConfig cassandraConfig;
 
   /* SpannerAccessor must be transient so that its value is not serialized at runtime. */
   private transient SpannerAccessor spannerAccessor;
@@ -90,6 +97,11 @@ public class AssignShardIdFn
 
   private final Long maxConnectionsAcrossAllShards;
 
+  private final Long maxConnections;
+
+  private String sourceType;
+
+
   public AssignShardIdFn(
       SpannerConfig spannerConfig,
       Schema schema,
@@ -100,7 +112,10 @@ public class AssignShardIdFn
       String customJarPath,
       String shardingCustomClassName,
       String shardingCustomParameters,
-      Long maxConnectionsAcrossAllShards) {
+      Long maxConnectionsAcrossAllShards,
+      String sourceType,
+      CassandraConfig cassandraConfig,
+      Long maxConnections) {
     this.spannerConfig = spannerConfig;
     this.schema = schema;
     this.ddl = ddl;
@@ -111,6 +126,9 @@ public class AssignShardIdFn
     this.shardingCustomClassName = shardingCustomClassName;
     this.shardingCustomParameters = shardingCustomParameters;
     this.maxConnectionsAcrossAllShards = maxConnectionsAcrossAllShards;
+    this.sourceType = sourceType;
+    this.cassandraConfig = cassandraConfig;
+    this.maxConnections = maxConnections;
   }
 
   // setSpannerAccessor is added to be used by unit tests
@@ -181,59 +199,65 @@ public class AssignShardIdFn
     String qualifiedShard = "";
     String tableName = record.getTableName();
     String keysJsonStr = record.getMod().getKeysJson();
+    Long finalKey;
 
     try {
-      if (shardingMode.equals(Constants.SHARDING_MODE_SINGLE_SHARD)) {
-        record.setShard(this.shardName);
-        qualifiedShard = this.shardName;
-      } else {
-        // Skip from processing if table not in session File
-        String shardIdColumn = getShardIdColumnForTableName(tableName);
-        if (shardIdColumn.isEmpty()) {
-          LOG.warn(
-              "Writing record for table {} to skipped directory name {} since table not present in"
-                  + " the session file.",
-              tableName,
-              skipDirName);
-          record.setShard(skipDirName);
-          qualifiedShard = skipDirName;
+      if ("mysql".equals(this.sourceType)) {
+        if (shardingMode.equals(Constants.SHARDING_MODE_SINGLE_SHARD)) {
+          record.setShard(this.shardName);
+          qualifiedShard = this.shardName;
         } else {
-
-          JsonNode keysJson = mapper.readTree(keysJsonStr);
-          String newValueJsonStr = record.getMod().getNewValuesJson();
-          JsonNode newValueJson = mapper.readTree(newValueJsonStr);
-          Map<String, Object> spannerRecord = new HashMap<>();
-          // Query the spanner database in case of a DELETE event
-          if (record.getModType() == ModType.DELETE) {
-            spannerRecord =
-                fetchSpannerRecord(
-                    tableName,
-                    record.getCommitTimestamp(),
-                    record.getServerTransactionId(),
-                    keysJson);
+          // Skip from processing if table not in session File
+          String shardIdColumn = getShardIdColumnForTableName(tableName);
+          if (shardIdColumn.isEmpty()) {
+            LOG.warn(
+                "Writing record for table {} to skipped directory name {} since table not present in"
+                    + " the session file.",
+                tableName,
+                skipDirName);
+            record.setShard(skipDirName);
+            qualifiedShard = skipDirName;
           } else {
-            spannerRecord = getSpannerRecordFromChangeStreamData(tableName, keysJson, newValueJson);
-          }
-          ShardIdRequest shardIdRequest = new ShardIdRequest(tableName, spannerRecord);
 
-          ShardIdResponse shardIdResponse = getShardIdResponse(shardIdRequest);
+            JsonNode keysJson = mapper.readTree(keysJsonStr);
+            String newValueJsonStr = record.getMod().getNewValuesJson();
+            JsonNode newValueJson = mapper.readTree(newValueJsonStr);
+            Map<String, Object> spannerRecord = new HashMap<>();
+            // Query the spanner database in case of a DELETE event
+            if (record.getModType() == ModType.DELETE) {
+              spannerRecord =
+                  fetchSpannerRecord(
+                      tableName,
+                      record.getCommitTimestamp(),
+                      record.getServerTransactionId(),
+                      keysJson);
+            } else {
+              spannerRecord = getSpannerRecordFromChangeStreamData(tableName, keysJson, newValueJson);
+            }
+            ShardIdRequest shardIdRequest = new ShardIdRequest(tableName, spannerRecord);
 
-          qualifiedShard = shardIdResponse.getLogicalShardId();
-          if (qualifiedShard == null || qualifiedShard.isEmpty() || qualifiedShard.contains("/")) {
-            throw new IllegalArgumentException(
-                "Invalid logical shard id value: "
-                    + qualifiedShard
-                    + " for spanner table: "
-                    + record.getTableName());
+            ShardIdResponse shardIdResponse = getShardIdResponse(shardIdRequest);
+
+            qualifiedShard = shardIdResponse.getLogicalShardId();
+            if (qualifiedShard == null || qualifiedShard.isEmpty() || qualifiedShard.contains("/")) {
+              throw new IllegalArgumentException(
+                  "Invalid logical shard id value: "
+                      + qualifiedShard
+                      + " for spanner table: "
+                      + record.getTableName());
+            }
           }
         }
-      }
 
-      record.setShard(qualifiedShard);
-      String finalKeyString = tableName + "_" + keysJsonStr + "_" + qualifiedShard;
-      Long finalKey =
-          finalKeyString.hashCode() % maxConnectionsAcrossAllShards; // The total parallelism is
-      // maxConnectionsAcrossAllShards
+        record.setShard(qualifiedShard);
+        String finalKeyString = tableName + "_" + keysJsonStr + "_" + qualifiedShard;
+        finalKey =
+            finalKeyString.hashCode() % maxConnectionsAcrossAllShards; // The total parallelism is
+        // maxConnectionsAcrossAllShards
+      } else {
+        String finalKeyString = tableName+"_"+keysJsonStr;
+        finalKey = finalKeyString.hashCode() % maxConnections;
+      }
       c.output(KV.of(finalKey, record));
 
     } catch (Exception e) {
@@ -242,7 +266,7 @@ public class AssignShardIdFn
       LOG.error("Error fetching shard Id column: " + e.getMessage() + ": " + errors.toString());
       // The record has no shard hence will be sent to DLQ in subsequent steps
       String finalKeyString = record.getTableName() + "_" + keysJsonStr + "_" + skipDirName;
-      Long finalKey = finalKeyString.hashCode() % maxConnectionsAcrossAllShards;
+      finalKey = finalKeyString.hashCode() % maxConnectionsAcrossAllShards;
       c.output(KV.of(finalKey, record));
     }
   }

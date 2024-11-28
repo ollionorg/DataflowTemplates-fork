@@ -29,12 +29,16 @@ import java.util.List;
  *   <li>A list of {@link Shard} objects representing the database shards.
  *   <li>Optional connection properties as a {@link String}.
  *   <li>The maximum number of connections allowed.
+ *   <li>The name of the driver to connect to source.
+ *   <li>Optional connection initialisation queries as a {@link String}.
  * </ul>
  */
 public class ConnectionHelperRequest {
   private List<Shard> shards;
   private String properties;
-  private final int maxConnections;
+  private int maxConnections;
+  private String driver;
+  private String connectionInitQuery;
   private CassandraConfig cassandraConfig;
 
   public List<Shard> getShards() {
@@ -51,12 +55,25 @@ public class ConnectionHelperRequest {
 
   public CassandraConfig getCassandraConfig() {
     return cassandraConfig;
+  public String getDriver() {
+    return driver;
   }
 
-  public ConnectionHelperRequest(List<Shard> shards, String properties, int maxConnections) {
+  public String getConnectionInitQuery() {
+    return connectionInitQuery;
+  }
+
+  public ConnectionHelperRequest(
+      List<Shard> shards,
+      String properties,
+      int maxConnections,
+      String driver,
+      String connectionInitQuery) {
     this.shards = shards;
     this.properties = properties;
     this.maxConnections = maxConnections;
+    this.driver = driver;
+    this.connectionInitQuery = connectionInitQuery;
   }
 
   public ConnectionHelperRequest(CassandraConfig cassandraConfig, int maxConnections) {

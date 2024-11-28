@@ -33,19 +33,22 @@ import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
 import com.google.cloud.teleport.v2.templates.changestream.ChangeStreamErrorRecord;
 import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataChangeRecord;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
-import com.google.cloud.teleport.v2.templates.dao.source.IDao;
-import com.google.cloud.teleport.v2.templates.dao.spanner.SpannerDao;
+import com.google.cloud.teleport.v2.templates.dbutils.dao.source.IDao;
+import com.google.cloud.teleport.v2.templates.dbutils.dao.spanner.SpannerDao;
+import com.google.cloud.teleport.v2.templates.dbutils.processor.InputRecordProcessor;
+import com.google.cloud.teleport.v2.templates.dbutils.processor.SourceProcessor;
+import com.google.cloud.teleport.v2.templates.dbutils.processor.SourceProcessorFactory;
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
-import com.google.cloud.teleport.v2.templates.exceptions.InvalidSourceException;
-import com.google.cloud.teleport.v2.templates.processor.SourceProcessor;
-import com.google.cloud.teleport.v2.templates.processor.SourceProcessorFactory;
-import com.google.cloud.teleport.v2.templates.utils.InputRecordProcessor;
+import com.google.cloud.teleport.v2.templates.exceptions.UnsupportedSourceException;
 import com.google.cloud.teleport.v2.templates.utils.ShadowTableRecord;
+import com.google.cloud.teleport.v2.templates.utils.SpannerDao;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
@@ -53,6 +56,8 @@ import org.apache.beam.sdk.metrics.Counter;
 import org.apache.beam.sdk.metrics.Distribution;
 import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.transforms.DoFn;
+import org.apache.beam.sdk.transforms.DoFn.ProcessContext;
+import org.apache.beam.sdk.transforms.DoFn.ProcessElement;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.TupleTag;
 import org.slf4j.Logger;
@@ -77,6 +82,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
 
   private final Distribution lagMetric =
       Metrics.distribution(SourceWriterFn.class, "replication_lag_in_milli");
+  private transient Map<String, MySqlDao> mySqlDaoMap = new HashMap<>();
 
   private final Schema schema;
   private final String sourceDbTimezoneOffset;
@@ -136,7 +142,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
 
   /** Setup function connects to Cloud Spanner. */
   @Setup
-  public void setup() throws InvalidSourceException {
+  public void setup() throws UnsupportedSourceException {
     mapper = new ObjectMapper();
     mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
     sourceProcessor =
@@ -148,6 +154,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
   @Teardown
   public void teardown() throws Exception {
     spannerDao.close();
+    sourceProcessor.close();
   }
 
   @ProcessElement
@@ -191,7 +198,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
                             > Long.parseLong(spannerRec.getRecordSequence())));
 
         if (!isSourceAhead) {
-          IDao sourceDao = sourceProcessor.getSourceDaoMap().get(shardId);
+          IDao sourceDao = sourceProcessor.getSourceDao(shardId);
 
           InputRecordProcessor.processRecord(
               spannerRec,

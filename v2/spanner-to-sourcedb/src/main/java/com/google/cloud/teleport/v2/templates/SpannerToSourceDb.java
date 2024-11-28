@@ -47,11 +47,9 @@ import com.google.cloud.teleport.v2.templates.transforms.UpdateDlqMetricsFn;
 import com.google.cloud.teleport.v2.templates.utils.ShadowTableCreator;
 import com.google.cloud.teleport.v2.transforms.DLQWriteTransform;
 import com.google.cloud.teleport.v2.values.FailsafeElement;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import org.apache.beam.runners.dataflow.options.DataflowPipelineDebugOptions;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineWorkerPoolOptions;
@@ -82,9 +80,7 @@ import org.apache.beam.sdk.values.PCollectionTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * This pipeline reads Spanner Change streams data and writes them to a source DB.
- */
+/** This pipeline reads Spanner Change streams data and writes them to a source DB. */
 @Template(
     name = "Spanner_to_SourceDb",
     category = TemplateCategory.STREAMING,
@@ -518,7 +514,6 @@ public class SpannerToSourceDb {
       cassandraConfig = cassandraConfigFileReader.getCassandraConfig(options.getCassandraConfigFilePath());
       LOG.info("Cassandra config is: {}", cassandraConfig);
     }
-
     boolean isRegularMode = "regular".equals(options.getRunMode());
     PCollectionTuple reconsumedElements = null;
     DeadLetterQueueManager dlqManager = buildDlqManager(options);
@@ -526,8 +521,8 @@ public class SpannerToSourceDb {
     int reshuffleBucketSize =
         maxNumWorkers
             * (debugOptions.getNumberOfWorkerHarnessThreads() > 0
-            ? debugOptions.getNumberOfWorkerHarnessThreads()
-            : Constants.DEFAULT_WORKER_HARNESS_THREAD_COUNT);
+                ? debugOptions.getNumberOfWorkerHarnessThreads()
+                : Constants.DEFAULT_WORKER_HARNESS_THREAD_COUNT);
 
     if (isRegularMode) {
       reconsumedElements =
@@ -627,7 +622,7 @@ public class SpannerToSourceDb {
                     connectionPoolSizePerWorker,
                     options.getSourceType(),
                     cassandraConfig,
-                    options.getMaxConnections() 
+                    options.getMaxConnections()
                 ));
 
     PCollection<FailsafeElement<String, String>> dlqPermErrorRecords =

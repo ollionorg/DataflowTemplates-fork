@@ -24,10 +24,8 @@ import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataCha
 import com.google.cloud.teleport.v2.templates.constants.Constants;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-
 import java.util.List;
 import java.util.Map;
-
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
 import org.apache.beam.sdk.transforms.PTransform;
@@ -41,12 +39,10 @@ import org.apache.beam.sdk.values.PValue;
 import org.apache.beam.sdk.values.TupleTag;
 import org.apache.beam.sdk.values.TupleTagList;
 
-/**
- * Takes an input of change stream events and writes them to the source database.
- */
+/** Takes an input of change stream events and writes them to the source database. */
 public class SourceWriterTransform
     extends PTransform<
-    PCollection<KV<Long, TrimmedShardedDataChangeRecord>>, SourceWriterTransform.Result> {
+        PCollection<KV<Long, TrimmedShardedDataChangeRecord>>, SourceWriterTransform.Result> {
 
   private final Schema schema;
   private final String sourceDbTimezoneOffset;
@@ -118,9 +114,7 @@ public class SourceWriterTransform
         sourceWriteResults.get(Constants.SKIPPED_TAG));
   }
 
-  /**
-   * Container class for the results of this transform.
-   */
+  /** Container class for the results of this transform. */
   @AutoValue
   public abstract static class Result implements POutput {
 

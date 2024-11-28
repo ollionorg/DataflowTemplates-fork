@@ -41,7 +41,7 @@ import com.google.cloud.teleport.v2.templates.dbutils.processor.SourceProcessorF
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 import com.google.cloud.teleport.v2.templates.exceptions.UnsupportedSourceException;
 import com.google.cloud.teleport.v2.templates.utils.ShadowTableRecord;
-import com.google.cloud.teleport.v2.templates.utils.SpannerDao;
+import com.google.cloud.teleport.v2.templates.dbutils.dao.spanner.SpannerDao;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import java.io.Serializable;
@@ -82,7 +82,6 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
 
   private final Distribution lagMetric =
       Metrics.distribution(SourceWriterFn.class, "replication_lag_in_milli");
-  private transient Map<String, MySqlDao> mySqlDaoMap = new HashMap<>();
 
   private final Schema schema;
   private final String sourceDbTimezoneOffset;

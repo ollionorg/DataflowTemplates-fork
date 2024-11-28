@@ -146,7 +146,9 @@ public class AssignShardIdFn
     this.shardIdFetcher = shardIdFetcher;
   }
 
-  /** Setup function connects to Cloud Spanner. */
+  /**
+   * Setup function connects to Cloud Spanner.
+   */
   @Setup
   public void setup() {
     boolean retry = true;
@@ -180,7 +182,9 @@ public class AssignShardIdFn
     }
   }
 
-  /** Teardown function disconnects from the Cloud Spanner. */
+  /**
+   * Teardown function disconnects from the Cloud Spanner.
+   */
   @Teardown
   public void teardown() {
     if (spannerConfig != null) {
@@ -255,7 +259,7 @@ public class AssignShardIdFn
             finalKeyString.hashCode() % maxConnectionsAcrossAllShards; // The total parallelism is
         // maxConnectionsAcrossAllShards
       } else {
-        String finalKeyString = tableName+"_"+keysJsonStr;
+        String finalKeyString = tableName + "_" + keysJsonStr;
         finalKey = finalKeyString.hashCode() % maxConnections;
       }
       c.output(KV.of(finalKey, record));

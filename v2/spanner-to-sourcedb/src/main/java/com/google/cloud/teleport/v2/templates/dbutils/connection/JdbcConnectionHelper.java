@@ -13,11 +13,8 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/utils/connection/MySQLConnectionHelper.java
-package com.google.cloud.teleport.v2.templates.utils.connection;
-========
+
 package com.google.cloud.teleport.v2.templates.dbutils.connection;
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/dbutils/connection/JdbcConnectionHelper.java
 
 import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
@@ -34,21 +31,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** This is a per Dataflow worker singleton that holds connection pool. */
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/utils/connection/MySQLConnectionHelper.java
-public class MySQLConnectionHelper implements IConnectionHelper<Connection> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(MySQLConnectionHelper.class);
-========
 public class JdbcConnectionHelper implements IConnectionHelper<Connection> {
 
   private static final Logger LOG = LoggerFactory.getLogger(JdbcConnectionHelper.class);
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/dbutils/connection/JdbcConnectionHelper.java
   private static Map<String, HikariDataSource> connectionPoolMap = null;
-  private static final String MYSQL_JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
 
   @Override
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/utils/connection/MySQLConnectionHelper.java
-========
   public synchronized boolean isConnectionPoolInitialized() {
     if (connectionPoolMap != null) {
       return true;
@@ -57,7 +46,6 @@ public class JdbcConnectionHelper implements IConnectionHelper<Connection> {
   }
 
   @Override
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/dbutils/connection/JdbcConnectionHelper.java
   public synchronized void init(ConnectionHelperRequest connectionHelperRequest) {
     if (connectionPoolMap != null) {
       return;
@@ -72,16 +60,9 @@ public class JdbcConnectionHelper implements IConnectionHelper<Connection> {
       config.setJdbcUrl(sourceConnectionUrl);
       config.setUsername(shard.getUserName());
       config.setPassword(shard.getPassword());
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/utils/connection/MySQLConnectionHelper.java
-      config.setDriverClassName(MYSQL_JDBC_DRIVER);
-      config.setMaximumPoolSize(connectionHelperRequest.getMaxConnections());
-      config.setConnectionInitSql(
-          "SET SESSION net_read_timeout=1200"); // to avoid timeouts at network level layer
-========
       config.setDriverClassName(connectionHelperRequest.getDriver());
       config.setMaximumPoolSize(connectionHelperRequest.getMaxConnections());
       config.setConnectionInitSql(connectionHelperRequest.getConnectionInitQuery());
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/dbutils/connection/JdbcConnectionHelper.java
       Properties jdbcProperties = new Properties();
       if (connectionHelperRequest.getProperties() != null
           && !connectionHelperRequest.getProperties().isEmpty()) {

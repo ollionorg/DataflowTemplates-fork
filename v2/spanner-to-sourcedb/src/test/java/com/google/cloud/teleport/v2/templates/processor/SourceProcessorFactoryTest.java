@@ -22,7 +22,6 @@ import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
 import com.google.cloud.teleport.v2.templates.dao.source.JdbcDao;
 import com.google.cloud.teleport.v2.templates.dml.MySQLDMLGenerator;
-import com.google.cloud.teleport.v2.templates.exceptions.InvalidSourceException;
 import com.google.cloud.teleport.v2.templates.utils.connection.MySQLConnectionHelper;
 import java.util.Arrays;
 import java.util.List;

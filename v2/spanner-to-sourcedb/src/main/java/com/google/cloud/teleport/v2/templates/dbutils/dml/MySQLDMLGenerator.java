@@ -13,11 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/dml/MySQLDMLGenerator.java
-package com.google.cloud.teleport.v2.templates.dml;
-========
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/dbutils/dml/MySQLDMLGenerator.java
 
 import com.google.cloud.teleport.v2.spanner.migrations.schema.ColumnPK;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceColumnDefinition;

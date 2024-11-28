@@ -26,9 +26,11 @@ import com.google.cloud.teleport.v2.cdc.dlq.StringDeadLetterQueueSanitizer;
 import com.google.cloud.teleport.v2.coders.FailsafeElementCoder;
 import com.google.cloud.teleport.v2.common.UncaughtExceptionLogger;
 import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
+import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
 import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
 import com.google.cloud.teleport.v2.spanner.migrations.spanner.SpannerSchema;
+import com.google.cloud.teleport.v2.spanner.migrations.utils.CassandraConfigFileReader;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SecretManagerAccessorImpl;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SessionFileReader;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.ShardFileReader;
@@ -367,6 +369,25 @@ public class SpannerToSourceDb {
     String getSourceType();
 
     void setSourceType(String value);
+
+    @TemplateParameter.GcsReadFile(
+        order = 10,
+        optional = false,
+        description = "Path to GCS file containing the the Cassandra Config details",
+        helpText = "Path to GCS file containing connection profile info for cassandra.")
+    String getCassandraConfigFilePath();
+
+    void setCassandraConfigFilePath(String value);
+
+    @TemplateParameter.Long(
+        order = 19,
+        optional = true,
+        description = "Maximum connections per cassandra cluster.",
+        helpText = "This will come from cassandra config file eventually.")
+    @Default.Long(10000)
+    Long getMaxConnections();
+
+    void setMaxConnections(Long value);
   }
 
   /**
@@ -405,7 +426,13 @@ public class SpannerToSourceDb {
         pipeline.getOptions().as(DataflowPipelineWorkerPoolOptions.class).getMaxNumWorkers() > 0
             ? pipeline.getOptions().as(DataflowPipelineWorkerPoolOptions.class).getMaxNumWorkers()
             : 1;
-    int connectionPoolSizePerWorker = (int) (options.getMaxShardConnections() / maxNumWorkers);
+    int connectionPoolSizePerWorker = 1;
+    if ("mysql".equals(options.getSourceType())) {
+      connectionPoolSizePerWorker = (int) (options.getMaxShardConnections() / maxNumWorkers);
+    } else {
+      connectionPoolSizePerWorker = (int) (options.getMaxConnections() / maxNumWorkers);
+    }
+
     if (connectionPoolSizePerWorker < 1) {
       // This can happen when the number of workers is more than max.
       // This can cause overload on the source database. Error out and let the user know.
@@ -463,18 +490,29 @@ public class SpannerToSourceDb {
 
     shadowTableCreator.createShadowTablesInSpanner();
     Ddl ddl = SpannerSchema.getInformationSchemaAsDdl(spannerConfig);
-    ShardFileReader shardFileReader = new ShardFileReader(new SecretManagerAccessorImpl());
-    List<Shard> shards = shardFileReader.getOrderedShardDetails(options.getSourceShardsFilePath());
-    String shardingMode = Constants.SHARDING_MODE_MULTI_SHARD;
-    if (shards.size() == 1) {
-      shardingMode = Constants.SHARDING_MODE_SINGLE_SHARD;
 
-      Shard singleShard = shards.get(0);
-      if (singleShard.getLogicalShardId() == null) {
-        singleShard.setLogicalShardId(Constants.DEFAULT_SHARD_ID);
-        LOG.info(
-            "Logical shard id was not found, hence setting it to : " + Constants.DEFAULT_SHARD_ID);
+    List<Shard> shards = new ArrayList<>();
+    String shardingMode = Constants.SHARDING_MODE_SINGLE_SHARD;
+    CassandraConfig cassandraConfig = null;
+
+    if ("mysql".equals(options.getSourceType())) {
+      ShardFileReader shardFileReader = new ShardFileReader(new SecretManagerAccessorImpl());
+      shards = shardFileReader.getOrderedShardDetails(options.getSourceShardsFilePath());
+      shardingMode = Constants.SHARDING_MODE_MULTI_SHARD;
+      if (shards.size() == 1) {
+        shardingMode = Constants.SHARDING_MODE_SINGLE_SHARD;
+
+        Shard singleShard = shards.get(0);
+        if (singleShard.getLogicalShardId() == null) {
+          singleShard.setLogicalShardId(Constants.DEFAULT_SHARD_ID);
+          LOG.info(
+              "Logical shard id was not found, hence setting it to : " + Constants.DEFAULT_SHARD_ID);
+        }
       }
+    } else {
+      CassandraConfigFileReader cassandraConfigFileReader = new CassandraConfigFileReader();
+      cassandraConfig = cassandraConfigFileReader.getCassandraConfig(options.getCassandraConfigFilePath());
+      LOG.info("Cassandra config is: {}", cassandraConfig);
     }
     boolean isRegularMode = "regular".equals(options.getRunMode());
     PCollectionTuple reconsumedElements = null;
@@ -561,7 +599,11 @@ public class SpannerToSourceDb {
                         options.getShardingCustomClassName(),
                         options.getShardingCustomParameters(),
                         options.getMaxShardConnections()
-                            * shards.size()))) // currently assuming that all shards accept the same
+                            * shards.size(),
+                        options.getSourceType(),
+                        cassandraConfig,
+                        options.getMaxConnections()
+                    ))) // currently assuming that all shards accept the same
             // number of max connections
             .setCoder(
                 KvCoder.of(
@@ -578,7 +620,10 @@ public class SpannerToSourceDb {
                     options.getShadowTablePrefix(),
                     options.getSkipDirectoryName(),
                     connectionPoolSizePerWorker,
-                    options.getSourceType()));
+                    options.getSourceType(),
+                    cassandraConfig,
+                    options.getMaxConnections()
+                ));
 
     PCollection<FailsafeElement<String, String>> dlqPermErrorRecords =
         reconsumedElements

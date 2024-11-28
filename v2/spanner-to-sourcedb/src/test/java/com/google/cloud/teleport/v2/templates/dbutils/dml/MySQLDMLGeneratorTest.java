@@ -13,11 +13,8 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dml/MySQLDMLGeneratorTest.java
-package com.google.cloud.teleport.v2.templates.dml;
-========
+
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dbutils/dml/MySQLDMLGeneratorTest.java
 
 import static org.junit.Assert.assertTrue;
 
@@ -33,15 +30,11 @@ import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerTable;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SyntheticPKey;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SessionFileReader;
 import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataChangeRecord;
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dml/MySQLDMLGeneratorTest.java
-import com.google.cloud.teleport.v2.templates.models.DMLGeneratorRequest;
-import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
-import com.google.cloud.teleport.v2.templates.utils.InputRecordProcessor;
-========
+
 import com.google.cloud.teleport.v2.templates.dbutils.processor.InputRecordProcessor;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorRequest;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dbutils/dml/MySQLDMLGeneratorTest.java
+
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
 import java.io.InputStream;

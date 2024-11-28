@@ -34,7 +34,6 @@ public class JdbcConnectionHelper implements IConnectionHelper<Connection> {
 
   private static final Logger LOG = LoggerFactory.getLogger(JdbcConnectionHelper.class);
   private static Map<String, HikariDataSource> connectionPoolMap = null;
-  private static final String MYSQL_JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
 
   @Override
   public synchronized boolean isConnectionPoolInitialized() {

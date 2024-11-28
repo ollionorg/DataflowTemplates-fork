@@ -55,6 +55,8 @@ public class ConnectionHelperRequest {
 
   public CassandraConfig getCassandraConfig() {
     return cassandraConfig;
+  }
+
   public String getDriver() {
     return driver;
   }

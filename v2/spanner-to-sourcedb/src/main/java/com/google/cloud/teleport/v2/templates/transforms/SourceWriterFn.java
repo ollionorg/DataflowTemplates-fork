@@ -126,7 +126,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
 
   /** Setup function connects to Cloud Spanner. */
   @Setup
-  public void setup() {
+  public void setup() throws UnsupportedSourceException {
     mapper = new ObjectMapper();
     mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
     sourceProcessor =

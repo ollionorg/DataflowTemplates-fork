@@ -53,8 +53,8 @@ public class ConnectionHelperRequest {
     return maxConnections;
   }
 
-  public CassandraConfig getCassandraConfig() {
-    return cassandraConfig;
+  public CassandraConfig getCassandraConfig() {return cassandraConfig;}
+
   public String getDriver() {
     return driver;
   }

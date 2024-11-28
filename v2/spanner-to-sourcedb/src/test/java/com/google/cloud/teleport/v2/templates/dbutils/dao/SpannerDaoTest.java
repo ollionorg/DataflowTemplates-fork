@@ -13,11 +13,8 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dao/SpannerDaoTest.java
-package com.google.cloud.teleport.v2.templates.dao;
-========
+
 package com.google.cloud.teleport.v2.templates.dbutils.dao;
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dbutils/dao/SpannerDaoTest.java
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,7 +23,6 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.DatabaseClient;
 import com.google.cloud.spanner.Key;
@@ -34,11 +30,7 @@ import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.ReadOnlyTransaction;
 import com.google.cloud.spanner.Struct;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dao/SpannerDaoTest.java
-import com.google.cloud.teleport.v2.templates.dao.spanner.SpannerDao;
-========
 import com.google.cloud.teleport.v2.templates.dbutils.dao.spanner.SpannerDao;
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dbutils/dao/SpannerDaoTest.java
 import com.google.cloud.teleport.v2.templates.utils.ShadowTableRecord;
 import com.google.common.collect.ImmutableList;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerAccessor;

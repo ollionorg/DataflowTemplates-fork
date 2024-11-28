@@ -1,0 +1,76 @@
+package com.google.cloud.teleport.v2.templates.dbutils.connection;
+
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.config.DriverOption;
+import com.datastax.oss.driver.api.core.config.ProgrammaticDriverConfigLoaderBuilder;
+import com.datastax.oss.driver.api.core.config.TypedDriverOption;
+import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
+import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
+import com.google.cloud.teleport.v2.templates.models.ConnectionHelperRequest;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
+import com.google.cloud.teleport.v2.templates.dbutils.connection.IConnectionHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class CassandraConnectionHelper implements IConnectionHelper<CqlSession> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CassandraConnectionHelper.class);
+    private static Map<String, CqlSession> connectionPoolMap = null;
+
+    @Override
+    public synchronized void init(ConnectionHelperRequest connectionHelperRequest) {
+        if (connectionPoolMap != null) {
+            return;
+        }
+        LOG.info("Initializing Cassandra connection pool with size: {}", connectionHelperRequest.getMaxConnections());
+        connectionPoolMap = new HashMap<>();
+        CassandraConfig cassandraConfig = connectionHelperRequest.getCassandraConfig();
+        cassandraConfig.validate();
+
+        CqlSessionBuilder builder = CqlSession.builder()
+                .addContactPoint(new InetSocketAddress(cassandraConfig.getHost(), Integer.parseInt(cassandraConfig.getPort())))
+                .withAuthCredentials(cassandraConfig.getUsername(), cassandraConfig.getPassword())
+                .withKeyspace(cassandraConfig.getKeyspace());
+
+        ProgrammaticDriverConfigLoaderBuilder configLoaderBuilder = DriverConfigLoader.programmaticBuilder();
+        configLoaderBuilder.withInt((DriverOption) TypedDriverOption.CONNECTION_POOL_LOCAL_SIZE, cassandraConfig.getLocalPoolSize());
+        configLoaderBuilder.withInt((DriverOption) TypedDriverOption.CONNECTION_POOL_REMOTE_SIZE, cassandraConfig.getRemotePoolSize());
+        builder.withConfigLoader(configLoaderBuilder.build());
+
+        CqlSession session = builder.build();
+        String connectionKey = cassandraConfig.getHost() + ":" + cassandraConfig.getPort() + "/" + cassandraConfig.getUsername();
+        connectionPoolMap.put(connectionKey, session);
+    }
+
+    @Override
+    public CqlSession getConnection(String connectionRequestKey) throws ConnectionException {
+        try {
+            if (connectionPoolMap == null) {
+                LOG.warn("Connection pool not initialized");
+                return null;
+            }
+            CqlSession session = connectionPoolMap.get(connectionRequestKey);
+            if (session == null) {
+                LOG.warn("Connection pool not found for source connection: {}", connectionRequestKey);
+                return null;
+            }
+            return session;
+        } catch (Exception e) {
+            throw new ConnectionException(e);
+        }
+    }
+
+    @Override
+    public boolean isConnectionPoolInitialized() {
+        return false;
+    }
+
+    // for unit testing
+    public void setConnectionPoolMap(Map<String, CqlSession> inputMap) {
+        connectionPoolMap = inputMap;
+    }
+}

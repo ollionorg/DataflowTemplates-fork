@@ -13,10 +13,17 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/dao/source/JdbcDao.java
 package com.google.cloud.teleport.v2.templates.dao.source;
 
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 import com.google.cloud.teleport.v2.templates.utils.connection.IConnectionHelper;
+========
+package com.google.cloud.teleport.v2.templates.dbutils.dao.source;
+
+import com.google.cloud.teleport.v2.templates.dbutils.connection.IConnectionHelper;
+import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
+>>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/dbutils/dao/source/JdbcDao.java
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;

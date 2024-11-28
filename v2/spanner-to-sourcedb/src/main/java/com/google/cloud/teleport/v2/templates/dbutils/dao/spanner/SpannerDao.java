@@ -13,7 +13,11 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/dao/spanner/SpannerDao.java
 package com.google.cloud.teleport.v2.templates.dao.spanner;
+========
+package com.google.cloud.teleport.v2.templates.dbutils.dao.spanner;
+>>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/main/java/com/google/cloud/teleport/v2/templates/dbutils/dao/spanner/SpannerDao.java
 
 import com.google.cloud.spanner.DatabaseClient;
 import com.google.cloud.spanner.Mutation;

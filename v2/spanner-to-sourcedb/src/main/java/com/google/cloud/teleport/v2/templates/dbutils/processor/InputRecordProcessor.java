@@ -13,12 +13,12 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.cloud.teleport.v2.templates.utils;
+package com.google.cloud.teleport.v2.templates.dbutils.processor;
 
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
 import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataChangeRecord;
-import com.google.cloud.teleport.v2.templates.dao.source.IDao;
-import com.google.cloud.teleport.v2.templates.dml.IDMLGenerator;
+import com.google.cloud.teleport.v2.templates.dbutils.dao.source.IDao;
+import com.google.cloud.teleport.v2.templates.dbutils.dml.IDMLGenerator;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorRequest;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
 import java.time.Instant;

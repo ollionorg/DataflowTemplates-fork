@@ -13,11 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dao/JdbcDaoTest.java
-package com.google.cloud.teleport.v2.templates.dao;
-========
 package com.google.cloud.teleport.v2.templates.dbutils.dao;
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dbutils/dao/JdbcDaoTest.java
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -25,15 +21,9 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dao/JdbcDaoTest.java
-import com.google.cloud.teleport.v2.templates.dao.source.JdbcDao;
-import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
-import com.google.cloud.teleport.v2.templates.utils.connection.MySQLConnectionHelper;
-========
 import com.google.cloud.teleport.v2.templates.dbutils.connection.JdbcConnectionHelper;
 import com.google.cloud.teleport.v2.templates.dbutils.dao.source.JdbcDao;
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dbutils/dao/JdbcDaoTest.java
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.Statement;
@@ -64,11 +54,7 @@ public final class JdbcDaoTest {
 
   @Test(expected = ConnectionException.class)
   public void testNullConnection() throws java.sql.SQLException, ConnectionException {
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dao/JdbcDaoTest.java
-    JdbcDao sqlDao = new JdbcDao("url", "user", new MySQLConnectionHelper());
-========
     JdbcDao sqlDao = new JdbcDao("url", "user", new JdbcConnectionHelper());
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dbutils/dao/JdbcDaoTest.java
     sqlDao.write("sql");
   }
 
@@ -76,15 +62,9 @@ public final class JdbcDaoTest {
   public void testSuccess() throws java.sql.SQLException, ConnectionException {
     Map<String, HikariDataSource> connectionPoolMap = new HashMap<>();
     connectionPoolMap.put("url/user", mockHikariDataSource);
-<<<<<<<< HEAD:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dao/JdbcDaoTest.java
-    MySQLConnectionHelper mySQLConnectionHelper = new MySQLConnectionHelper();
-    mySQLConnectionHelper.setConnectionPoolMap(connectionPoolMap);
-    JdbcDao sqlDao = new JdbcDao("url", "user", mySQLConnectionHelper);
-========
     JdbcConnectionHelper jdbcConnectionHelper = new JdbcConnectionHelper();
     jdbcConnectionHelper.setConnectionPoolMap(connectionPoolMap);
     JdbcDao sqlDao = new JdbcDao("url", "user", jdbcConnectionHelper);
->>>>>>>> dev-repackaged:v2/spanner-to-sourcedb/src/test/java/com/google/cloud/teleport/v2/templates/dbutils/dao/JdbcDaoTest.java
     sqlDao.write("sql");
     verify(mockStatement).executeUpdate(eq("sql"));
   }

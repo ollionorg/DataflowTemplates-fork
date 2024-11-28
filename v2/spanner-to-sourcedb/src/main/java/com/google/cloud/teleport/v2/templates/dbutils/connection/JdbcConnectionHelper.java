@@ -13,7 +13,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package com.google.cloud.teleport.v2.templates.dbutils.connection;
 
 import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
@@ -31,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** This is a per Dataflow worker singleton that holds connection pool. */
-
 public class JdbcConnectionHelper implements IConnectionHelper<Connection> {
 
   private static final Logger LOG = LoggerFactory.getLogger(JdbcConnectionHelper.class);

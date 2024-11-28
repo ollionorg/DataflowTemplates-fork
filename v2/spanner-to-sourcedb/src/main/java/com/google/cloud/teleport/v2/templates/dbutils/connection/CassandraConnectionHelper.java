@@ -1,4 +1,4 @@
-package com.google.cloud.teleport.v2.templates.utils.connection;
+package com.google.cloud.teleport.v2.templates.dbutils.connection;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
@@ -12,6 +12,8 @@ import com.google.cloud.teleport.v2.templates.models.ConnectionHelperRequest;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.google.cloud.teleport.v2.templates.dbutils.connection.IConnectionHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +63,11 @@ public class CassandraConnectionHelper implements IConnectionHelper<CqlSession> 
         } catch (Exception e) {
             throw new ConnectionException(e);
         }
+    }
+
+    @Override
+    public boolean isConnectionPoolInitialized() {
+        return false;
     }
 
     // for unit testing

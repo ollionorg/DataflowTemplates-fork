@@ -15,6 +15,7 @@
  */
 package com.google.cloud.teleport.v2.templates.models;
 
+import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
 import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
 import java.util.List;
 
@@ -38,6 +39,7 @@ public class ConnectionHelperRequest {
   private int maxConnections;
   private String driver;
   private String connectionInitQuery;
+  private CassandraConfig cassandraConfig;
 
   public List<Shard> getShards() {
     return shards;
@@ -50,6 +52,8 @@ public class ConnectionHelperRequest {
   public int getMaxConnections() {
     return maxConnections;
   }
+
+  public CassandraConfig getCassandraConfig() {return cassandraConfig;}
 
   public String getDriver() {
     return driver;
@@ -70,5 +74,10 @@ public class ConnectionHelperRequest {
     this.maxConnections = maxConnections;
     this.driver = driver;
     this.connectionInitQuery = connectionInitQuery;
+  }
+
+  public ConnectionHelperRequest(CassandraConfig cassandraConfig, int maxConnections) {
+    this.cassandraConfig = cassandraConfig;
+    this.maxConnections = maxConnections;
   }
 }

@@ -15,6 +15,8 @@
  */
 package com.google.cloud.teleport.v2.templates.transforms;
 
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,6 +25,7 @@ import com.google.cloud.spanner.SpannerException;
 import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
 import com.google.cloud.teleport.v2.spanner.ddl.IndexColumn;
 import com.google.cloud.teleport.v2.spanner.ddl.Table;
+import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
 import com.google.cloud.teleport.v2.spanner.migrations.convertors.ChangeEventSpannerConvertor;
 import com.google.cloud.teleport.v2.spanner.migrations.exceptions.ChangeEventConvertorException;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
@@ -38,11 +41,14 @@ import com.google.cloud.teleport.v2.templates.dbutils.processor.SourceProcessorF
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 import com.google.cloud.teleport.v2.templates.exceptions.UnsupportedSourceException;
 import com.google.cloud.teleport.v2.templates.utils.ShadowTableRecord;
+import com.google.cloud.teleport.v2.templates.dbutils.dao.spanner.SpannerDao;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
@@ -50,6 +56,8 @@ import org.apache.beam.sdk.metrics.Counter;
 import org.apache.beam.sdk.metrics.Distribution;
 import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.transforms.DoFn;
+import org.apache.beam.sdk.transforms.DoFn.ProcessContext;
+import org.apache.beam.sdk.transforms.DoFn.ProcessElement;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.TupleTag;
 import org.slf4j.Logger;
@@ -86,6 +94,10 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
   private final int maxThreadPerDataflowWorker;
   private final String source;
   private SourceProcessor sourceProcessor;
+  private CassandraConfig cassandraConfig;
+  private transient Cluster cluster;
+  private transient Session session;
+
 
   public SourceWriterFn(
       List<Shard> shards,
@@ -96,7 +108,9 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
       String shadowTablePrefix,
       String skipDirName,
       int maxThreadPerDataflowWorker,
-      String source) {
+      String source,
+      CassandraConfig cassandraConfig
+  ) {
 
     this.schema = schema;
     this.sourceDbTimezoneOffset = sourceDbTimezoneOffset;
@@ -107,6 +121,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
     this.skipDirName = skipDirName;
     this.maxThreadPerDataflowWorker = maxThreadPerDataflowWorker;
     this.source = source;
+    this.cassandraConfig = cassandraConfig;
   }
 
   // for unit testing purposes

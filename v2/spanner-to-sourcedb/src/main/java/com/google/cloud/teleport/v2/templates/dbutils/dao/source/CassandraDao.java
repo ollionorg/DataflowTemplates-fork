@@ -1,7 +1,8 @@
-package com.google.cloud.teleport.v2.templates.dao.source;
+package com.google.cloud.teleport.v2.templates.dbutils.dao.source;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
+import com.google.cloud.teleport.v2.templates.dao.source.IDao;
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 import com.google.cloud.teleport.v2.templates.utils.connection.IConnectionHelper;
 

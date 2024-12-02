@@ -27,7 +27,7 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 
 ### Required parameters
 
-* **sourceConfigURL** : The JDBC connection URL string. For example, `jdbc:mysql://127.4.5.30:3306/my-db?autoReconnect=true&maxReconnects=10&unicode=true&characterEncoding=UTF-8` or the mySqlShard config.
+* **sourceConfigURL** : The JDBC connection URL string. For example, `jdbc:mysql://127.4.5.30:3306/my-db?autoReconnect=true&maxReconnects=10&unicode=true&characterEncoding=UTF-8` or the shard config.
 * **instanceId** : The destination Cloud Spanner instance.
 * **databaseId** : The destination Cloud Spanner database.
 * **projectId** : This is the name of the Cloud Spanner project.

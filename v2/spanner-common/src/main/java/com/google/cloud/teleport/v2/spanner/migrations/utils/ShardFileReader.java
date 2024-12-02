@@ -16,6 +16,7 @@
 package com.google.cloud.teleport.v2.spanner.migrations.utils;
 
 import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
@@ -162,7 +163,7 @@ public class ShardFileReader {
    * @param sourceShardsFilePath
    * @return
    */
-  public List<MySqlShard> readForwardMigrationShardingConfig(String sourceShardsFilePath) {
+  public List<IShard> readForwardMigrationShardingConfig(String sourceShardsFilePath) {
     String jsonString = null;
     try {
       InputStream stream =
@@ -190,7 +191,7 @@ public class ShardFileReader {
             .create()
             .fromJson(jsonString, shardConfiguration);
 
-    List<MySqlShard> mySqlShardList = new ArrayList<>();
+    List<IShard> mySqlShardList = new ArrayList<>();
     List<Map> dataShards =
         (List)
             (((Map) shardConfigMap.getOrDefault("shardConfigurationBulk", new HashMap<>()))
@@ -222,7 +223,7 @@ public class ShardFileReader {
       String namespace =
           Optional.ofNullable(dataShard.get("namespace")).map(Object::toString).orElse(null);
 
-      MySqlShard mySqlShard =
+      IShard mySqlShard =
           new MySqlShard(
               "",
               host,

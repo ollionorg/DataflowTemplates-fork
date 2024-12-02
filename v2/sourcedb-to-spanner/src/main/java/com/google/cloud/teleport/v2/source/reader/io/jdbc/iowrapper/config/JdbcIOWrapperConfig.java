@@ -63,7 +63,7 @@ public abstract class JdbcIOWrapperConfig {
   /** Configured Partition Column. If unspecified for a table, it's auto-inferred. */
   public abstract ImmutableMap<String, ImmutableList<String>> tableVsPartitionColumns();
 
-  /** MySqlShard ID. */
+  /** shard ID. */
   @Nullable
   public abstract String shardID();
 

@@ -19,7 +19,7 @@ import com.google.cloud.teleport.metadata.Template;
 import com.google.cloud.teleport.metadata.TemplateCategory;
 import com.google.cloud.teleport.v2.common.UncaughtExceptionLogger;
 import com.google.cloud.teleport.v2.options.SourceDbToSpannerOptions;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SecretManagerAccessorImpl;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.ShardFileReader;
 import com.google.common.annotations.VisibleForTesting;
@@ -103,10 +103,10 @@ public class SourceDbToSpanner {
 
     // Decide type and source of migration
     if (options.getSourceConfigURL().startsWith("gs://")) {
-      List<MySqlShard> mySqlShards =
+      List<IShard> shards =
           new ShardFileReader(new SecretManagerAccessorImpl())
               .readForwardMigrationShardingConfig(options.getSourceConfigURL());
-      return PipelineController.executeShardedMigration(options, pipeline, mySqlShards, spannerConfig);
+      return PipelineController.executeShardedMigration(options, pipeline, shards, spannerConfig);
     } else {
       return PipelineController.executeSingleInstanceMigration(options, pipeline, spannerConfig);
     }

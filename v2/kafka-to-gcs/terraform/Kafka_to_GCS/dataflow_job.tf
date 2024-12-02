@@ -71,7 +71,7 @@ variable "outputFilenamePrefix" {
 
 variable "numShards" {
   type        = number
-  description = "The maximum number of output mySqlShards produced when writing. Default number is runner-dependent."
+  description = "The maximum number of output shards produced when writing. Default number is runner-dependent."
   default     = 0
 }
 

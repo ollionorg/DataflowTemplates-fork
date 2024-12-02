@@ -79,11 +79,11 @@ public class PipelineController {
   static PipelineResult executeShardedMigration(
       SourceDbToSpannerOptions options,
       Pipeline pipeline,
-      List<IShard> mySqlShards,
+      List<IShard> shards,
       SpannerConfig spannerConfig) {
     // TODO
-    // Merge logical mySqlShards into 1 physical mySqlShard
-    // Populate completion per mySqlShard
+    // Merge logical shards into 1 physical shard
+    // Populate completion per shard
     // Take connection properties map
     // Write to common DLQ ?
 
@@ -96,20 +96,20 @@ public class PipelineController {
     SQLDialect sqlDialect = SQLDialect.valueOf(options.getSourceDbDialect());
 
     LOG.info(
-        "running migration for mySqlShards: {}",
-        mySqlShards.stream().map(IShard::getHost).collect(Collectors.toList()));
-    for (IShard mySqlShard : mySqlShards) {
-      for (Map.Entry<String, String> entry : mySqlShard.getDbNameToLogicalShardIdMap().entrySet()) {
+        "running migration for shards: {}",
+        shards.stream().map(IShard::getHost).collect(Collectors.toList()));
+    for (IShard shard : shards) {
+      for (Map.Entry<String, String> entry : shard.getDbNameToLogicalShardIdMap().entrySet()) {
         // Read data from source
         String shardId = entry.getValue();
 
-        // If a namespace is configured for a mySqlShard uses that, otherwise uses the namespace
+        // If a namespace is configured for a shard uses that, otherwise uses the namespace
         // configured in the options if there is one.
-        String namespace = Optional.ofNullable(mySqlShard.getNamespace()).orElse(options.getNamespace());
+        String namespace = Optional.ofNullable(shard.getNamespace()).orElse(options.getNamespace());
 
         ShardedDbConfigContainer dbConfigContainer =
             new ShardedDbConfigContainer(
-                    mySqlShard, sqlDialect, namespace, shardId, entry.getKey(), options);
+                    shard, sqlDialect, namespace, shardId, entry.getKey(), options);
         setupLogicalDbMigration(
             options,
             pipeline,
@@ -186,7 +186,7 @@ public class PipelineController {
   }
 
   /**
-   * For the spanner tables that contain the mySqlShard id column, returns the source table to
+   * For the spanner tables that contain the shard id column, returns the source table to
    * shardColumn.
    *
    * @param schemaMapper
@@ -249,7 +249,7 @@ public class PipelineController {
 
   static class ShardedDbConfigContainer implements DbConfigContainer {
 
-    private IShard mySqlShard;
+    private IShard shard;
 
     private SQLDialect sqlDialect;
 
@@ -262,13 +262,13 @@ public class PipelineController {
     private SourceDbToSpannerOptions options;
 
     public ShardedDbConfigContainer(
-        IShard mySqlShard,
+        IShard shard,
         SQLDialect sqlDialect,
         String namespace,
         String shardId,
         String dbName,
         SourceDbToSpannerOptions options) {
-      this.mySqlShard = mySqlShard;
+      this.shard = shard;
       this.sqlDialect = sqlDialect;
       this.namespace = namespace;
       this.shardId = shardId;
@@ -282,11 +282,11 @@ public class PipelineController {
           sqlDialect,
           sourceTables,
           null,
-          mySqlShard.getHost(),
-          mySqlShard.getConnectionProperties(),
-          Integer.parseInt(mySqlShard.getPort()),
-          mySqlShard.getUser(),
-          mySqlShard.getPassword(),
+          shard.getHost(),
+          shard.getConnectionProperties(),
+          Integer.parseInt(shard.getPort()),
+          shard.getUser(),
+          shard.getPassword(),
           dbName,
           namespace,
           shardId,

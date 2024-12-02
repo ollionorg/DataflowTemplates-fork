@@ -18,7 +18,7 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 * **inputTopics** : Kafka topic(s) to read the input from. (Example: topic1,topic2).
 * **outputFileFormat** : The file format of the desired output files. Can be TEXT, AVRO or PARQUET. Defaults to TEXT.
 * **outputDirectory** : The path and filename prefix for writing output files. Must end with a slash. (Example: gs://your-bucket/your-path).
-* **numShards** : The maximum number of output mySqlShards produced when writing. Default number is runner-dependent.
+* **numShards** : The maximum number of output shards produced when writing. Default number is runner-dependent.
 
 ### Optional parameters
 

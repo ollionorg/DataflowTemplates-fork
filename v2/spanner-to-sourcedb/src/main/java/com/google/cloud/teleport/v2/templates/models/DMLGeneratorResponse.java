@@ -15,18 +15,10 @@
  */
 package com.google.cloud.teleport.v2.templates.models;
 
-public class DMLGeneratorResponse {
-  private String dmlStatement;
+import java.util.List;
 
-  public String getDmlStatement() {
-    return dmlStatement;
-  }
-
-  public void setDmlStatement(String dmlStatement) {
-    this.dmlStatement = dmlStatement;
-  }
-
-  public DMLGeneratorResponse(String dmlStatement) {
-    this.dmlStatement = dmlStatement;
-  }
+public interface DMLGeneratorResponse {
+  String getDmlStatement();
+  Boolean isPreparedStatement();
+  List<Object> getValues();
 }

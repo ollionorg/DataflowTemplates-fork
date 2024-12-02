@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.google.cloud.teleport.v2.templates.models.SimpleStatementGeneratedResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -45,7 +47,7 @@ public class MySQLDMLGenerator implements IDMLGenerator {
       LOG.warn(
           "The spanner table {} was not found in session file, dropping the record",
           dmlGeneratorRequest.getSpannerTableName());
-      return new DMLGeneratorResponse("");
+      return new SimpleStatementGeneratedResponse("");
     }
 
     String spannerTableId =
@@ -60,20 +62,20 @@ public class MySQLDMLGenerator implements IDMLGenerator {
       LOG.warn(
           "The spanner table {} was not found in session file, dropping the record",
           dmlGeneratorRequest.getSpannerTableName());
-      return new DMLGeneratorResponse("");
+      return new SimpleStatementGeneratedResponse("");
     }
 
     SourceTable sourceTable = dmlGeneratorRequest.getSchema().getSrcSchema().get(spannerTableId);
     if (sourceTable == null) {
       LOG.warn("The table {} was not found in source", dmlGeneratorRequest.getSpannerTableName());
-      return new DMLGeneratorResponse("");
+      return new SimpleStatementGeneratedResponse("");
     }
 
     if (sourceTable.getPrimaryKeys() == null || sourceTable.getPrimaryKeys().length == 0) {
       LOG.warn(
           "Cannot reverse replicate for table {} without primary key, skipping the record",
           sourceTable.getName());
-      return new DMLGeneratorResponse("");
+      return new SimpleStatementGeneratedResponse("");
     }
 
     Map<String, String> pkcolumnNameValues =
@@ -87,7 +89,7 @@ public class MySQLDMLGenerator implements IDMLGenerator {
       LOG.warn(
           "Cannot reverse replicate for table {} without primary key, skipping the record",
           sourceTable.getName());
-      return new DMLGeneratorResponse("");
+      return new SimpleStatementGeneratedResponse("");
     }
 
     if ("INSERT".equals(dmlGeneratorRequest.getModType())
@@ -99,7 +101,7 @@ public class MySQLDMLGenerator implements IDMLGenerator {
       return getDeleteStatement(sourceTable.getName(), pkcolumnNameValues);
     } else {
       LOG.warn("Unsupported modType: " + dmlGeneratorRequest.getModType());
-      return new DMLGeneratorResponse("");
+      return new SimpleStatementGeneratedResponse("");
     }
   }
 
@@ -128,7 +130,7 @@ public class MySQLDMLGenerator implements IDMLGenerator {
 
       String returnVal =
           "INSERT INTO `" + tableName + "`(" + allColumns + ")" + " VALUES (" + allValues + ") ";
-      return new DMLGeneratorResponse(returnVal);
+      return new SimpleStatementGeneratedResponse(returnVal);
     }
     int index = 0;
 
@@ -160,7 +162,7 @@ public class MySQLDMLGenerator implements IDMLGenerator {
             + "ON DUPLICATE KEY UPDATE "
             + updateValues;
 
-    return new DMLGeneratorResponse(returnVal);
+    return new SimpleStatementGeneratedResponse(returnVal);
   }
 
   private static DMLGeneratorResponse getDeleteStatement(
@@ -180,7 +182,7 @@ public class MySQLDMLGenerator implements IDMLGenerator {
     }
     String returnVal = "DELETE FROM `" + tableName + "` WHERE " + deleteValues;
 
-    return new DMLGeneratorResponse(returnVal);
+    return new SimpleStatementGeneratedResponse(returnVal);
   }
 
   private static DMLGeneratorResponse generateUpsertStatement(

@@ -22,7 +22,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.PreparedStatement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -48,7 +47,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             LOG.warn(
                     "The spanner table {} was not found in session file, dropping the record",
                     dmlGeneratorRequest.getSpannerTableName());
-            return new DMLGeneratorResponse("");
+            return new DMLGeneratorResponse("", isPrepardStatement, values);
         }
 
         String spannerTableId =
@@ -63,20 +62,20 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             LOG.warn(
                     "The spanner table {} was not found in session file, dropping the record",
                     dmlGeneratorRequest.getSpannerTableName());
-            return new DMLGeneratorResponse("");
+            return new DMLGeneratorResponse("", isPrepardStatement, values);
         }
 
         SourceTable sourceTable = dmlGeneratorRequest.getSchema().getSrcSchema().get(spannerTableId);
         if (sourceTable == null) {
             LOG.warn("The table {} was not found in source", dmlGeneratorRequest.getSpannerTableName());
-            return new DMLGeneratorResponse("");
+            return new DMLGeneratorResponse("", isPrepardStatement, values);
         }
 
         if (sourceTable.getPrimaryKeys() == null || sourceTable.getPrimaryKeys().length == 0) {
             LOG.warn(
                     "Cannot reverse replicate for table {} without primary key, skipping the record",
                     sourceTable.getName());
-            return new DMLGeneratorResponse("");
+            return new DMLGeneratorResponse("", isPrepardStatement, values);
         }
 
         Map<String, Object> pkColumnNameValues =
@@ -90,7 +89,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             LOG.warn(
                     "Cannot reverse replicate for table {} without primary key, skipping the record",
                     sourceTable.getName());
-            return new DMLGeneratorResponse("");
+            return new DMLGeneratorResponse("", isPrepardStatement, values);
         }
 
         if ("INSERT".equals(dmlGeneratorRequest.getModType())
@@ -104,11 +103,11 @@ public class CassandraDMLGenerator implements IDMLGenerator {
 
         } else if ("DELETE".equals(dmlGeneratorRequest.getModType())) {
             return new DMLGeneratorResponse(
-                    getDeleteStatementCQL(sourceTable.getName(), pkColumnNameValues)
-            );
+                    getDeleteStatementCQL(sourceTable.getName(), pkColumnNameValues),
+                    isPrepardStatement, values);
         } else {
             LOG.warn("Unsupported modType: " + dmlGeneratorRequest.getModType());
-            return new DMLGeneratorResponse("");
+            return new DMLGeneratorResponse("", isPrepardStatement, values);
         }
     }
 
@@ -130,8 +129,8 @@ public class CassandraDMLGenerator implements IDMLGenerator {
                         sourceTable.getPrimaryKeySet(),
                         columnNameValues,
                         pkColumnNameValues
-                )
-        );
+                ),
+                isPrepardStatement, values);
     }
 
     private static String getUpsertStatementCQL(

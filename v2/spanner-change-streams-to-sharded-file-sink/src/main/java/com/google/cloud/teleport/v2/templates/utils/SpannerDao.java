@@ -25,7 +25,7 @@ import com.google.cloud.spanner.ResultSet;
 import com.google.cloud.spanner.Statement;
 import com.google.cloud.spanner.TransactionRunner.TransactionCallable;
 import com.google.cloud.teleport.v2.spanner.migrations.metadata.SpannerToGcsJobMetadata;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.spanner.admin.database.v1.UpdateDatabaseDdlMetadata;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -253,19 +253,19 @@ public class SpannerDao {
     }
   }
 
-  public void initShardProgress(List<Shard> shards, String runId) {
+  public void initShardProgress(List<MySqlShard> mySqlShards, String runId) {
     checkAndCreateDataSeenTable();
     checkAndCreateProgressTable();
     List<Mutation> mutations = new ArrayList<>();
     Timestamp epochTimestamp = Timestamp.parseTimestamp("1970-01-01T12:00:00Z");
-    for (Shard shard : shards) {
+    for (MySqlShard mySqlShard : mySqlShards) {
 
       mutations.add(
           Mutation.newInsertOrUpdateBuilder(shardFileCreateProgressTableName)
               .set("run_id")
               .to(runId)
-              .set("shard")
-              .to(shard.getLogicalShardId())
+              .set("mySqlShard")
+              .to(mySqlShard.getLogicalShardId())
               .set("created_upto")
               .to(epochTimestamp)
               .build());

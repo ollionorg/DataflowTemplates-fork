@@ -52,12 +52,12 @@ import org.slf4j.LoggerFactory;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(JUnit4.class)
-public class DataStreamToSpannerShardedMigrationWithMigrationShardIdColumnIT
+public class DataStreamToSpannerShardedMigrationWithMigrationMySqlShardIdColumnIT
     extends DataStreamToSpannerITBase {
 
   private static final Logger LOG =
       LoggerFactory.getLogger(
-          DataStreamToSpannerShardedMigrationWithMigrationShardIdColumnIT.class);
+          DataStreamToSpannerShardedMigrationWithMigrationMySqlShardIdColumnIT.class);
 
   private static final String TABLE = "Users";
   private static final String MOVIE_TABLE = "Movie";
@@ -75,7 +75,7 @@ public class DataStreamToSpannerShardedMigrationWithMigrationShardIdColumnIT
   private static final String SPANNER_DDL_RESOURCE =
       "DataStreamToSpannerShardedMigrationWithMigrationShardIdColumnIT/spanner-schema.sql";
 
-  private static HashSet<DataStreamToSpannerShardedMigrationWithMigrationShardIdColumnIT>
+  private static HashSet<DataStreamToSpannerShardedMigrationWithMigrationMySqlShardIdColumnIT>
       testInstances = new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo1;
   private static PipelineLauncher.LaunchInfo jobInfo2;
@@ -92,7 +92,7 @@ public class DataStreamToSpannerShardedMigrationWithMigrationShardIdColumnIT
   public void setUp() throws IOException, InterruptedException {
     // Prevent cleaning up of dataflow job after a test method is executed.
     skipBaseCleanup = true;
-    synchronized (DataStreamToSpannerShardedMigrationWithMigrationShardIdColumnIT.class) {
+    synchronized (DataStreamToSpannerShardedMigrationWithMigrationMySqlShardIdColumnIT.class) {
       testInstances.add(this);
       if (spannerResourceManager == null) {
         spannerResourceManager = setUpSpannerResourceManager();
@@ -150,7 +150,7 @@ public class DataStreamToSpannerShardedMigrationWithMigrationShardIdColumnIT
    */
   @AfterClass
   public static void cleanUp() throws IOException {
-    for (DataStreamToSpannerShardedMigrationWithMigrationShardIdColumnIT instance : testInstances) {
+    for (DataStreamToSpannerShardedMigrationWithMigrationMySqlShardIdColumnIT instance : testInstances) {
       instance.tearDownBase();
     }
     ResourceManagerUtils.cleanResources(spannerResourceManager, pubsubResourceManager);

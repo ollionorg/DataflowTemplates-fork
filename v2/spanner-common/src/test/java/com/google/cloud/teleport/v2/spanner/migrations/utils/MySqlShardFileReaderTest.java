@@ -21,7 +21,8 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,21 +35,21 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 @RunWith(JUnit4.class)
-public final class ShardFileReaderTest {
+public final class MySqlShardFileReaderTest {
   @Rule public final MockitoRule mocktio = MockitoJUnit.rule();
   @Mock private ISecretManagerAccessor secretManagerAccessorMockImpl;
 
   @Test
   public void shardFileReading() {
     ShardFileReader shardFileReader = new ShardFileReader(new SecretManagerAccessorImpl());
-    List<Shard> shards = shardFileReader.getOrderedShardDetails("src/test/resources/shard.json");
-    List<Shard> expectedShards =
+    List<MySqlShard> mySqlShards = shardFileReader.getOrderedShardDetails("src/test/resources/shard.json");
+    List<MySqlShard> expectedMySqlShards =
         Arrays.asList(
-            new Shard(
+            new MySqlShard(
                 "shardA", "hostShardA", "3306", "test", "test", "test", "namespaceA", null, null),
-            new Shard("shardB", "hostShardB", "3306", "test", "test", "test", null, null, null));
+            new MySqlShard("shardB", "hostShardB", "3306", "test", "test", "test", null, null, null));
 
-    assertEquals(shards, expectedShards);
+    assertEquals(mySqlShards, expectedMySqlShards);
   }
 
   @Test
@@ -73,11 +74,11 @@ public final class ShardFileReaderTest {
         .thenReturn("secretC");
 
     ShardFileReader shardFileReader = new ShardFileReader(secretManagerAccessorMockImpl);
-    List<Shard> shards =
+    List<MySqlShard> mySqlShards =
         shardFileReader.getOrderedShardDetails("src/test/resources/shard-with-secret.json");
-    List<Shard> expectedShards =
+    List<MySqlShard> expectedMySqlShards =
         Arrays.asList(
-            new Shard(
+            new MySqlShard(
                 "shardA",
                 "hostShardA",
                 "3306",
@@ -87,7 +88,7 @@ public final class ShardFileReaderTest {
                 "namespaceA",
                 "projects/123/secrets/secretA/versions/latest",
                 null),
-            new Shard(
+            new MySqlShard(
                 "shardB",
                 "hostShardB",
                 "3306",
@@ -97,7 +98,7 @@ public final class ShardFileReaderTest {
                 null,
                 "projects/123/secrets/secretB",
                 null),
-            new Shard(
+            new MySqlShard(
                 "shardC",
                 "hostShardC",
                 "3306",
@@ -107,9 +108,9 @@ public final class ShardFileReaderTest {
                 "namespaceC",
                 "projects/123/secrets/secretC/",
                 null),
-            new Shard("shardD", "hostShardD", "3306", "test", "test", "test", null, null, null));
+            new MySqlShard("shardD", "hostShardD", "3306", "test", "test", "test", null, null, null));
 
-    assertEquals(shards, expectedShards);
+    assertEquals(mySqlShards, expectedMySqlShards);
   }
 
   @Test
@@ -147,11 +148,11 @@ public final class ShardFileReaderTest {
     String testConnectionProperties =
         "useUnicode=yes&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull";
     ShardFileReader shardFileReader = new ShardFileReader(new SecretManagerAccessorImpl());
-    List<Shard> shards =
+    List<MySqlShard> mySqlShards =
         shardFileReader.readForwardMigrationShardingConfig(
-            "src/test/resources/bulk-migration-shards.json");
-    Shard shard1 =
-        new Shard(
+            "src/test/resources/bulk-migration-mySqlShards.json");
+    MySqlShard mySqlShard1 =
+        new MySqlShard(
             "",
             "1.1.1.1",
             "3306",
@@ -161,23 +162,23 @@ public final class ShardFileReaderTest {
             "namespace1",
             null,
             testConnectionProperties);
-    shard1.getDbNameToLogicalShardIdMap().put("person1", "1-1-1-1-person");
-    shard1.getDbNameToLogicalShardIdMap().put("person2", "1-1-1-1-person2");
-    Shard shard2 = new Shard("", "1.1.1.2", "3306", "test1", "pass1", "", null, null, "");
-    shard2.getDbNameToLogicalShardIdMap().put("person1", "1-1-1-2-person");
-    shard2.getDbNameToLogicalShardIdMap().put("person20", "1-1-1-2-person2");
-    List<Shard> expectedShards = new ArrayList<>(Arrays.asList(shard1, shard2));
+    mySqlShard1.getDbNameToLogicalShardIdMap().put("person1", "1-1-1-1-person");
+    mySqlShard1.getDbNameToLogicalShardIdMap().put("person2", "1-1-1-1-person2");
+    MySqlShard mySqlShard2 = new MySqlShard("", "1.1.1.2", "3306", "test1", "pass1", "", null, null, "");
+    mySqlShard2.getDbNameToLogicalShardIdMap().put("person1", "1-1-1-2-person");
+    mySqlShard2.getDbNameToLogicalShardIdMap().put("person20", "1-1-1-2-person2");
+    List<MySqlShard> expectedMySqlShards = new ArrayList<>(Arrays.asList(mySqlShard1, mySqlShard2));
 
-    assertEquals(expectedShards, shards);
-    assertEquals(shard1.toString().contains(testConnectionProperties), true);
-    assertEquals(shard1.getConnectionProperties(), testConnectionProperties);
-    var originalHarshCode = shard1.hashCode();
-    shard1.setConnectionProperties("");
-    assertNotEquals(originalHarshCode, shard1.hashCode());
+    assertEquals(expectedMySqlShards, mySqlShards);
+    assertEquals(mySqlShard1.toString().contains(testConnectionProperties), true);
+    assertEquals(mySqlShard1.getConnectionProperties(), testConnectionProperties);
+    var originalHarshCode = mySqlShard1.hashCode();
+    mySqlShard1.setConnectionProperties("");
+    assertNotEquals(originalHarshCode, mySqlShard1.hashCode());
     // Cover the equality override.
-    assertEquals(shard1, shard1);
-    assertNotEquals(shard1, "");
-    assertNotEquals(shard1, shards.get(0));
+    assertEquals(mySqlShard1, mySqlShard1);
+    assertNotEquals(mySqlShard1, "");
+    assertNotEquals(mySqlShard1, mySqlShards.get(0));
   }
 
   @Test
@@ -187,11 +188,11 @@ public final class ShardFileReaderTest {
     when(secretManagerAccessorMockImpl.getSecret("projects/123/secrets/secretB/versions/latest"))
         .thenReturn("secretB");
     ShardFileReader shardFileReader = new ShardFileReader(secretManagerAccessorMockImpl);
-    List<Shard> shards =
+    List<MySqlShard> mySqlShards =
         shardFileReader.readForwardMigrationShardingConfig(
-            "src/test/resources/bulk-migration-shards-secret.json");
-    Shard shard1 =
-        new Shard(
+            "src/test/resources/bulk-migration-mySqlShards-secret.json");
+    MySqlShard mySqlShard1 =
+        new MySqlShard(
             "",
             "1.1.1.1",
             "3306",
@@ -201,10 +202,10 @@ public final class ShardFileReaderTest {
             null,
             "projects/123/secrets/secretA/versions/latest",
             "");
-    shard1.getDbNameToLogicalShardIdMap().put("person1", "1-1-1-1-person");
-    shard1.getDbNameToLogicalShardIdMap().put("person2", "1-1-1-1-person2");
-    Shard shard2 =
-        new Shard(
+    mySqlShard1.getDbNameToLogicalShardIdMap().put("person1", "1-1-1-1-person");
+    mySqlShard1.getDbNameToLogicalShardIdMap().put("person2", "1-1-1-1-person2");
+    MySqlShard mySqlShard2 =
+        new MySqlShard(
             "",
             "1.1.1.2",
             "3306",
@@ -214,10 +215,10 @@ public final class ShardFileReaderTest {
             null,
             "projects/123/secrets/secretB/versions/latest",
             "");
-    shard2.getDbNameToLogicalShardIdMap().put("person1", "1-1-1-2-person");
-    shard2.getDbNameToLogicalShardIdMap().put("person20", "1-1-1-2-person2");
-    List<Shard> expectedShards = new ArrayList<>(Arrays.asList(shard1, shard2));
+    mySqlShard2.getDbNameToLogicalShardIdMap().put("person1", "1-1-1-2-person");
+    mySqlShard2.getDbNameToLogicalShardIdMap().put("person20", "1-1-1-2-person2");
+    List<MySqlShard> expectedMySqlShards = new ArrayList<>(Arrays.asList(mySqlShard1, mySqlShard2));
 
-    assertEquals(shards, expectedShards);
+    assertEquals(mySqlShards, expectedMySqlShards);
   }
 }

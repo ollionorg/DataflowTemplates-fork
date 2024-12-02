@@ -21,7 +21,7 @@ import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
 import com.google.cloud.teleport.metadata.SkipDirectRunnerTest;
 import com.google.cloud.teleport.metadata.TemplateIntegrationTest;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.spanner.migrations.transformation.CustomTransformation;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
@@ -282,20 +282,20 @@ public class GCSToSourceDbWithoutReaderIT extends TemplateTestBase {
 
   private void createAndUploadShardConfigToGcs(
       GcsResourceManager gcsResourceManager, MySQLResourceManager jdbcResourceManager) {
-    Shard shard = new Shard();
-    shard.setLogicalShardId("Shard1");
-    shard.setUser(jdbcResourceManager.getUsername());
-    shard.setHost(jdbcResourceManager.getHost());
-    shard.setPassword(jdbcResourceManager.getPassword());
-    shard.setPort(String.valueOf(jdbcResourceManager.getPort()));
-    shard.setDbName(jdbcResourceManager.getDatabaseName());
-    JsonObject jsObj = new Gson().toJsonTree(shard).getAsJsonObject();
+    MySqlShard mySqlShard = new MySqlShard();
+    mySqlShard.setLogicalShardId("Shard1");
+    mySqlShard.setUser(jdbcResourceManager.getUsername());
+    mySqlShard.setHost(jdbcResourceManager.getHost());
+    mySqlShard.setPassword(jdbcResourceManager.getPassword());
+    mySqlShard.setPort(String.valueOf(jdbcResourceManager.getPort()));
+    mySqlShard.setDbName(jdbcResourceManager.getDatabaseName());
+    JsonObject jsObj = new Gson().toJsonTree(mySqlShard).getAsJsonObject();
     jsObj.remove("secretManagerUri"); // remove field secretManagerUri
     JsonArray ja = new JsonArray();
     ja.add(jsObj);
     String shardFileContents = ja.toString();
-    LOG.info("Shard file contents: {}", shardFileContents);
-    gcsResourceManager.createArtifact("input/shard.json", shardFileContents);
+    LOG.info("MySqlShard file contents: {}", shardFileContents);
+    gcsResourceManager.createArtifact("input/mySqlShard.json", shardFileContents);
   }
 
   public void createAndUploadJarToGcs(GcsResourceManager gcsResourceManager)

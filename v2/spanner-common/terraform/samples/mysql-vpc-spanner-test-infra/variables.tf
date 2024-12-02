@@ -16,7 +16,7 @@ variable "vpc_params" {
 }
 
 variable "mysql_params" {
-  description = "Parameters for MySQL shards source configuration"
+  description = "Parameters for MySQL mySqlShards source configuration"
   type = list(object({
     vm_name              = string
     machine_type         = optional(string, "n2-standard-2")

@@ -334,7 +334,7 @@ Create template spec in Google Cloud Storage with path to container image in Goo
                    {
                         "name": "numShards",
                         "label": "Number of Shards.",
-                        "helpText": "Maximum number of output shards. Default:0 and should be set to 1 or higher number.",
+                        "helpText": "Maximum number of output mySqlShards. Default:0 and should be set to 1 or higher number.",
                         "isOptional": true,
                         "regexes": [
                           "^[1-9][0-9]*$"

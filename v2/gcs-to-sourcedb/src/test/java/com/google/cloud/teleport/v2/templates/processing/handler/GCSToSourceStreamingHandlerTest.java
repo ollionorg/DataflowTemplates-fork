@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 import com.google.cloud.Timestamp;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.templates.common.ProcessingContext;
 import com.google.cloud.teleport.v2.templates.common.TrimmedShardedDataChangeRecord;
 import java.nio.charset.StandardCharsets;
@@ -58,12 +58,12 @@ public class GCSToSourceStreamingHandlerTest {
   public void testWriteFilteredEventsToGcs_Success() {
     ProcessingContext taskContext = mock(ProcessingContext.class);
     Storage mockStorage = mock(Storage.class);
-    Shard shard = mock(Shard.class);
+    MySqlShard mySqlShard = mock(MySqlShard.class);
     when(taskContext.getGCSPath()).thenReturn(VALID_GCS_PATH);
     when(taskContext.getStartTimestamp()).thenReturn("2023-06-23T10:15:30Z");
     when(taskContext.getWindowDuration()).thenReturn(org.joda.time.Duration.standardMinutes(10));
-    when(shard.getLogicalShardId()).thenReturn("shard-123");
-    when(taskContext.getShard()).thenReturn(shard);
+    when(mySqlShard.getLogicalShardId()).thenReturn("mySqlShard-123");
+    when(taskContext.getShard()).thenReturn(mySqlShard);
     List<Mod> mods = new ArrayList<>();
 
     List<TrimmedShardedDataChangeRecord> filteredEvents = new ArrayList<>();
@@ -91,7 +91,7 @@ public class GCSToSourceStreamingHandlerTest {
     assertEquals(capturedBlobInfo.getBucket(), "my-bucket");
     assertEquals(
         capturedBlobInfo.getName(),
-        "my-path/filteredEvents/shard-123/2023-06-23T10:15:30.000Z-2023-06-23T10:25:30.000Z-pane-0-last-0-of-1.txt");
+        "my-path/filteredEvents/mySqlShard-123/2023-06-23T10:15:30.000Z-2023-06-23T10:25:30.000Z-pane-0-last-0-of-1.txt");
   }
 
   @Test
@@ -103,9 +103,9 @@ public class GCSToSourceStreamingHandlerTest {
     when(taskContext.getGCSPath()).thenReturn(VALID_GCS_PATH);
     when(taskContext.getStartTimestamp()).thenReturn("2023-06-23T10:15:30Z");
     when(taskContext.getWindowDuration()).thenReturn(org.joda.time.Duration.standardMinutes(10));
-    Shard shard = mock(Shard.class);
-    when(shard.getLogicalShardId()).thenReturn("shard-123");
-    when(taskContext.getShard()).thenReturn(shard);
+    MySqlShard mySqlShard = mock(MySqlShard.class);
+    when(mySqlShard.getLogicalShardId()).thenReturn("mySqlShard-123");
+    when(taskContext.getShard()).thenReturn(mySqlShard);
 
     List<TrimmedShardedDataChangeRecord> filteredEvents = new ArrayList<>();
 

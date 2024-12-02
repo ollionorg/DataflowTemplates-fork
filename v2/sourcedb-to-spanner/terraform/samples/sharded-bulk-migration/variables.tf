@@ -36,9 +36,9 @@ variable "common_params" {
     num_workers           = optional(number)
     default_log_level     = optional(string)
 
-    # This parameters decides the number of physical shards to migrate using a single dataflow job.
+    # This parameters decides the number of physical mySqlShards to migrate using a single dataflow job.
     # Set this in a way that restricts the total number of tables to 150 within a single job.
-    # Ex: if each physical shard has 2 logical shards, and each logical shard has 15 tables,
+    # Ex: if each physical mySqlShard has 2 logical mySqlShards, and each logical mySqlShard has 15 tables,
     # the batch size should not exceed 5.
     batch_size = optional(number, 1)
   })

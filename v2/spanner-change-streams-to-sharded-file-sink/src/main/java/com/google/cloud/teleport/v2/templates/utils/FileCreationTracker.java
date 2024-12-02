@@ -16,7 +16,7 @@
 package com.google.cloud.teleport.v2.templates.utils;
 
 import com.google.cloud.spanner.SpannerException;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import java.util.List;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
 
@@ -37,8 +37,8 @@ public class FileCreationTracker {
     this.runId = runId;
   }
 
-  public void init(List<Shard> shards) {
-    spannerDao.initShardProgress(shards, runId);
+  public void init(List<MySqlShard> mySqlShards) {
+    spannerDao.initShardProgress(mySqlShards, runId);
   }
 
   public void updateProgress(String shard, String endTime) {

@@ -19,8 +19,8 @@ public interface IDao<T> {
   /**
    * Executes a given write statement against the data source.
    *
-   * @param statement Query statement.
+   * @param dmlResponseGenerator Query statement.
    * @throws Exception If there is an error executing the statement.
    */
-  void write(T statement) throws Exception;
+  void write(T dmlResponseGenerator) throws Exception;
 }

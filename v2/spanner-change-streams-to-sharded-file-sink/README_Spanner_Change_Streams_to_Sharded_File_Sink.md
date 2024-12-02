@@ -2,7 +2,7 @@
 Spanner Change Streams to Sharded File Sink template
 ---
 Streaming pipeline. Ingests data from Spanner Change Streams, splits them into
-shards and intervals , and writes them to a file sink.
+mySqlShards and intervals , and writes them to a file sink.
 
 
 :memo: This is a Google-provided template! Please
@@ -24,7 +24,7 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 * **metadataInstance** : This is the instance to store the metadata used by the connector to control the consumption of the change stream API data.
 * **metadataDatabase** : This is the database to store the metadata used by the connector to control the consumption of the change stream API data.
 * **gcsOutputDirectory** : The path and filename prefix for writing output files. Must end with a slash. DateTime formatting is used to parse directory path for date & time formatters. (Example: gs://your-bucket/your-path/).
-* **sourceShardsFilePath** : Source shard details file path in Cloud Storage that contains connection profile of source shards. Atleast one shard information is expected.
+* **sourceShardsFilePath** : Source mySqlShard details file path in Cloud Storage that contains connection profile of source mySqlShards. Atleast one mySqlShard information is expected.
 * **runIdentifier** : The identifier to distinguish between different runs of reverse replication flows.
 
 ### Optional parameters
@@ -37,8 +37,8 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 * **metadataTableSuffix** : Suffix appended to the spanner_to_gcs_metadata and shard_file_create_progress metadata tables.Useful when doing multiple runs.Only alpha numeric and underscores are allowed. Defaults to empty.
 * **skipDirectoryName** : Records skipped from reverse replication are written to this directory. Default directory name is skip.
 * **runMode** : Regular starts from input start time, resume start from last processed time. Defaults to: regular.
-* **shardingCustomJarPath** : Custom jar location in Cloud Storage that contains the customization logic for fetching shard id. Defaults to empty.
-* **shardingCustomClassName** : Fully qualified class name having the custom shard id implementation.  It is a mandatory field in case shardingCustomJarPath is specified. Defaults to empty.
+* **shardingCustomJarPath** : Custom jar location in Cloud Storage that contains the customization logic for fetching mySqlShard id. Defaults to empty.
+* **shardingCustomClassName** : Fully qualified class name having the custom mySqlShard id implementation.  It is a mandatory field in case shardingCustomJarPath is specified. Defaults to empty.
 * **shardingCustomParameters** : String containing any custom parameters to be passed to the custom sharding class. Defaults to empty.
 
 

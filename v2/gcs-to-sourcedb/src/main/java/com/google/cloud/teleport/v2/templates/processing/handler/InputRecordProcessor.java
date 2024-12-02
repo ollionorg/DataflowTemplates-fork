@@ -138,7 +138,7 @@ public class InputRecordProcessor {
       dao.batchWrite(dmlBatch);
       Instant daoEndTime = Instant.now();
       LOG.info(
-          "Shard "
+          "MySqlShard "
               + shardId
               + ": Write to mysql for "
               + recordList.size()

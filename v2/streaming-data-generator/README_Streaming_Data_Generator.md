@@ -34,7 +34,7 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 * **windowDuration** : The window duration/size in which data will be written to Cloud Storage. Allowed formats are: Ns (for seconds, example: 5s), Nm (for minutes, example: 12m), Nh (for hours, example: 2h). (Example: 1m). Defaults to: 1m.
 * **outputDirectory** : The path and filename prefix for writing output files. Must end with a slash. DateTime formatting is used to parse directory path for date & time formatters. (Example: gs://your-bucket/your-path/).
 * **outputFilenamePrefix** : The prefix to place on each windowed file. (Example: output-). Defaults to: output-.
-* **numShards** : The maximum number of output shards produced when writing. A higher number of shards means higher throughput for writing to Cloud Storage, but potentially higher data aggregation cost across shards when processing output Cloud Storage files. Default value is decided by Dataflow.
+* **numShards** : The maximum number of output mySqlShards produced when writing. A higher number of mySqlShards means higher throughput for writing to Cloud Storage, but potentially higher data aggregation cost across mySqlShards when processing output Cloud Storage files. Default value is decided by Dataflow.
 * **driverClassName** : JDBC driver class name to use. (Example: com.mysql.jdbc.Driver).
 * **connectionUrl** : Url connection string to connect to the JDBC source. (Example: jdbc:mysql://some-host:3306/sampledb).
 * **username** : User name to be used for the JDBC connection.

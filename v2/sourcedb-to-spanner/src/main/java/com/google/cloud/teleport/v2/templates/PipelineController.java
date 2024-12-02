@@ -26,7 +26,7 @@ import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.ISchemaMapper;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.IdentityMapper;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SessionBasedMapper;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.cloud.teleport.v2.spanner.migrations.spanner.SpannerSchema;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
@@ -79,7 +79,7 @@ public class PipelineController {
   static PipelineResult executeShardedMigration(
       SourceDbToSpannerOptions options,
       Pipeline pipeline,
-      List<Shard> shards,
+      List<IShard> shards,
       SpannerConfig spannerConfig) {
     // TODO
     // Merge logical shards into 1 physical shard
@@ -97,8 +97,8 @@ public class PipelineController {
 
     LOG.info(
         "running migration for shards: {}",
-        shards.stream().map(Shard::getHost).collect(Collectors.toList()));
-    for (Shard shard : shards) {
+        shards.stream().map(IShard::getHost).collect(Collectors.toList()));
+    for (IShard shard : shards) {
       for (Map.Entry<String, String> entry : shard.getDbNameToLogicalShardIdMap().entrySet()) {
         // Read data from source
         String shardId = entry.getValue();
@@ -109,7 +109,7 @@ public class PipelineController {
 
         ShardedDbConfigContainer dbConfigContainer =
             new ShardedDbConfigContainer(
-                shard, sqlDialect, namespace, shardId, entry.getKey(), options);
+                    shard, sqlDialect, namespace, shardId, entry.getKey(), options);
         setupLogicalDbMigration(
             options,
             pipeline,
@@ -249,7 +249,7 @@ public class PipelineController {
 
   static class ShardedDbConfigContainer implements DbConfigContainer {
 
-    private Shard shard;
+    private IShard shard;
 
     private SQLDialect sqlDialect;
 
@@ -262,7 +262,7 @@ public class PipelineController {
     private SourceDbToSpannerOptions options;
 
     public ShardedDbConfigContainer(
-        Shard shard,
+        IShard shard,
         SQLDialect sqlDialect,
         String namespace,
         String shardId,
@@ -285,7 +285,7 @@ public class PipelineController {
           shard.getHost(),
           shard.getConnectionProperties(),
           Integer.parseInt(shard.getPort()),
-          shard.getUserName(),
+          shard.getUser(),
           shard.getPassword(),
           dbName,
           namespace,

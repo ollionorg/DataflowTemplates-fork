@@ -1,10 +1,10 @@
 package com.google.cloud.teleport.v2.templates.models;
 import java.util.List;
 
-public class SimpleStatementGeneratedResponse implements DMLGeneratorResponse {
+public class RawStatementGeneratedResponse implements DMLGeneratorResponse {
     private String dmlStatement;
 
-    public SimpleStatementGeneratedResponse(String dmlStatement) {
+    public RawStatementGeneratedResponse(String dmlStatement) {
         this.dmlStatement = dmlStatement;
     }
 

@@ -65,7 +65,7 @@ public class InputRecordProcessor {
         LOG.warn("DML statement is empty for table: " + tableName);
         return;
       }
-      dao.write(dmlGeneratorResponse.getDmlStatement());
+      dao.write(dmlGeneratorResponse);
 
       Counter numRecProcessedMetric =
           Metrics.counter(shardId, "records_written_to_source_" + shardId);

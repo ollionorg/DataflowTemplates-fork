@@ -18,13 +18,14 @@ package com.google.cloud.teleport.v2.templates.dbutils.dml;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.*;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorRequest;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
+import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
+import com.google.cloud.teleport.v2.templates.models.RawStatementGeneratedResponse;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.time.Instant;
+import java.util.*;
 
 /**
  * Creates DML statements For Cassandra
@@ -47,7 +48,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             LOG.warn(
                     "The spanner table {} was not found in session file, dropping the record",
                     dmlGeneratorRequest.getSpannerTableName());
-            return new DMLGeneratorResponse("", isPrepardStatement, values);
+            return new RawStatementGeneratedResponse("");
         }
 
         String spannerTableId =
@@ -62,20 +63,20 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             LOG.warn(
                     "The spanner table {} was not found in session file, dropping the record",
                     dmlGeneratorRequest.getSpannerTableName());
-            return new DMLGeneratorResponse("", isPrepardStatement, values);
+            return new RawStatementGeneratedResponse("");
         }
 
         SourceTable sourceTable = dmlGeneratorRequest.getSchema().getSrcSchema().get(spannerTableId);
         if (sourceTable == null) {
             LOG.warn("The table {} was not found in source", dmlGeneratorRequest.getSpannerTableName());
-            return new DMLGeneratorResponse("", isPrepardStatement, values);
+            return new RawStatementGeneratedResponse("");
         }
 
         if (sourceTable.getPrimaryKeys() == null || sourceTable.getPrimaryKeys().length == 0) {
             LOG.warn(
                     "Cannot reverse replicate for table {} without primary key, skipping the record",
                     sourceTable.getName());
-            return new DMLGeneratorResponse("", isPrepardStatement, values);
+            return new RawStatementGeneratedResponse("");
         }
 
         Map<String, Object> pkColumnNameValues =
@@ -89,7 +90,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             LOG.warn(
                     "Cannot reverse replicate for table {} without primary key, skipping the record",
                     sourceTable.getName());
-            return new DMLGeneratorResponse("", isPrepardStatement, values);
+            return new RawStatementGeneratedResponse("");
         }
 
         if ("INSERT".equals(dmlGeneratorRequest.getModType())
@@ -102,12 +103,10 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             );
 
         } else if ("DELETE".equals(dmlGeneratorRequest.getModType())) {
-            return new DMLGeneratorResponse(
-                    getDeleteStatementCQL(sourceTable.getName(), pkColumnNameValues),
-                    isPrepardStatement, values);
+            return getDeleteStatementCQL(sourceTable.getName(), pkColumnNameValues,  Instant.now().toEpochMilli() * 1000);
         } else {
             LOG.warn("Unsupported modType: " + dmlGeneratorRequest.getModType());
-            return new DMLGeneratorResponse("", isPrepardStatement, values);
+            return new RawStatementGeneratedResponse("");
         }
     }
 
@@ -123,76 +122,82 @@ public class CassandraDMLGenerator implements IDMLGenerator {
                         dmlGeneratorRequest.getNewValuesJson(),
                         dmlGeneratorRequest.getKeyValuesJson(),
                         dmlGeneratorRequest.getSourceDbTimezoneOffset());
-        return new DMLGeneratorResponse(
-                getUpsertStatementCQL(
+        return getUpsertStatementCQL(
                         sourceTable.getName(),
-                        sourceTable.getPrimaryKeySet(),
+                Instant.now().toEpochMilli() * 1000,
                         columnNameValues,
                         pkColumnNameValues
-                ),
-                isPrepardStatement, values);
+                );
     }
 
-    private static String getUpsertStatementCQL(
+    private static DMLGeneratorResponse getUpsertStatementCQL(
             String tableName,
-            Set<String> primaryKeys,
+            long timestamp,
             Map<String, Object> columnNameValues,
-            Map<String, Object> pkColumnNameValues) {
+            Map<String, Object> pkColumnNameValues
+    ) {
 
         StringBuilder allColumns = new StringBuilder();
-        StringBuilder allValues = new StringBuilder();
+        StringBuilder placeholders = new StringBuilder();
+        List<Object> values = new ArrayList<>();
 
-        // Process primary key columns
         for (Map.Entry<String, Object> entry : pkColumnNameValues.entrySet()) {
             String colName = entry.getKey();
             Object colValue = entry.getValue();
 
             allColumns.append(colName).append(", ");
-            allValues.append(colValue).append(", ");
+            placeholders.append("?, ");
+            values.add(colValue);
         }
 
-        // Process additional columns
         for (Map.Entry<String, Object> entry : columnNameValues.entrySet()) {
             String colName = entry.getKey();
             Object colValue = entry.getValue();
 
             allColumns.append(colName).append(", ");
-            allValues.append(colValue).append(", ");
+            placeholders.append("?, ");
+            values.add(colValue);
         }
 
-        // Remove trailing comma and space
         if (allColumns.length() > 0) {
             allColumns.setLength(allColumns.length() - 2);
         }
-        if (allValues.length() > 0) {
-            allValues.setLength(allValues.length() - 2);
+        if (placeholders.length() > 0) {
+            placeholders.setLength(placeholders.length() - 2);
         }
 
-        // Construct the CQL INSERT statement
-        return "INSERT INTO " + tableName + " (" + allColumns + ") VALUES (" + allValues + ");";
+        String preparedStatement = "INSERT INTO " + tableName + " (" + allColumns + ") VALUES (" + placeholders + ") USING TIMESTAMP ?;";
+        values.add(timestamp);
+        return new PreparedStatementGeneratedResponse(preparedStatement, values);
     }
 
-    private static String getDeleteStatementCQL(
-            String tableName, Map<String, Object> pkColumnNameValues) {
+
+    private static DMLGeneratorResponse getDeleteStatementCQL(
+            String tableName,
+            Map<String, Object> pkColumnNameValues,
+            long timestamp
+    ) {
 
         StringBuilder deleteConditions = new StringBuilder();
+        List<Object> values = new ArrayList<>();
 
-        // Process primary key columns for the WHERE clause
-        int index = 0;
         for (Map.Entry<String, Object> entry : pkColumnNameValues.entrySet()) {
             String colName = entry.getKey();
-            Object colValue = entry.getValue();
-
-            deleteConditions.append(colName).append(" = ").append(colValue);
-            if (index + 1 < pkColumnNameValues.size()) {
-                deleteConditions.append(" AND ");
-            }
-            index++;
+            deleteConditions.append(colName).append(" = ? AND ");
+            values.add(entry.getValue());
         }
 
-        // Construct the CQL DELETE statement
-        return "DELETE FROM " + tableName + " WHERE " + deleteConditions + ";";
+        if (deleteConditions.length() > 0) {
+            deleteConditions.setLength(deleteConditions.length() - 5);
+        }
+
+        String preparedStatement = "DELETE FROM " + tableName + " WHERE " + deleteConditions + " USING TIMESTAMP ?;";
+
+        values.add(timestamp);
+
+        return new PreparedStatementGeneratedResponse(preparedStatement, values);
     }
+
 
     private static Map<String, Object> getColumnValues(
             SpannerTable spannerTable,

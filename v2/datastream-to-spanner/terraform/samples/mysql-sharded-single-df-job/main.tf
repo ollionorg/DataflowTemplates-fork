@@ -78,14 +78,14 @@ resource "google_storage_bucket_object" "session_file_object" {
 
 locals {
   host_to_stream_map = {
-    for mySqlShard in var.shard_list :
-    mySqlShard.datastream_params.mysql_host => mySqlShard.datastream_params.stream_id
+    for shard in var.shard_list :
+    shard.datastream_params.mysql_host => shard.datastream_params.stream_id
   }
 }
 
 # if the sharding context file is specified, use that, otherwise
 # auto-generate sharding context on basis of stream names, MySQL db names and logical
-# mySqlShard names.
+# shard names.
 resource "google_storage_bucket_object" "sharding_context_file_object" {
   depends_on   = [google_project_service.enabled_apis]
   name         = "shardingContext.json"
@@ -103,9 +103,9 @@ resource "google_storage_bucket_object" "sharding_context_file_object" {
     :
     jsonencode({
       "StreamToDbAndShardMap" : {
-        for idx, mySqlShard in var.shard_list : "${mySqlShard.shard_id != null ? mySqlShard.shard_id : random_pet.migration_id[idx].id}-${mySqlShard.datastream_params.stream_id}" => {
+        for idx, shard in var.shard_list : "${shard.shard_id != null ? shard.shard_id : random_pet.migration_id[idx].id}-${shard.datastream_params.stream_id}" => {
           for db in var.common_params.datastream_params.mysql_databases :
-          db.database => "${replace(mySqlShard.datastream_params.mysql_host, ".", "-")}-${db.database}"
+          db.database => "${replace(shard.datastream_params.mysql_host, ".", "-")}-${db.database}"
         }
       }
     })

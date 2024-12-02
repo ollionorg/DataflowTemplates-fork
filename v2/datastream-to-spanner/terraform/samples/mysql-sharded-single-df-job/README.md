@@ -2,7 +2,7 @@
 
 > **_SCENARIO:_** This Terraform example illustrates launching a live migration
 > jobs for a sharded MySQL source using a single dataflow job, setting up all the required cloud infrastructure.
-> **Only the source details of physical mySqlShards are needed as input.**
+> **Only the source details of physical shards are needed as input.**
 
 ## Terraform permissions
 
@@ -177,9 +177,9 @@ configuration and creates the following resources -
 
 1. **Datastream private connection** - If configured, a Datastream private
    connection will be deployed for your configured VPC. If not configured, IP
-   allowlisting will be assumed as the mode of Datastream access. A single private connection is created for all mySqlShards.
+   allowlisting will be assumed as the mode of Datastream access. A single private connection is created for all shards.
 2. **Source datastream connection profiles** - This allows Datastream to connect
-   to the MySQL instance (using IP allowlisting or private connectivity). A source connection profile is created per physical mySqlShard.
+   to the MySQL instance (using IP allowlisting or private connectivity). A source connection profile is created per physical shard.
 3. **GCS buckets** - A GCS bucket for Datastream to write the source data to. Each datastream job writes to a separate
    folder in `data/` directory, therefore, only 1 GCS bucket is created.
 4. **Target datastream connection profiles** - The connection profile to
@@ -187,10 +187,10 @@ configuration and creates the following resources -
 5. **Pubsub topics and subscriptions** - This contains GCS object notifications as
    files are written to GCS for consumption by the Dataflow job.
 6. **Datastream streams** - A datastream stream which reads from the source
-   specified in the source connection profile and writes the data to the GCS bucket(mySqlShard specific directory inside the GCS bucket)
+   specified in the source connection profile and writes the data to the GCS bucket(shard specific directory inside the GCS bucket)
    specified in the target connection profile. Note that it uses a mandatory
    prefix path inside the bucket where it will write the data to. The default
-   prefix path is `data/` (can be overridden). A stream is created per physical mySqlShard.
+   prefix path is `data/` (can be overridden). A stream is created per physical shard.
 7. **Bucket notifications** - Creates the GCS bucket notification which publish
    to the pubsub topic created. Note that the bucket notification is created on
    the mandatory prefix path specified for the stream above.
@@ -242,13 +242,13 @@ resource_ids = {
   "gcs_bucket" = "smt-glorious-lionfish-terraform-test"
   "pubsub_subscription" = "smt-glorious-lionfish-terraform-test-topic-sub"
   "pubsub_topic" = "smt-glorious-lionfish-terraform-test-topic"
-  "mySqlShard1" = {
-    "datastream_source_connection_profile" = "mySqlShard1-source-conn1"
-    "datastream_stream" = "mySqlShard1-stream1"
+  "shard1" = {
+    "datastream_source_connection_profile" = "shard1-source-conn1"
+    "datastream_stream" = "shard1-stream1"
   }
-  "mySqlShard2" = {
-    "datastream_source_connection_profile" = "mySqlShard2-source-conn2"
-    "datastream_stream" = "mySqlShard2-stream2"
+  "shard2" = {
+    "datastream_source_connection_profile" = "shard2-source-conn2"
+    "datastream_stream" = "shard2-stream2"
   }
 }
 resource_urls = {
@@ -257,13 +257,13 @@ resource_urls = {
   "gcs_bucket" = "https://console.cloud.google.com/storage/browser/smt-glorious-lionfish-terraform-test?project=span-cloud-ck-testing-external"
   "pubsub_subscription" = "https://console.cloud.google.com/cloudpubsub/subscription/detail/smt-glorious-lionfish-terraform-test-topic-sub?project=span-cloud-ck-testing-external"
   "pubsub_topic" = "https://console.cloud.google.com/cloudpubsub/topic/detail/smt-glorious-lionfish-terraform-test-topic?project=span-cloud-ck-testing-external"
-  "mySqlShard1" = {
-    "datastream_source_connection_profile" = "https://console.cloud.google.com/datastream/connection-profiles/locations/us-central1/instances/mySqlShard1-source-conn1?project=span-cloud-ck-testing-external"
-    "datastream_stream" = "https://console.cloud.google.com/datastream/streams/locations/us-central1/instances/mySqlShard1-stream1?project=span-cloud-ck-testing-external"
+  "shard1" = {
+    "datastream_source_connection_profile" = "https://console.cloud.google.com/datastream/connection-profiles/locations/us-central1/instances/shard1-source-conn1?project=span-cloud-ck-testing-external"
+    "datastream_stream" = "https://console.cloud.google.com/datastream/streams/locations/us-central1/instances/shard1-stream1?project=span-cloud-ck-testing-external"
   }
-  "mySqlShard2" = {
-    "datastream_source_connection_profile" = "https://console.cloud.google.com/datastream/connection-profiles/locations/us-central1/instances/mySqlShard2-source-conn2?project=span-cloud-ck-testing-external"
-    "datastream_stream" = "https://console.cloud.google.com/datastream/streams/locations/us-central1/instances/mySqlShard2-stream2?project=span-cloud-ck-testing-external"
+  "shard2" = {
+    "datastream_source_connection_profile" = "https://console.cloud.google.com/datastream/connection-profiles/locations/us-central1/instances/shard2-source-conn2?project=span-cloud-ck-testing-external"
+    "datastream_stream" = "https://console.cloud.google.com/datastream/streams/locations/us-central1/instances/shard2-stream2?project=span-cloud-ck-testing-external"
   }
 }
 ```
@@ -494,11 +494,11 @@ job.
 
 Sharding context is used to populate the `migration_shard_id` column
 added by SMT to each table of your schema. This allows the customer to trace
-the source of each record in Spanner, back to the source mySqlShards.
+the source of each record in Spanner, back to the source shards.
 
 By default, `migration_shard_id` is populated with
 the `"${mysql_host_ip}-${dbName}"`.
-Alternatively, for each mySqlShard, a sharding context file can be specified.
+Alternatively, for each shard, a sharding context file can be specified.
 To specify a sharding context file -
 
 1. Create a sharding context file with the following structure:
@@ -509,7 +509,7 @@ To specify a sharding context file -
          "db1": "shard_id1",
          "db2": "shard_id2"
        },
-       ... Repeat for other source mySqlShards
+       ... Repeat for other source shards
      }
    }
    ```

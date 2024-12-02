@@ -100,11 +100,11 @@ resource "google_storage_bucket_object" "session_file_object" {
   bucket       = google_storage_bucket.datastream_bucket[count.index].id
 }
 
-# if the transformation context file for the mySqlShard is specified, use that, otherwise
+# if the transformation context file for the shard is specified, use that, otherwise
 # auto-generate transformation context on basis of MySQL host IP and logical
-# mySqlShard names.
+# shard names.
 resource "google_storage_bucket_object" "transformation_context_file_object" {
-  for_each     = { for idx, mySqlShard in var.shard_list : idx => mySqlShard }
+  for_each     = { for idx, shard in var.shard_list : idx => shard }
   depends_on   = [google_project_service.enabled_apis]
   name         = "transformationContext.json"
   content_type = "application/json"

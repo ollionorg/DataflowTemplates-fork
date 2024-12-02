@@ -158,7 +158,7 @@ public class ProcessingContextGenerator {
     Duration duration = DurationUtils.parseDuration(windowDuration);
 
     for (IShard iShard : iShards) {
-      LOG.info(" The sorted mySqlShard is: {}", iShard);
+      LOG.info(" The sorted IShards is: {}", iShard);
       ProcessingContext taskContext =
           new ProcessingContext(
                   iShard,
@@ -229,7 +229,7 @@ public class ProcessingContextGenerator {
     Duration duration = DurationUtils.parseDuration(windowDuration);
 
     for (IShard iShard : iShards) {
-      LOG.info(" The sorted mySqlShard is: {}", iShard);
+      LOG.info(" The sorted shards is: {}", iShard);
       ShardProgress shardProgress = shardProgressList.get(iShard.getLogicalShardId());
 
       String shardStartTime = null;
@@ -239,15 +239,15 @@ public class ProcessingContextGenerator {
         if ((runMode.equals(Constants.RUN_MODE_RESUME_SUCCESS)
                 || runMode.equals(Constants.RUN_MODE_RESUME_ALL))
             && shardProgress.getStatus().equals(Constants.SHARD_PROGRESS_STATUS_SUCCESS)) {
-          // Advance the start time by window duration for successful mySqlShards
+          // Advance the start time by window duration for successful Shards
           shardStartTimeInst = shardStartTimeInst.plus(duration);
         }
         shardStartTime = shardStartTimeInst.toString();
 
-        LOG.info(" The startTime for mySqlShard {} is : {}", iShard, shardStartTime);
+        LOG.info(" The startTime for shards {} is : {}", iShard, shardStartTime);
       } else {
         LOG.info(
-            " Skipping mySqlShard: {} as it does not qualify for given runMode {}.", iShard, runMode);
+            " Skipping shards: {} as it does not qualify for given runMode {}.", iShard, runMode);
         continue;
       }
       ProcessingContext taskContext =

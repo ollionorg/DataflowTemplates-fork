@@ -33,12 +33,12 @@ public class Constants {
   /** Run mode - resumeAll. */
   public static final String RUN_MODE_RESUME_ALL = "resumeAll";
 
-  /** MySqlShard progress status - success. */
+  /** IShard progress status - success. */
   public static final String SHARD_PROGRESS_STATUS_SUCCESS = "SUCCESS";
 
-  /** MySqlShard progress status - error. */
+  /** IShard progress status - error. */
   public static final String SHARD_PROGRESS_STATUS_ERROR = "ERROR";
 
-  /** MySqlShard progress status - reprocess. */
+  /** IShard progress status - reprocess. */
   public static final String SHARD_PROGRESS_STATUS_REPROCESS = "REPROCESS";
 }

@@ -86,7 +86,7 @@ public class ProcessingContext implements Serializable {
   @Override
   public String toString() {
 
-    return "{ MySqlShard details :"
+    return "{ IShard details :"
         + iShard.toString()
         + " sourceDbTimezoneOffset: "
         + sourceDbTimezoneOffset

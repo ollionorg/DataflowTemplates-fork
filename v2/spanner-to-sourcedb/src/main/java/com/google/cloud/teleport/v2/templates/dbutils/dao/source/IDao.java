@@ -15,8 +15,6 @@
  */
 package com.google.cloud.teleport.v2.templates.dbutils.dao.source;
 
-import com.datastax.oss.driver.api.core.cql.ResultSet;
-
 public interface IDao<T> {
   /**
    * Executes a given write statement against the data source.

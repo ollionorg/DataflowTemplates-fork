@@ -241,11 +241,11 @@ public final class WordCount {
     @TemplateParameter.Integer(
         order = 3,
         optional = true,
-        description = "Maximum output mySqlShards",
+        description = "Maximum output shards",
         helpText =
-            "The maximum number of output mySqlShards produced when writing. A higher number of mySqlShards"
+            "The maximum number of output shards produced when writing. A higher number of shards"
                 + " means higher throughput for writing to Cloud Storage, but potentially higher"
-                + " data aggregation cost across mySqlShards when processing output Cloud Storage"
+                + " data aggregation cost across shards when processing output Cloud Storage"
                 + " files. Default is runner dependent.")
     @Default.Integer(-1)
     int getNumShards();

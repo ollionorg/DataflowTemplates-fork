@@ -24,3 +24,6 @@ public interface IDao<T> {
    */
   void write(T dmlResponseGenerator) throws Exception;
 }
+
+  T read(T statement) throws Exception;
+}

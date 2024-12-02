@@ -15,7 +15,8 @@
  */
 package com.google.cloud.teleport.v2.templates.dbutils.connection;
 
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 import com.google.cloud.teleport.v2.templates.models.ConnectionHelperRequest;
 import com.zaxxer.hikari.HikariConfig;
@@ -51,13 +52,13 @@ public class JdbcConnectionHelper implements IConnectionHelper<Connection> {
     LOG.info(
         "Initializing connection pool with size: ", connectionHelperRequest.getMaxConnections());
     connectionPoolMap = new HashMap<>();
-    for (Shard shard : connectionHelperRequest.getShards()) {
+    for (IShard mySqlShard : connectionHelperRequest.getShards()) {
       String sourceConnectionUrl =
-          "jdbc:mysql://" + shard.getHost() + ":" + shard.getPort() + "/" + shard.getDbName();
+          "jdbc:mysql://" + mySqlShard.getHost() + ":" + mySqlShard.getPort() + "/" + mySqlShard.getDbName();
       HikariConfig config = new HikariConfig();
       config.setJdbcUrl(sourceConnectionUrl);
-      config.setUsername(shard.getUserName());
-      config.setPassword(shard.getPassword());
+      config.setUsername(mySqlShard.getUser());
+      config.setPassword(mySqlShard.getPassword());
       config.setDriverClassName(connectionHelperRequest.getDriver());
       config.setMaximumPoolSize(connectionHelperRequest.getMaxConnections());
       config.setConnectionInitSql(connectionHelperRequest.getConnectionInitQuery());
@@ -77,7 +78,7 @@ public class JdbcConnectionHelper implements IConnectionHelper<Connection> {
       }
       HikariDataSource ds = new HikariDataSource(config);
 
-      connectionPoolMap.put(sourceConnectionUrl + "/" + shard.getUserName(), ds);
+      connectionPoolMap.put(sourceConnectionUrl + "/" + mySqlShard.getUser(), ds);
     }
   }
 

@@ -35,7 +35,7 @@ variable "region" {
 
 variable "sourceShardsFilePath" {
   type        = string
-  description = "Source shard details file path in Cloud Storage that contains connection profile of source shards"
+  description = "Source mySqlShard details file path in Cloud Storage that contains connection profile of source mySqlShards"
 
 }
 
@@ -65,7 +65,7 @@ variable "timerInterval" {
 
 variable "startTimestamp" {
   type        = string
-  description = "Start time of file for all shards. If not provided, the value is taken from spanner_to_gcs_metadata. If provided, this takes precedence. To be given when running in regular run mode."
+  description = "Start time of file for all mySqlShards. If not provided, the value is taken from spanner_to_gcs_metadata. If provided, this takes precedence. To be given when running in regular run mode."
   default     = null
 }
 
@@ -89,19 +89,19 @@ variable "spannerProjectId" {
 
 variable "metadataInstance" {
   type        = string
-  description = "This is the instance to store the shard progress of the files processed."
+  description = "This is the instance to store the mySqlShard progress of the files processed."
 
 }
 
 variable "metadataDatabase" {
   type        = string
-  description = "This is the database to store  the shard progress of the files processed.."
+  description = "This is the database to store  the mySqlShard progress of the files processed.."
 
 }
 
 variable "runMode" {
   type        = string
-  description = "Regular writes to source db, reprocess does processing the specific shards marked as REPROCESS, resumeFailed does reprocess of all shards in error state, resumeSuccess continues processing shards in successful state, resumeAll continues processing all shards irrespective of state. Defaults to: regular."
+  description = "Regular writes to source db, reprocess does processing the specific mySqlShards marked as REPROCESS, resumeFailed does reprocess of all mySqlShards in error state, resumeSuccess continues processing mySqlShards in successful state, resumeAll continues processing all mySqlShards irrespective of state. Defaults to: regular."
   default     = null
 }
 

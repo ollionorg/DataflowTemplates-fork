@@ -28,7 +28,7 @@ import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.ISchemaMapper;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.IdentityMapper;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SessionBasedMapper;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.templates.PipelineController.ShardedDbConfigContainer;
 import com.google.cloud.teleport.v2.templates.PipelineController.SingleInstanceDbConfigContainer;
 import com.google.common.io.Resources;
@@ -242,12 +242,12 @@ public class PipelineControllerTest {
     sourceDbToSpannerOptions.setPassword(testPassword);
     sourceDbToSpannerOptions.setTables("table1,table2");
 
-    Shard shard =
-        new Shard("shard1", "localhost", "3306", "user", "password", null, null, null, null);
+    MySqlShard mySqlShard =
+        new MySqlShard("shard1", "localhost", "3306", "user", "password", null, null, null, null);
 
     ShardedDbConfigContainer dbConfigContainer =
         new ShardedDbConfigContainer(
-            shard, SQLDialect.MYSQL, null, "shard1", "testDB", sourceDbToSpannerOptions);
+                mySqlShard, SQLDialect.MYSQL, null, "shard1", "testDB", sourceDbToSpannerOptions);
 
     PCollection<Integer> dummyPCollection = pipeline.apply(Create.of(1));
     pipeline.run();

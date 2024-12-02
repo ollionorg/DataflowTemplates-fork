@@ -18,14 +18,17 @@ package com.google.cloud.teleport.v2.templates.processor;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
-import com.google.cloud.teleport.v2.templates.dao.source.JdbcDao;
-import com.google.cloud.teleport.v2.templates.dml.MySQLDMLGenerator;
-import com.google.cloud.teleport.v2.templates.utils.connection.MySQLConnectionHelper;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import com.google.cloud.teleport.v2.templates.dbutils.connection.JdbcConnectionHelper;
+import com.google.cloud.teleport.v2.templates.dbutils.dao.source.JdbcDao;
+import com.google.cloud.teleport.v2.templates.dbutils.dml.MySQLDMLGenerator;
+import com.google.cloud.teleport.v2.templates.dbutils.processor.SourceProcessor;
+import com.google.cloud.teleport.v2.templates.dbutils.processor.SourceProcessorFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,9 +39,9 @@ import org.mockito.Mockito;
 public class SourceProcessorFactoryTest {
   @Test
   public void testCreateSourceProcessor_validSource() throws Exception {
-    List<Shard> shards =
+    List<MySqlShard> mySqlShards =
         Arrays.asList(
-            new Shard(
+            new MySqlShard(
                 "shard1",
                 "localhost",
                 "3306",
@@ -49,13 +52,13 @@ public class SourceProcessorFactoryTest {
                 "projects/myproject/secrets/mysecret/versions/latest",
                 ""));
     int maxConnections = 10;
-    MySQLConnectionHelper mockConnectionHelper = Mockito.mock(MySQLConnectionHelper.class);
+    JdbcConnectionHelper mockConnectionHelper = Mockito.mock(JdbcConnectionHelper.class);
     doNothing().when(mockConnectionHelper).init(any());
     SourceProcessorFactory.setConnectionHelperMap(
         Map.of(Constants.SOURCE_MYSQL, mockConnectionHelper));
     SourceProcessor processor =
         SourceProcessorFactory.createSourceProcessor(
-            Constants.SOURCE_MYSQL, shards, maxConnections);
+            Constants.SOURCE_MYSQL, mySqlShards, maxConnections);
 
     Assert.assertNotNull(processor);
     Assert.assertTrue(processor.getDmlGenerator() instanceof MySQLDMLGenerator);
@@ -65,9 +68,9 @@ public class SourceProcessorFactoryTest {
 
   @Test(expected = InvalidSourceException.class)
   public void testCreateSourceProcessor_invalidSource() throws Exception {
-    List<Shard> shards =
+    List<MySqlShard> mySqlShards =
         Arrays.asList(
-            new Shard(
+            new MySqlShard(
                 "shard1",
                 "localhost",
                 "3306",
@@ -79,6 +82,6 @@ public class SourceProcessorFactoryTest {
                 ""));
     int maxConnections = 10;
 
-    SourceProcessorFactory.createSourceProcessor("invalid_source", shards, maxConnections);
+    SourceProcessorFactory.createSourceProcessor("invalid_source", mySqlShards, maxConnections);
   }
 }

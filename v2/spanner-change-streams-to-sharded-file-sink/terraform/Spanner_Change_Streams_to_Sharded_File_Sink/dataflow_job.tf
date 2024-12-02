@@ -107,7 +107,7 @@ variable "filtrationMode" {
 
 variable "sourceShardsFilePath" {
   type        = string
-  description = "Source shard details file path in Cloud Storage that contains connection profile of source shards. Atleast one shard information is expected."
+  description = "Source mySqlShard details file path in Cloud Storage that contains connection profile of source mySqlShards. Atleast one mySqlShard information is expected."
 
 }
 
@@ -137,13 +137,13 @@ variable "runMode" {
 
 variable "shardingCustomJarPath" {
   type        = string
-  description = "Custom jar location in Cloud Storage that contains the customization logic for fetching shard id. Defaults to empty."
+  description = "Custom jar location in Cloud Storage that contains the customization logic for fetching mySqlShard id. Defaults to empty."
   default     = null
 }
 
 variable "shardingCustomClassName" {
   type        = string
-  description = "Fully qualified class name having the custom shard id implementation.  It is a mandatory field in case shardingCustomJarPath is specified. Defaults to empty."
+  description = "Fully qualified class name having the custom mySqlShard id implementation.  It is a mandatory field in case shardingCustomJarPath is specified. Defaults to empty."
   default     = null
 }
 

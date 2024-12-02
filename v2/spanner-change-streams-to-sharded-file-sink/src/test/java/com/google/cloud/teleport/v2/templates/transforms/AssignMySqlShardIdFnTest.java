@@ -62,9 +62,9 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-/** Tests for AssignShardIdFnTest class. */
+/** Tests for AssignMySqlShardIdFnTest class. */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class AssignShardIdFnTest {
+public class AssignMySqlShardIdFnTest {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   @Rule public final MockitoRule mocktio = MockitoJUnit.rule();
 

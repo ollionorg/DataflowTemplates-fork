@@ -16,7 +16,8 @@
 package com.google.cloud.teleport.v2.templates.common;
 
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
+
 import java.io.Serializable;
 import java.util.Objects;
 import org.joda.time.Duration;
@@ -24,7 +25,7 @@ import org.joda.time.Duration;
 /** Each worker task context. */
 public class ProcessingContext implements Serializable {
 
-  private Shard shard;
+  private IShard iShard;
   private Schema schema;
 
   private String sourceDbTimezoneOffset;
@@ -34,14 +35,14 @@ public class ProcessingContext implements Serializable {
   private String runId;
 
   public ProcessingContext(
-      Shard shard,
+      IShard iShard,
       Schema schema,
       String sourceDbTimezoneOffset,
       String startTimestamp,
       Duration windowDuration,
       String gcsPath,
       String runId) {
-    this.shard = shard;
+    this.iShard = iShard;
     this.schema = schema;
     this.sourceDbTimezoneOffset = sourceDbTimezoneOffset;
     this.startTimestamp = startTimestamp;
@@ -50,8 +51,8 @@ public class ProcessingContext implements Serializable {
     this.runId = runId;
   }
 
-  public Shard getShard() {
-    return shard;
+  public IShard getShard() {
+    return iShard;
   }
 
   public Schema getSchema() {
@@ -85,8 +86,8 @@ public class ProcessingContext implements Serializable {
   @Override
   public String toString() {
 
-    return "{ Shard details :"
-        + shard.toString()
+    return "{ MySqlShard details :"
+        + iShard.toString()
         + " sourceDbTimezoneOffset: "
         + sourceDbTimezoneOffset
         + " startTimestamp: "

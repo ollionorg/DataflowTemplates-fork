@@ -16,7 +16,8 @@
 package com.google.cloud.teleport.v2.templates.models;
 
 import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
+
 import java.util.List;
 
 /**
@@ -26,7 +27,7 @@ import java.util.List;
  * database or a data source. It includes:
  *
  * <ul>
- *   <li>A list of {@link Shard} objects representing the database shards.
+ *   <li>A list of {@link IShard} objects representing the database mySqlShards.
  *   <li>Optional connection properties as a {@link String}.
  *   <li>The maximum number of connections allowed.
  *   <li>The name of the driver to connect to source.
@@ -34,15 +35,14 @@ import java.util.List;
  * </ul>
  */
 public class ConnectionHelperRequest {
-  private List<Shard> shards;
+  private List<IShard> iShards;
   private String properties;
   private int maxConnections;
   private String driver;
   private String connectionInitQuery;
-  private CassandraConfig cassandraConfig;
 
-  public List<Shard> getShards() {
-    return shards;
+  public List<IShard> getShards() {
+    return iShards;
   }
 
   public String getProperties() {
@@ -51,10 +51,6 @@ public class ConnectionHelperRequest {
 
   public int getMaxConnections() {
     return maxConnections;
-  }
-
-  public CassandraConfig getCassandraConfig() {
-    return cassandraConfig;
   }
 
   public String getDriver() {
@@ -66,12 +62,12 @@ public class ConnectionHelperRequest {
   }
 
   public ConnectionHelperRequest(
-      List<Shard> shards,
+      List<IShard> iShards,
       String properties,
       int maxConnections,
       String driver,
       String connectionInitQuery) {
-    this.shards = shards;
+    this.iShards = iShards;
     this.properties = properties;
     this.maxConnections = maxConnections;
     this.driver = driver;

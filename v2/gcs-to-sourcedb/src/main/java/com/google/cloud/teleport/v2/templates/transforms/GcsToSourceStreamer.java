@@ -182,7 +182,7 @@ public class GcsToSourceStreamer extends DoFn<KV<String, ProcessingContext>, Voi
       @StateId("stopProcessing") ValueState<Boolean> stopProcessing) {
     String shardId = keyString.read();
     LOG.info(
-        "Shard " + shardId + ": started timer processing for expiry time: " + context.timestamp());
+        "MySqlShard " + shardId + ": started timer processing for expiry time: " + context.timestamp());
     ProcessingContext taskContext = processingContext.read();
     Boolean failedShard = stopProcessing.read();
     if (failedShard != null && failedShard) {

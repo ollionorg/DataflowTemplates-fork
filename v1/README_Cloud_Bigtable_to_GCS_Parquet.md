@@ -26,7 +26,7 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 
 ### Optional parameters
 
-* **numShards** : The maximum number of output shards produced when writing. A higher number of shards means higher throughput for writing to Cloud Storage, but potentially higher data aggregation cost across shards when processing output Cloud Storage files. The default value is decided by Dataflow.
+* **numShards** : The maximum number of output mySqlShards produced when writing. A higher number of mySqlShards means higher throughput for writing to Cloud Storage, but potentially higher data aggregation cost across mySqlShards when processing output Cloud Storage files. The default value is decided by Dataflow.
 * **bigtableAppProfileId** : The ID of the Bigtable application profile to use for the export. If you don't specify an app profile, Bigtable uses the instance's default app profile: https://cloud.google.com/bigtable/docs/app-profiles#default-app-profile.
 
 

@@ -635,7 +635,7 @@ public class GenericRecordTypeConvertorTest {
     // Null shard id case, shard id population should be skipped.
     genericRecordTypeConvertor = new GenericRecordTypeConvertor(shardedMapper, "", null, null);
     actual = genericRecordTypeConvertor.transformChangeEvent(genericRecord, "people");
-    // Shard id should not be present.
+    // MySqlShard id should not be present.
     assertEquals(Map.of("new_name", Value.string("name1")), actual);
   }
 

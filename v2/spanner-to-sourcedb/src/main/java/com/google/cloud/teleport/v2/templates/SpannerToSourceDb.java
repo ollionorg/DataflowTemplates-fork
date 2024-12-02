@@ -28,7 +28,8 @@ import com.google.cloud.teleport.v2.common.UncaughtExceptionLogger;
 import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
 import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.spanner.migrations.spanner.SpannerSchema;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.CassandraConfigFileReader;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SecretManagerAccessorImpl;
@@ -378,16 +379,6 @@ public class SpannerToSourceDb {
     String getCassandraConfigFilePath();
 
     void setCassandraConfigFilePath(String value);
-
-    @TemplateParameter.Long(
-        order = 19,
-        optional = true,
-        description = "Maximum connections per cassandra cluster.",
-        helpText = "This will come from cassandra config file eventually.")
-    @Default.Long(10000)
-    Long getMaxConnections();
-
-    void setMaxConnections(Long value);
   }
 
   /**
@@ -491,28 +482,38 @@ public class SpannerToSourceDb {
     shadowTableCreator.createShadowTablesInSpanner();
     Ddl ddl = SpannerSchema.getInformationSchemaAsDdl(spannerConfig);
 
-    List<Shard> shards = new ArrayList<>();
+    List<IShard> iShards = new ArrayList<>();
     String shardingMode = Constants.SHARDING_MODE_SINGLE_SHARD;
-    CassandraConfig cassandraConfig = null;
 
     if ("mysql".equals(options.getSourceType())) {
       ShardFileReader shardFileReader = new ShardFileReader(new SecretManagerAccessorImpl());
-      shards = shardFileReader.getOrderedShardDetails(options.getSourceShardsFilePath());
+      iShards = shardFileReader.getOrderedShardDetails(options.getSourceShardsFilePath());
       shardingMode = Constants.SHARDING_MODE_MULTI_SHARD;
-      if (shards.size() == 1) {
+      if (iShards.size() == 1) {
         shardingMode = Constants.SHARDING_MODE_SINGLE_SHARD;
 
-        Shard singleShard = shards.get(0);
-        if (singleShard.getLogicalShardId() == null) {
-          singleShard.setLogicalShardId(Constants.DEFAULT_SHARD_ID);
+        IShard singleMySqlShard = iShards.get(0);
+        if (singleMySqlShard.getLogicalShardId() == null) {
+          singleMySqlShard.setLogicalShardId(Constants.DEFAULT_SHARD_ID);
           LOG.info(
               "Logical shard id was not found, hence setting it to : " + Constants.DEFAULT_SHARD_ID);
         }
       }
     } else {
       CassandraConfigFileReader cassandraConfigFileReader = new CassandraConfigFileReader();
-      cassandraConfig = cassandraConfigFileReader.getCassandraConfig(options.getCassandraConfigFilePath());
-      LOG.info("Cassandra config is: {}", cassandraConfig);
+      iShards = cassandraConfigFileReader.getCassandraShard(options.getCassandraConfigFilePath());
+      LOG.info("Cassandra config is: {}", iShards.get(0));
+      if (iShards.size() == 1) {
+        shardingMode = Constants.SHARDING_MODE_SINGLE_SHARD;
+        IShard singleCassandraShard = iShards.get(0);
+        if (singleCassandraShard.getLogicalShardId() == null) {
+          singleCassandraShard.setLogicalShardId(Constants.DEFAULT_SHARD_ID);
+          LOG.info(
+                  "Logical shard id was not found, hence setting it to : " + Constants.DEFAULT_SHARD_ID);
+        }
+      }else{
+        throw new IllegalArgumentException("Not Supporting more than one shard for cassandra")
+      }
     }
     boolean isRegularMode = "regular".equals(options.getRunMode());
     PCollectionTuple reconsumedElements = null;
@@ -593,17 +594,16 @@ public class SpannerToSourceDb {
                         schema,
                         ddl,
                         shardingMode,
-                        shards.get(0).getLogicalShardId(),
+                        iShards.get(0).getLogicalShardId(),
                         options.getSkipDirectoryName(),
                         options.getShardingCustomJarPath(),
                         options.getShardingCustomClassName(),
                         options.getShardingCustomParameters(),
                         options.getMaxShardConnections()
-                            * shards.size(),
+                            * iShards.size(),
                         options.getSourceType(),
-                        cassandraConfig,
-                        options.getMaxConnections()
-                    ))) // currently assuming that all shards accept the same
+                        options.getMaxShardConnections()
+                    ))) // currently assuming that all mySqlShards accept the same
             // number of max connections
             .setCoder(
                 KvCoder.of(
@@ -612,18 +612,17 @@ public class SpannerToSourceDb {
             .apply(
                 "Write to source",
                 new SourceWriterTransform(
-                    shards,
-                    schema,
-                    spannerMetadataConfig,
-                    options.getSourceDbTimezoneOffset(),
-                    ddl,
-                    options.getShadowTablePrefix(),
-                    options.getSkipDirectoryName(),
-                    connectionPoolSizePerWorker,
-                    options.getSourceType(),
-                    cassandraConfig,
-                    options.getMaxConnections()
-                ));
+                        iShards,
+                        schema,
+                        spannerMetadataConfig,
+                        options.getSourceDbTimezoneOffset(),
+                        ddl,
+                        options.getShadowTablePrefix(),
+                        options.getSkipDirectoryName(),
+                        connectionPoolSizePerWorker,
+                        options.getSourceType(),
+                        options.getMaxShardConnections()
+                  ));
 
     PCollection<FailsafeElement<String, String>> dlqPermErrorRecords =
         reconsumedElements

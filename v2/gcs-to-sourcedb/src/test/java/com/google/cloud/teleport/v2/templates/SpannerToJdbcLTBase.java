@@ -15,7 +15,7 @@
  */
 package com.google.cloud.teleport.v2.templates;
 
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.common.base.MoreObjects;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
@@ -130,14 +130,14 @@ public class SpannerToJdbcLTBase extends TemplateLoadTestBase {
     for (int i = 0; i < 1; ++i) {
       if (jdbcResourceManagers.get(i) instanceof MySQLResourceManager) {
         MySQLResourceManager resourceManager = (MySQLResourceManager) jdbcResourceManagers.get(i);
-        Shard shard = new Shard();
-        shard.setLogicalShardId("Shard" + (i + 1));
-        shard.setUser(jdbcResourceManagers.get(i).getUsername());
-        shard.setHost(resourceManager.getHost());
-        shard.setPassword(jdbcResourceManagers.get(i).getPassword());
-        shard.setPort(String.valueOf(resourceManager.getPort()));
-        shard.setDbName(jdbcResourceManagers.get(i).getDatabaseName());
-        JsonObject jsObj = (JsonObject) new Gson().toJsonTree(shard).getAsJsonObject();
+        MySqlShard mySqlShard = new MySqlShard();
+        mySqlShard.setLogicalShardId("MySqlShard" + (i + 1));
+        mySqlShard.setUser(jdbcResourceManagers.get(i).getUsername());
+        mySqlShard.setHost(resourceManager.getHost());
+        mySqlShard.setPassword(jdbcResourceManagers.get(i).getPassword());
+        mySqlShard.setPort(String.valueOf(resourceManager.getPort()));
+        mySqlShard.setDbName(jdbcResourceManagers.get(i).getDatabaseName());
+        JsonObject jsObj = (JsonObject) new Gson().toJsonTree(mySqlShard).getAsJsonObject();
         jsObj.remove("secretManagerUri"); // remove field secretManagerUri
         ja.add(jsObj);
       } else {
@@ -146,7 +146,7 @@ public class SpannerToJdbcLTBase extends TemplateLoadTestBase {
       }
     }
     String shardFileContents = ja.toString();
-    LOG.info("Shard file contents: {}", shardFileContents);
+    LOG.info("MySqlShard file contents: {}", shardFileContents);
     gcsResourceManager.createArtifact("input/shard.json", shardFileContents);
   }
 

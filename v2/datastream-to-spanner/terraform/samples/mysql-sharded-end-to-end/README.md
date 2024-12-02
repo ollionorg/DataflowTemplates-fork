@@ -2,7 +2,7 @@
 
 > **_SCENARIO:_** This Terraform example illustrates launching a live migration
 > jobs for a sharded MySQL source, setting up all the required cloud infrastructure.
-> **Only the source details of physical shards are needed as input.**
+> **Only the source details of physical mySqlShards are needed as input.**
 
 ## Terraform permissions
 
@@ -182,26 +182,26 @@ configuration and creates the following resources -
 
 1. **Datastream private connection** - If configured, a Datastream private
    connection will be deployed for your configured VPC. If not configured, IP
-   allowlisting will be assumed as the mode of Datastream access. A single private connection is created for all shards.
+   allowlisting will be assumed as the mode of Datastream access. A single private connection is created for all mySqlShards.
 2. **Source datastream connection profiles** - This allows Datastream to connect
    to the MySQL instance (using IP allowlisting or private connectivity). A source connection profile is created per
-   physical shard.
-3. **GCS buckets** - A GCS bucket to for Datastream to write the source data to. A bucket is created per physical shard.
+   physical mySqlShard.
+3. **GCS buckets** - A GCS bucket to for Datastream to write the source data to. A bucket is created per physical mySqlShard.
 4. **Target datastream connection profiles** - The connection profile to
-   configure the created bucket in Datastream. A target connection profile is created per physical shard.
+   configure the created bucket in Datastream. A target connection profile is created per physical mySqlShard.
 5. **Pubsub topics and subscriptions** - This contains GCS object notifications as
    files are written to GCS for consumption by the Dataflow job. A pubsub topic & subscription is created per physical
-   shard.
+   mySqlShard.
 6. **Datastream streams** - A datastream stream which reads from the source
    specified in the source connection profile and writes the data to the bucket
    specified in the target connection profile. Note that it uses a mandatory
    prefix path inside the bucket where it will write the data to. The default
-   prefix path is `data` (can be overridden). A stream is created per physical shard.
+   prefix path is `data` (can be overridden). A stream is created per physical mySqlShard.
 7. **Bucket notifications** - Creates the GCS bucket notification which publish
    to the pubsub topic created. Note that the bucket notification is created on
    the mandatory prefix path specified for the stream above. A notification is created per bucket.
 8. **Dataflow job** - The Dataflow job which reads from GCS and writes to
-   Spanner. A dataflow job is created per shard.
+   Spanner. A dataflow job is created per mySqlShard.
 9. **Permissions** - It adds the required roles to the specified (or the
    default) service accounts for the live migration to work.
 
@@ -498,31 +498,31 @@ job.
 
 Transformation context is used to populate the `migration_shard_id` column
 added by SMT to each table of your schema. This allows the customer to trace
-the source of each record in Spanner, back to the source shards.
+the source of each record in Spanner, back to the source mySqlShards.
 
 By default, `migration_shard_id` is populated with
 the `"${mysql_host_ip}-${dbName}"`.
-Alternatively, for each shard, a transformation context file can be specified.
+Alternatively, for each mySqlShard, a transformation context file can be specified.
 To
 specify a transformation context file -
 
-1. Create a transformation context file per shard.
+1. Create a transformation context file per mySqlShard.
 2. Set
    the `var.shard_list[*].dataflow_params.template_params.local_transformation_context_path`
    variable to the relative path from working directory to the transformation
    context file.
 
-### Overriding Dataflow workers per shard
+### Overriding Dataflow workers per mySqlShard
 
 The values configured in `var.common_params.dataflow_params.runner_params`
 define
 the `num_workers`, `max_workers` and `machine_type` for all the Dataflow jobs.
-This can be overridden by specifying the same values at the shard level.
+This can be overridden by specifying the same values at the mySqlShard level.
 Do so by specifying the same values
 in `var.shard_list[*].dataflow_params.runner_params`.
 
 This can be useful when trying to provide asymmetric resources to different
-shards as well as selective update scenarios.
+mySqlShards as well as selective update scenarios.
 
 ### Cross project writes to Spanner
 

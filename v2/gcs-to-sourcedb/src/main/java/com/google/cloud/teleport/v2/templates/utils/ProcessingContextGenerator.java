@@ -17,7 +17,7 @@ package com.google.cloud.teleport.v2.templates.utils;
 
 import com.google.cloud.teleport.v2.spanner.migrations.metadata.SpannerToGcsJobMetadata;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SecretManagerAccessorImpl;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SessionFileReader;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.ShardFileReader;
@@ -66,7 +66,7 @@ public class ProcessingContextGenerator {
 
     Schema schema = SessionFileReader.read(sessionFilePath);
     ShardFileReader shardFileReader = new ShardFileReader(new SecretManagerAccessorImpl());
-    List<Shard> shards = shardFileReader.getOrderedShardDetails(sourceShardsFilePath);
+    List<IShard> iShards = shardFileReader.getOrderedShardDetails(sourceShardsFilePath);
 
     ShardProgressTracker shardProgressTracker =
         new ShardProgressTracker(
@@ -92,7 +92,7 @@ public class ProcessingContextGenerator {
               metadataDatabase,
               tableSuffix,
               runId,
-              shards,
+                  iShards,
               schema,
               isMetadataDbPostgres);
     } else {
@@ -105,7 +105,7 @@ public class ProcessingContextGenerator {
               metadataDatabase,
               tableSuffix,
               runId,
-              shards,
+                  iShards,
               schema,
               shardProgressTracker,
               runMode,
@@ -126,7 +126,7 @@ public class ProcessingContextGenerator {
       String metadataDatabase,
       String tableSuffix,
       String runId,
-      List<Shard> shards,
+      List<IShard> iShards,
       Schema schema,
       boolean isMetadataDbPostgres) {
 
@@ -157,18 +157,18 @@ public class ProcessingContextGenerator {
 
     Duration duration = DurationUtils.parseDuration(windowDuration);
 
-    for (Shard shard : shards) {
-      LOG.info(" The sorted shard is: {}", shard);
+    for (IShard iShard : iShards) {
+      LOG.info(" The sorted mySqlShard is: {}", iShard);
       ProcessingContext taskContext =
           new ProcessingContext(
-              shard,
+                  iShard,
               schema,
               sourceDbTimezoneOffset,
               startTimestamp,
               duration,
               gcsInputDirectoryPath,
               runId);
-      response.put(shard.getLogicalShardId(), taskContext);
+      response.put(iShard.getLogicalShardId(), taskContext);
     }
 
     return response;
@@ -182,7 +182,7 @@ public class ProcessingContextGenerator {
       String metadataDatabase,
       String tableSuffix,
       String runId,
-      List<Shard> shards,
+      List<IShard> iShards,
       Schema schema,
       ShardProgressTracker shardProgressTracker,
       String runMode,
@@ -228,9 +228,9 @@ public class ProcessingContextGenerator {
 
     Duration duration = DurationUtils.parseDuration(windowDuration);
 
-    for (Shard shard : shards) {
-      LOG.info(" The sorted shard is: {}", shard);
-      ShardProgress shardProgress = shardProgressList.get(shard.getLogicalShardId());
+    for (IShard iShard : iShards) {
+      LOG.info(" The sorted mySqlShard is: {}", iShard);
+      ShardProgress shardProgress = shardProgressList.get(iShard.getLogicalShardId());
 
       String shardStartTime = null;
       if (shardProgress != null) {
@@ -239,27 +239,27 @@ public class ProcessingContextGenerator {
         if ((runMode.equals(Constants.RUN_MODE_RESUME_SUCCESS)
                 || runMode.equals(Constants.RUN_MODE_RESUME_ALL))
             && shardProgress.getStatus().equals(Constants.SHARD_PROGRESS_STATUS_SUCCESS)) {
-          // Advance the start time by window duration for successful shards
+          // Advance the start time by window duration for successful mySqlShards
           shardStartTimeInst = shardStartTimeInst.plus(duration);
         }
         shardStartTime = shardStartTimeInst.toString();
 
-        LOG.info(" The startTime for shard {} is : {}", shard, shardStartTime);
+        LOG.info(" The startTime for mySqlShard {} is : {}", iShard, shardStartTime);
       } else {
         LOG.info(
-            " Skipping shard: {} as it does not qualify for given runMode {}.", shard, runMode);
+            " Skipping mySqlShard: {} as it does not qualify for given runMode {}.", iShard, runMode);
         continue;
       }
       ProcessingContext taskContext =
           new ProcessingContext(
-              shard,
+                  iShard,
               schema,
               sourceDbTimezoneOffset,
               shardStartTime,
               duration,
               gcsInputDirectoryPath,
               runId);
-      response.put(shard.getLogicalShardId(), taskContext);
+      response.put(iShard.getLogicalShardId(), taskContext);
     }
     return response;
   }

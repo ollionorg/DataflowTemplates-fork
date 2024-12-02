@@ -154,8 +154,8 @@ echo '{
             "is_optional": true
         },
         {
-            "label": "Maximum output shards",
-            "help_text": "The maximum number of output shards produced when writing. Default number is runner defined",
+            "label": "Maximum output mySqlShards",
+            "help_text": "The maximum number of output mySqlShards produced when writing. Default number is runner defined",
             "name": "numShards",
             "param_type": "TEXT",
             "is_optional": true
@@ -193,7 +193,7 @@ The template has the following optional parameters:
 * windowDuration: The window duration in which data will be written. Defaults to 5m.
 * rpcPriority: The priority for Spanner RPC priority. Defaults to HIGH.
 * outputFileNamePrefix: The output filename prefix. Defaults to "output"
-* numShards: the maximum number of output shards produced when writing. Default is 1.
+* numShards: the maximum number of output mySqlShards produced when writing. Default is 1.
 
 Template can be executed using the following gcloud command:
 

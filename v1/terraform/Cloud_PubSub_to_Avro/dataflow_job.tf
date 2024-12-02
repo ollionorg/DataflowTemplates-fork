@@ -65,7 +65,7 @@ variable "avroTempDirectory" {
 
 variable "outputShardTemplate" {
   type        = string
-  description = "Defines the unique/dynamic portion of each windowed file. Recommended: use the default (W-P-SS-of-NN). At runtime, 'W' is replaced with the window date range and 'P' is replaced with the pane info. Repeating sequences of the letters 'S' or 'N' are replaced with the shard number and number of shards respectively. The pipeline assumes a single file output and will produce the text of '00-of-01' by default."
+  description = "Defines the unique/dynamic portion of each windowed file. Recommended: use the default (W-P-SS-of-NN). At runtime, 'W' is replaced with the window date range and 'P' is replaced with the pane info. Repeating sequences of the letters 'S' or 'N' are replaced with the mySqlShard number and number of mySqlShards respectively. The pipeline assumes a single file output and will produce the text of '00-of-01' by default."
   default     = null
 }
 

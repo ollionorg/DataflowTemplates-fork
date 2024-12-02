@@ -15,7 +15,7 @@
  */
 package com.google.cloud.teleport.v2.spanner.migrations.utils;
 
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
@@ -53,47 +53,47 @@ public class ShardFileReader {
     this.secretManagerAccessor = secretManagerAccessor;
   }
 
-  public List<Shard> getOrderedShardDetails(String sourceShardsFilePath) {
+  public List<IShard> getOrderedShardDetails(String sourceShardsFilePath) {
 
     try (InputStream stream =
         Channels.newInputStream(
             FileSystems.open(FileSystems.matchNewResource(sourceShardsFilePath, false)))) {
 
       String result = IOUtils.toString(stream, StandardCharsets.UTF_8);
-      Type listOfShardObject = new TypeToken<ArrayList<Shard>>() {}.getType();
-      List<Shard> shardList =
+      Type listOfShardObject = new TypeToken<ArrayList<IShard>>() {}.getType();
+      List<IShard> mySqlShardList =
           new GsonBuilder()
               .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
               .create()
               .fromJson(result, listOfShardObject);
 
-      for (Shard shard : shardList) {
-        LOG.info(" The shard is: {} ", shard);
+      for (IShard iShards : mySqlShardList) {
+        LOG.info(" The mySqlShard is: {} ", iShards);
         String password =
             resolvePassword(
                 sourceShardsFilePath,
-                shard.getSecretManagerUri(),
-                shard.getLogicalShardId(),
-                shard.getPassword());
+                    iShards.getSecretManagerUri(),
+                    iShards.getLogicalShardId(),
+                    iShards.getPassword());
         if (password == null || password.isEmpty()) {
           throw new RuntimeException(
-              "Neither password nor secretManagerUri was found in the shard file "
+              "Neither password nor secretManagerUri was found in the mySqlShard file "
                   + sourceShardsFilePath
-                  + "  for shard "
-                  + shard.getLogicalShardId());
+                  + "  for mySqlShard "
+                  + iShards.getLogicalShardId());
         }
-        shard.setPassword(password);
+        iShards.setPassword(password);
       }
 
       Collections.sort(
-          shardList,
-          new Comparator<Shard>() {
-            public int compare(Shard s1, Shard s2) {
+              mySqlShardList,
+          new Comparator<IShard>() {
+            public int compare(IShard s1, IShard s2) {
               return s1.getLogicalShardId().compareTo(s2.getLogicalShardId());
             }
           });
 
-      return shardList;
+      return mySqlShardList;
 
     } catch (IOException e) {
       LOG.error(
@@ -162,7 +162,7 @@ public class ShardFileReader {
    * @param sourceShardsFilePath
    * @return
    */
-  public List<Shard> readForwardMigrationShardingConfig(String sourceShardsFilePath) {
+  public List<MySqlShard> readForwardMigrationShardingConfig(String sourceShardsFilePath) {
     String jsonString = null;
     try {
       InputStream stream =
@@ -190,7 +190,7 @@ public class ShardFileReader {
             .create()
             .fromJson(jsonString, shardConfiguration);
 
-    List<Shard> shardList = new ArrayList<>();
+    List<MySqlShard> mySqlShardList = new ArrayList<>();
     List<Map> dataShards =
         (List)
             (((Map) shardConfigMap.getOrDefault("shardConfigurationBulk", new HashMap<>()))
@@ -214,7 +214,7 @@ public class ShardFileReader {
       if (password == null || password.isEmpty()) {
         LOG.warn("could not fetch password for host: {}", host);
         throw new RuntimeException(
-            "Neither password nor secretManagerUri was found in the shard file "
+            "Neither password nor secretManagerUri was found in the mySqlShard file "
                 + sourceShardsFilePath
                 + "  for host "
                 + host);
@@ -222,8 +222,8 @@ public class ShardFileReader {
       String namespace =
           Optional.ofNullable(dataShard.get("namespace")).map(Object::toString).orElse(null);
 
-      Shard shard =
-          new Shard(
+      MySqlShard mySqlShard =
+          new MySqlShard(
               "",
               host,
               dataShard.getOrDefault("port", 0).toString(),
@@ -235,12 +235,12 @@ public class ShardFileReader {
               dataShard.getOrDefault("connectionProperties", "").toString());
 
       for (Map database : databases) {
-        shard
+        mySqlShard
             .getDbNameToLogicalShardIdMap()
             .put((String) (database.get("dbName")), (String) (database.get("databaseId")));
       }
-      shardList.add(shard);
+      mySqlShardList.add(mySqlShard);
     }
-    return shardList;
+    return mySqlShardList;
   }
 }

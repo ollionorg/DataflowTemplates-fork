@@ -87,7 +87,7 @@ common_params = {
 
 shard_list = [
   {
-    shard_id = "<YOUR_SHARD_ID>" # A unique identifier for the shard (e.g., "shard-01")
+    shard_id = "<YOUR_SHARD_ID>" # A unique identifier for the mySqlShard (e.g., "mySqlShard-01")
 
     datastream_params = {
       source_connection_profile_id = "<YOUR_SOURCE_CONNECTION_PROFILE_ID>" # Datastream source connection profile ID
@@ -112,11 +112,11 @@ shard_list = [
       }
 
       runner_params = {
-        max_workers  = "<YOUR_MAX_WORKERS>"  # Maximum number of worker VMs for this shard
-        num_workers  = "<YOUR_NUM_WORKERS>"  # Initial number of worker VMs for this shard
-        machine_type = "<YOUR_MACHINE_TYPE>" # Machine type for worker VMs in this shard (e.g., "n2-standard-2")
+        max_workers  = "<YOUR_MAX_WORKERS>"  # Maximum number of worker VMs for this mySqlShard
+        num_workers  = "<YOUR_NUM_WORKERS>"  # Initial number of worker VMs for this mySqlShard
+        machine_type = "<YOUR_MACHINE_TYPE>" # Machine type for worker VMs in this mySqlShard (e.g., "n2-standard-2")
       }
     }
   }
-  # Add more shard definitions as needed
+  # Add more mySqlShard definitions as needed
 ]

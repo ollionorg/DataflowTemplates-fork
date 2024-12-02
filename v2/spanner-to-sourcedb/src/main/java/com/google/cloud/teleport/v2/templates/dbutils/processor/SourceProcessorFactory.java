@@ -15,12 +15,15 @@
  */
 package com.google.cloud.teleport.v2.templates.dbutils.processor;
 
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
+import com.google.cloud.teleport.v2.templates.dbutils.connection.CassandraConnectionHelper;
 import com.google.cloud.teleport.v2.templates.dbutils.connection.IConnectionHelper;
 import com.google.cloud.teleport.v2.templates.dbutils.connection.JdbcConnectionHelper;
+import com.google.cloud.teleport.v2.templates.dbutils.dao.source.CassandraDao;
 import com.google.cloud.teleport.v2.templates.dbutils.dao.source.IDao;
 import com.google.cloud.teleport.v2.templates.dbutils.dao.source.JdbcDao;
+import com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraDMLGenerator;
 import com.google.cloud.teleport.v2.templates.dbutils.dml.IDMLGenerator;
 import com.google.cloud.teleport.v2.templates.dbutils.dml.MySQLDMLGenerator;
 import com.google.cloud.teleport.v2.templates.exceptions.UnsupportedSourceException;
@@ -33,22 +36,36 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class SourceProcessorFactory {
-  private static Map<String, IDMLGenerator> dmlGeneratorMap =
-      Map.of(Constants.SOURCE_MYSQL, new MySQLDMLGenerator());
+  private static Map<String, IDMLGenerator> dmlGeneratorMap = new HashMap<>();
 
-  private static Map<String, IConnectionHelper> connectionHelperMap =
-      Map.of(Constants.SOURCE_MYSQL, new JdbcConnectionHelper());
+  private static Map<String, IConnectionHelper> connectionHelperMap = new HashMap<>();
 
   private static Map<String, String> driverMap =
       Map.of(Constants.SOURCE_MYSQL, "com.mysql.cj.jdbc.Driver");
 
-  private static Map<String, Function<Shard, String>> connectionUrl =
-      Map.of(
-          Constants.SOURCE_MYSQL,
-          shard ->
-              "jdbc:mysql://" + shard.getHost() + ":" + shard.getPort() + "/" + shard.getDbName());
+  private static Map<String, Function<IShard, String>> connectionUrl = new HashMap<>();
 
-  private static Map<String, BiFunction<List<Shard>, Integer, ConnectionHelperRequest>>
+  static {
+
+    dmlGeneratorMap.put(Constants.SOURCE_MYSQL, new MySQLDMLGenerator());
+    dmlGeneratorMap.put(Constants.SOURCE_CASSANDRA, new CassandraDMLGenerator());
+
+    connectionHelperMap.put(Constants.SOURCE_MYSQL, new JdbcConnectionHelper());
+    connectionHelperMap.put(Constants.SOURCE_CASSANDRA, new CassandraConnectionHelper());
+
+    connectionUrl.put(
+            Constants.SOURCE_MYSQL,
+            shard ->
+                    "jdbc:mysql://" + shard.getHost() + ":" + shard.getPort() + "/" + shard.getDbName()
+    );
+    connectionUrl.put(
+            Constants.SOURCE_CASSANDRA,
+            shard ->
+                    shard.getHost() + ":" + shard.getPort() + "/" + shard.getUser() + "/" + shard.getKeySpaceName()
+    );
+  }
+
+  private static Map<String, BiFunction<List<IShard>, Integer, ConnectionHelperRequest>>
       connectionHelperRequestFactory =
           Map.of(
               Constants.SOURCE_MYSQL,
@@ -70,16 +87,16 @@ public class SourceProcessorFactory {
    * Creates a SourceProcessor instance for the specified source type.
    *
    * @param source the type of the source database
-   * @param shards the list of shards for the source
+   * @param iShards the list of mySqlShards for the source
    * @param maxConnections the maximum number of connections
    * @return a configured SourceProcessor instance
    * @throws Exception if the source type is invalid
    */
   public static SourceProcessor createSourceProcessor(
-      String source, List<Shard> shards, int maxConnections) throws UnsupportedSourceException {
+          String source, List<IShard> iShards, int maxConnections) throws UnsupportedSourceException {
     IDMLGenerator dmlGenerator = getDMLGenerator(source);
-    initializeConnectionHelper(source, shards, maxConnections);
-    Map<String, IDao> sourceDaoMap = createSourceDaoMap(source, shards);
+    initializeConnectionHelper(source, iShards, maxConnections);
+    Map<String, IDao> sourceDaoMap = createSourceDaoMap(source, iShards);
 
     return SourceProcessor.builder().dmlGenerator(dmlGenerator).sourceDaoMap(sourceDaoMap).build();
   }
@@ -101,28 +118,28 @@ public class SourceProcessorFactory {
   }
 
   private static void initializeConnectionHelper(
-      String source, List<Shard> shards, int maxConnections) throws UnsupportedSourceException {
+          String source, List<IShard> iShards, int maxConnections) throws UnsupportedSourceException {
     IConnectionHelper connectionHelper = getConnectionHelper(source);
     if (!connectionHelper.isConnectionPoolInitialized()) {
       ConnectionHelperRequest request =
-          createConnectionHelperRequest(source, shards, maxConnections);
+          createConnectionHelperRequest(source, iShards, maxConnections);
       connectionHelper.init(request);
     }
   }
 
   private static ConnectionHelperRequest createConnectionHelperRequest(
-      String source, List<Shard> shards, int maxConnections) throws UnsupportedSourceException {
+          String source, List<IShard> iShards, int maxConnections) throws UnsupportedSourceException {
     return Optional.ofNullable(connectionHelperRequestFactory.get(source))
-        .map(factory -> factory.apply(shards, maxConnections))
+        .map(factory -> factory.apply(iShards, maxConnections))
         .orElseThrow(
             () ->
                 new UnsupportedSourceException(
                     "Invalid source type for ConnectionHelperRequest: " + source));
   }
 
-  private static Map<String, IDao> createSourceDaoMap(String source, List<Shard> shards)
+  private static Map<String, IDao> createSourceDaoMap(String source, List<IShard> iShards)
       throws UnsupportedSourceException {
-    Function<Shard, String> urlGenerator =
+    Function<IShard, String> urlGenerator =
         Optional.ofNullable(connectionUrl.get(source))
             .orElseThrow(
                 () ->
@@ -130,9 +147,10 @@ public class SourceProcessorFactory {
                         "Invalid source type for URL generation: " + source));
 
     Map<String, IDao> sourceDaoMap = new HashMap<>();
-    for (Shard shard : shards) {
+    for (IShard shard : iShards) {
       String connectionUrl = urlGenerator.apply(shard);
-      IDao sqlDao = new JdbcDao(connectionUrl, shard.getUserName(), getConnectionHelper(source));
+      IDao sqlDao = source.equals(Constants.SOURCE_MYSQL) ? new JdbcDao(connectionUrl, shard.getUser(), getConnectionHelper(source))
+              : new CassandraDao(connectionUrl, shard.getUser(), getConnectionHelper(source));
       sourceDaoMap.put(shard.getLogicalShardId(), sqlDao);
     }
     return sourceDaoMap;

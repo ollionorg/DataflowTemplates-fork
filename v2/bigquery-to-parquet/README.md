@@ -72,8 +72,8 @@ echo '{
         },
         {
             "name":"numShards",
-            "label":"Number of file shards to create",
-            "helpText":"Number of file shards to create. Default: 0 (runner will decide number of shards).",
+            "label":"Number of file mySqlShards to create",
+            "helpText":"Number of file mySqlShards to create. Default: 0 (runner will decide number of mySqlShards).",
             "paramType":"TEXT",
             "isOptional":true
         },
@@ -130,7 +130,7 @@ The template requires the following parameters:
 * bucket: Cloud Storage bucket to land exported data in.
 
 The template has the following optional parameters:
-* numShards: Number of file shards to create. Default: 0 (runner will decide number of shards).
+* numShards: Number of file mySqlShards to create. Default: 0 (runner will decide number of mySqlShards).
 * fields: Fields in table to export. Default: None (all fields will be exported).
 
 Template can be executed using the following gcloud command:

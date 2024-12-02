@@ -26,7 +26,7 @@ import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.ISchemaMapper;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.IdentityMapper;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SessionBasedMapper;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.cloud.teleport.v2.spanner.migrations.spanner.SpannerSchema;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
@@ -79,11 +79,11 @@ public class PipelineController {
   static PipelineResult executeShardedMigration(
       SourceDbToSpannerOptions options,
       Pipeline pipeline,
-      List<Shard> shards,
+      List<IShard> mySqlShards,
       SpannerConfig spannerConfig) {
     // TODO
-    // Merge logical shards into 1 physical shard
-    // Populate completion per shard
+    // Merge logical mySqlShards into 1 physical mySqlShard
+    // Populate completion per mySqlShard
     // Take connection properties map
     // Write to common DLQ ?
 
@@ -96,20 +96,20 @@ public class PipelineController {
     SQLDialect sqlDialect = SQLDialect.valueOf(options.getSourceDbDialect());
 
     LOG.info(
-        "running migration for shards: {}",
-        shards.stream().map(Shard::getHost).collect(Collectors.toList()));
-    for (Shard shard : shards) {
-      for (Map.Entry<String, String> entry : shard.getDbNameToLogicalShardIdMap().entrySet()) {
+        "running migration for mySqlShards: {}",
+        mySqlShards.stream().map(IShard::getHost).collect(Collectors.toList()));
+    for (IShard mySqlShard : mySqlShards) {
+      for (Map.Entry<String, String> entry : mySqlShard.getDbNameToLogicalShardIdMap().entrySet()) {
         // Read data from source
         String shardId = entry.getValue();
 
-        // If a namespace is configured for a shard uses that, otherwise uses the namespace
+        // If a namespace is configured for a mySqlShard uses that, otherwise uses the namespace
         // configured in the options if there is one.
-        String namespace = Optional.ofNullable(shard.getNamespace()).orElse(options.getNamespace());
+        String namespace = Optional.ofNullable(mySqlShard.getNamespace()).orElse(options.getNamespace());
 
         ShardedDbConfigContainer dbConfigContainer =
             new ShardedDbConfigContainer(
-                shard, sqlDialect, namespace, shardId, entry.getKey(), options);
+                    mySqlShard, sqlDialect, namespace, shardId, entry.getKey(), options);
         setupLogicalDbMigration(
             options,
             pipeline,
@@ -186,7 +186,7 @@ public class PipelineController {
   }
 
   /**
-   * For the spanner tables that contain the shard id column, returns the source table to
+   * For the spanner tables that contain the mySqlShard id column, returns the source table to
    * shardColumn.
    *
    * @param schemaMapper
@@ -249,7 +249,7 @@ public class PipelineController {
 
   static class ShardedDbConfigContainer implements DbConfigContainer {
 
-    private Shard shard;
+    private IShard mySqlShard;
 
     private SQLDialect sqlDialect;
 
@@ -262,13 +262,13 @@ public class PipelineController {
     private SourceDbToSpannerOptions options;
 
     public ShardedDbConfigContainer(
-        Shard shard,
+        IShard mySqlShard,
         SQLDialect sqlDialect,
         String namespace,
         String shardId,
         String dbName,
         SourceDbToSpannerOptions options) {
-      this.shard = shard;
+      this.mySqlShard = mySqlShard;
       this.sqlDialect = sqlDialect;
       this.namespace = namespace;
       this.shardId = shardId;
@@ -282,11 +282,11 @@ public class PipelineController {
           sqlDialect,
           sourceTables,
           null,
-          shard.getHost(),
-          shard.getConnectionProperties(),
-          Integer.parseInt(shard.getPort()),
-          shard.getUserName(),
-          shard.getPassword(),
+          mySqlShard.getHost(),
+          mySqlShard.getConnectionProperties(),
+          Integer.parseInt(mySqlShard.getPort()),
+          mySqlShard.getUser(),
+          mySqlShard.getPassword(),
           dbName,
           namespace,
           shardId,

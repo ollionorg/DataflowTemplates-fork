@@ -20,7 +20,7 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 * **spannerProjectId** : This is the name of the Cloud Spanner project.
 * **metadataInstance** : This is the instance to store the metadata used by the connector to control the consumption of the change stream API data.
 * **metadataDatabase** : This is the database to store the metadata used by the connector to control the consumption of the change stream API data.
-* **sourceShardsFilePath** : Path to GCS file containing connection profile info for source shards.
+* **sourceShardsFilePath** : Path to GCS file containing connection profile info for source mySqlShards.
 
 ### Optional parameters
 
@@ -29,13 +29,13 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 * **shadowTablePrefix** : The prefix used to name shadow tables. Default: `shadow_`.
 * **sessionFilePath** : Session file path in Cloud Storage that contains mapping information from HarbourBridge.
 * **filtrationMode** : Mode of Filtration, decides how to drop certain records based on a criteria. Currently supported modes are: none (filter nothing), forward_migration (filter records written via the forward migration pipeline). Defaults to forward_migration.
-* **shardingCustomJarPath** : Custom jar location in Cloud Storage that contains the customization logic for fetching shard id. Defaults to empty.
-* **shardingCustomClassName** : Fully qualified class name having the custom shard id implementation.  It is a mandatory field in case shardingCustomJarPath is specified. Defaults to empty.
+* **shardingCustomJarPath** : Custom jar location in Cloud Storage that contains the customization logic for fetching mySqlShard id. Defaults to empty.
+* **shardingCustomClassName** : Fully qualified class name having the custom mySqlShard id implementation.  It is a mandatory field in case shardingCustomJarPath is specified. Defaults to empty.
 * **shardingCustomParameters** : String containing any custom parameters to be passed to the custom sharding class. Defaults to empty.
 * **sourceDbTimezoneOffset** : This is the timezone offset from UTC for the source database. Example value: +10:00. Defaults to: +00:00.
 * **dlqGcsPubSubSubscription** : The Pub/Sub subscription being used in a Cloud Storage notification policy for DLQ retry directory when running in regular mode. The name should be in the format of projects/<project-id>/subscriptions/<subscription-name>. When set, the deadLetterQueueDirectory and dlqRetryMinutes are ignored.
 * **skipDirectoryName** : Records skipped from reverse replication are written to this directory. Default directory name is skip.
-* **maxShardConnections** : This will come from shard file eventually. Defaults to: 10000.
+* **maxShardConnections** : This will come from mySqlShard file eventually. Defaults to: 10000.
 * **deadLetterQueueDirectory** : The file path used when storing the error queue output. The default file path is a directory under the Dataflow job's temp location.
 * **dlqMaxRetryCount** : The max number of times temporary errors can be retried through DLQ. Defaults to 500.
 * **runMode** : This is the run mode type, whether regular or with retryDLQ.Default is regular. retryDLQ is used to retry the severe DLQ records only.

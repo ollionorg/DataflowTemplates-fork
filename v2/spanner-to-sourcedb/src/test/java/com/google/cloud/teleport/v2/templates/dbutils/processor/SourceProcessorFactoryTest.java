@@ -18,7 +18,7 @@ package com.google.cloud.teleport.v2.templates.dbutils.processor;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
 import com.google.cloud.teleport.v2.templates.dbutils.connection.JdbcConnectionHelper;
 import com.google.cloud.teleport.v2.templates.dbutils.dao.source.JdbcDao;
@@ -37,9 +37,9 @@ import org.mockito.Mockito;
 public class SourceProcessorFactoryTest {
   @Test
   public void testCreateSourceProcessor_validSource() throws Exception {
-    List<Shard> shards =
+    List<MySqlShard> mySqlShards =
         Arrays.asList(
-            new Shard(
+            new MySqlShard(
                 "shard1",
                 "localhost",
                 "3306",
@@ -56,7 +56,7 @@ public class SourceProcessorFactoryTest {
         Map.of(Constants.SOURCE_MYSQL, mockConnectionHelper));
     SourceProcessor processor =
         SourceProcessorFactory.createSourceProcessor(
-            Constants.SOURCE_MYSQL, shards, maxConnections);
+            Constants.SOURCE_MYSQL, mySqlShards, maxConnections);
 
     Assert.assertNotNull(processor);
     Assert.assertTrue(processor.getDmlGenerator() instanceof MySQLDMLGenerator);
@@ -66,9 +66,9 @@ public class SourceProcessorFactoryTest {
 
   @Test(expected = UnsupportedSourceException.class)
   public void testCreateSourceProcessor_invalidSource() throws Exception {
-    List<Shard> shards =
+    List<MySqlShard> mySqlShards =
         Arrays.asList(
-            new Shard(
+            new MySqlShard(
                 "shard1",
                 "localhost",
                 "3306",
@@ -80,6 +80,6 @@ public class SourceProcessorFactoryTest {
                 ""));
     int maxConnections = 10;
 
-    SourceProcessorFactory.createSourceProcessor("invalid_source", shards, maxConnections);
+    SourceProcessorFactory.createSourceProcessor("invalid_source", mySqlShards, maxConnections);
   }
 }

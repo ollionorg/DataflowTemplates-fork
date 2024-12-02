@@ -155,7 +155,7 @@ variable "runMode" {
 
 variable "transformationContextFilePath" {
   type        = string
-  description = "Transformation context file path in cloud storage used to populate data used in transformations performed during migrations   Eg: The shard id to db name to identify the db from which a row was migrated"
+  description = "Transformation context file path in cloud storage used to populate data used in transformations performed during migrations   Eg: The mySqlShard id to db name to identify the db from which a row was migrated"
   default     = null
 }
 

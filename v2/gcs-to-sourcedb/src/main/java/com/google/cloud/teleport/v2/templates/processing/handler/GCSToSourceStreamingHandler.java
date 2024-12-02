@@ -57,7 +57,7 @@ public class GCSToSourceStreamingHandler {
       List<TrimmedShardedDataChangeRecord> records = inputFileReader.getRecords();
       Instant readEndTime = Instant.now();
       LOG.info(
-          "Shard "
+          "MySqlShard "
               + shardId
               + ": read "
               + records.size()
@@ -82,7 +82,7 @@ public class GCSToSourceStreamingHandler {
       MySqlDao dao =
           new DaoFactory(
                   connectString,
-                  taskContext.getShard().getUserName(),
+                  taskContext.getShard().getUser(),
                   taskContext.getShard().getPassword())
               .getMySqlDao(shardId);
 
@@ -101,7 +101,7 @@ public class GCSToSourceStreamingHandler {
       markShardSuccess(taskContext, spannerDao, fileProcessedStartInterval);
       dao.cleanup();
       LOG.info(
-          "Shard " + shardId + ": Successfully processed batch of " + records.size() + " records.");
+          "MySqlShard " + shardId + ": Successfully processed batch of " + records.size() + " records.");
     } catch (Exception e) {
       Metrics.counter(GCSToSourceStreamingHandler.class, "shard_failed_" + shardId).inc();
       markShardFailure(taskContext, spannerDao, fileProcessedStartInterval);

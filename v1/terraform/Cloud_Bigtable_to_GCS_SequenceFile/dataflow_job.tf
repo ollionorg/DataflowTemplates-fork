@@ -89,7 +89,7 @@ variable "destinationPath" {
 
 variable "filenamePrefix" {
   type        = string
-  description = "The prefix for each shard in destinationPath. (Example: output-). Defaults to: part."
+  description = "The prefix for each mySqlShard in destinationPath. (Example: output-). Defaults to: part."
   default     = "part"
 }
 

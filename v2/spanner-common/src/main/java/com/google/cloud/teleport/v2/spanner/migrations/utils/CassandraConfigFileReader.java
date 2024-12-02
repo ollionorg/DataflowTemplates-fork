@@ -1,36 +1,40 @@
 package com.google.cloud.teleport.v2.spanner.migrations.utils;
 
-import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.CassandraShard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.channels.Channels;
-import java.nio.charset.StandardCharsets;
 import org.apache.beam.sdk.io.FileSystems;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 
 /** Class to read the Cassandra configuration file in GCS and convert it into a CassandraConfig object. */
 public class CassandraConfigFileReader {
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraConfigFileReader.class);
 
-    public CassandraConfig getCassandraConfig(String cassandraConfigFilePath) {
+    public List<IShard> getCassandraShard(String cassandraConfigFilePath) {
         try (InputStream stream =
                      Channels.newInputStream(
                              FileSystems.open(FileSystems.matchNewResource(cassandraConfigFilePath, false)))) {
 
             String result = IOUtils.toString(stream, StandardCharsets.UTF_8);
-            CassandraConfig cassandraConfig =
+            IShard iShard =
                     new GsonBuilder()
                             .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
                             .create()
-                            .fromJson(result, CassandraConfig.class);
+                            .fromJson(result, CassandraShard.class);
 
-            LOG.info("The Cassandra config is: {}", cassandraConfig);
-            return cassandraConfig;
+            LOG.info("The Cassandra config is: {}", iShard);
+            return Collections.singletonList(iShard);
 
         } catch (IOException e) {
             LOG.error(

@@ -7,7 +7,7 @@ You can specify the training, testing, and validation percentage splits. By
 default, the split is 1 or 100% for the training set and 0 or 0% for testing and
 validation sets. When setting the dataset split, the sum of training, testing,
 and validation needs to add up to 1 or 100% (for example, 0.6+0.2+0.2). Dataflow
-automatically determines the optimal number of shards for each output dataset.
+automatically determines the optimal number of mySqlShards for each output dataset.
 
 
 :memo: This is a Google-provided template! Please

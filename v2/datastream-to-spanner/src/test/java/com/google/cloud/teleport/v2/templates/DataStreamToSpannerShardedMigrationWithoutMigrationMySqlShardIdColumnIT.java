@@ -51,17 +51,17 @@ import org.slf4j.LoggerFactory;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(JUnit4.class)
-public class DataStreamToSpannerShardedMigrationWithoutMigrationShardIdColumnIT
+public class DataStreamToSpannerShardedMigrationWithoutMigrationMySqlShardIdColumnIT
     extends DataStreamToSpannerITBase {
   private static final Logger LOG =
       LoggerFactory.getLogger(
-          DataStreamToSpannerShardedMigrationWithoutMigrationShardIdColumnIT.class);
+          DataStreamToSpannerShardedMigrationWithoutMigrationMySqlShardIdColumnIT.class);
 
   private static final String TABLE = "Users";
   private static final String SPANNER_DDL_RESOURCE =
       "DataStreamToSpannerShardedMigrationWithoutMigrationShardIdColumnIT/spanner-schema.sql";
 
-  private static HashSet<DataStreamToSpannerShardedMigrationWithoutMigrationShardIdColumnIT>
+  private static HashSet<DataStreamToSpannerShardedMigrationWithoutMigrationMySqlShardIdColumnIT>
       testInstances = new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo1;
   private static PipelineLauncher.LaunchInfo jobInfo2;
@@ -78,7 +78,7 @@ public class DataStreamToSpannerShardedMigrationWithoutMigrationShardIdColumnIT
   public void setUp() throws IOException {
     // Prevent cleaning up of dataflow job after a test method is executed.
     skipBaseCleanup = true;
-    synchronized (DataStreamToSpannerShardedMigrationWithoutMigrationShardIdColumnIT.class) {
+    synchronized (DataStreamToSpannerShardedMigrationWithoutMigrationMySqlShardIdColumnIT.class) {
       testInstances.add(this);
       if (spannerResourceManager == null) {
         spannerResourceManager = setUpSpannerResourceManager();
@@ -131,7 +131,7 @@ public class DataStreamToSpannerShardedMigrationWithoutMigrationShardIdColumnIT
    */
   @AfterClass
   public static void cleanUp() throws IOException {
-    for (DataStreamToSpannerShardedMigrationWithoutMigrationShardIdColumnIT instance :
+    for (DataStreamToSpannerShardedMigrationWithoutMigrationMySqlShardIdColumnIT instance :
         testInstances) {
       instance.tearDownBase();
     }

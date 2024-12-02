@@ -1,7 +1,7 @@
 # Spanner Changestream to Sharded File Sink Dataflow Template
 
 The [SpannerChangeStreamsToShardedFileSink](src/main/java/com/google/cloud/teleport/v2/templates/SpannerChangeStreamsToShardedFileSink.java) pipeline
-ingests Spanner change stream data to GCS file sink sharded by logical shard id values.
+ingests Spanner change stream data to GCS file sink sharded by logical mySqlShard id values.
 
 
 ## Getting Started

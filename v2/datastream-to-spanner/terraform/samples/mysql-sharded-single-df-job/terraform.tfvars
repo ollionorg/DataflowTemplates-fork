@@ -88,7 +88,7 @@ common_params = {
 
 shard_list = [
   {
-    shard_id = "<YOUR_SHARD_ID>" # A unique identifier for the shard (e.g., "shard-01")
+    shard_id = "<YOUR_SHARD_ID>" # A unique identifier for the mySqlShard (e.g., "mySqlShard-01")
 
     datastream_params = {
       source_connection_profile_id = "<YOUR_SOURCE_CONNECTION_PROFILE_ID>" # Datastream source connection profile ID
@@ -99,5 +99,5 @@ shard_list = [
       stream_id                    = "<YOUR_STREAM_ID>"                    # Datastream stream ID (will be prefixed with common_params.datastream_params.stream_prefix_path)
     }
   }
-  # Add more shard definitions as needed
+  # Add more mySqlShard definitions as needed
 ]

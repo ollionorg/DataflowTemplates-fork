@@ -17,7 +17,7 @@ common_params = {
 
 data_shards = [
   {
-    dataShardId = "data-shard1"
+    dataShardId = "data-mySqlShard1"
     host        = "10.1.1.1"
     user        = "username"
     password    = "password"
@@ -26,7 +26,7 @@ data_shards = [
       {
         dbName         = "db1"
         databaseId     = "logicaldb1"
-        refDataShardId = "data-shard1"
+        refDataShardId = "data-mySqlShard1"
       }
     ]
   }

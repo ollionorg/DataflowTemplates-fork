@@ -74,7 +74,7 @@ The template has the following optional parameters:
 * outputFileFormat: The format of the file to write to. Valid formats are Text, Avro and Parquet. Default: text.
 * outputFilenamePrefix: The filename prefix of the files to write to. Default: output.
 * windowDuration: The window duration in which data will be written. Default: 5m.
-* numShards: Number of file shards to create. Default: decided by runner.
+* numShards: Number of file mySqlShards to create. Default: decided by runner.
 
 Template can be executed using the following gcloud command.
 ```sh

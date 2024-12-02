@@ -37,7 +37,7 @@ import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerColumnDefin
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerColumnType;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerTable;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SyntheticPKey;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SessionFileReader;
 import com.google.cloud.teleport.v2.templates.changestream.ChangeStreamErrorRecord;
 import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataChangeRecord;
@@ -78,7 +78,7 @@ public class SourceWriterFnTest {
   @Mock private DoFn.ProcessContext processContext;
   private static Gson gson = new Gson();
 
-  private Shard testShard;
+  private MySqlShard testMySqlShard;
   private Schema testSchema;
   private Ddl testDdl;
   private String testSourceDbTimezoneOffset;
@@ -115,13 +115,13 @@ public class SourceWriterFnTest {
         .when(mockSqlDao)
         .write(contains("12345")); // to test code path of generic exception
     doNothing().when(mockSqlDao).write(contains("parent1"));
-    testShard = new Shard();
-    testShard.setLogicalShardId("shardA");
-    testShard.setUser("test");
-    testShard.setHost("test");
-    testShard.setPassword("test");
-    testShard.setPort("1234");
-    testShard.setDbName("test");
+    testMySqlShard = new MySqlShard();
+    testMySqlShard.setLogicalShardId("shardA");
+    testMySqlShard.setUser("test");
+    testMySqlShard.setHost("test");
+    testMySqlShard.setPassword("test");
+    testMySqlShard.setPort("1234");
+    testMySqlShard.setDbName("test");
 
     testSchema = SessionFileReader.read("src/test/resources/sourceWriterUTSession.json");
     testSourceDbTimezoneOffset = "+00:00";
@@ -140,7 +140,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -167,7 +167,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -193,7 +193,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -219,7 +219,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -249,7 +249,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -277,7 +277,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -309,7 +309,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -337,7 +337,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -367,7 +367,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -397,7 +397,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -427,7 +427,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -456,7 +456,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             getSchemaObject(),
             mockSpannerConfig,
             testSourceDbTimezoneOffset,

@@ -46,7 +46,7 @@ var (
 			"v2/gcs-to-sourcedb/",
 			"v2/sourcedb-to-spanner/",
 			"v2/spanner-to-sourcedb/",
-			"v2/spanner-custom-shard",
+			"v2/spanner-custom-mySqlShard",
 			"plugins/templates-maven-plugin"},
 	}
 )

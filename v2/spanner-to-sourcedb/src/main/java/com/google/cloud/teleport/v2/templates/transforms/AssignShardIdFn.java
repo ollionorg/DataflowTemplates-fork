@@ -26,7 +26,6 @@ import com.google.cloud.teleport.v2.spanner.ddl.Column;
 import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
 import com.google.cloud.teleport.v2.spanner.ddl.IndexColumn;
 import com.google.cloud.teleport.v2.spanner.ddl.Table;
-import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerTable;
 import com.google.cloud.teleport.v2.spanner.type.Type;
@@ -38,15 +37,6 @@ import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataCha
 import com.google.cloud.teleport.v2.templates.constants.Constants;
 import com.google.cloud.teleport.v2.templates.utils.ShardingLogicImplFetcher;
 import com.google.common.collect.ImmutableList;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import org.apache.beam.sdk.io.gcp.spanner.SpannerAccessor;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
 import org.apache.beam.sdk.io.gcp.spanner.changestreams.model.ModType;
@@ -59,6 +49,14 @@ import org.joda.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
  * This DoFn assigns the shardId as key to the record.
  */
@@ -68,7 +66,6 @@ public class AssignShardIdFn
 
   private final SpannerConfig spannerConfig;
 
-  private final CassandraConfig cassandraConfig;
 
   /* SpannerAccessor must be transient so that its value is not serialized at runtime. */
   private transient SpannerAccessor spannerAccessor;
@@ -114,7 +111,6 @@ public class AssignShardIdFn
       String shardingCustomParameters,
       Long maxConnectionsAcrossAllShards,
       String sourceType,
-      CassandraConfig cassandraConfig,
       Long maxConnections) {
     this.spannerConfig = spannerConfig;
     this.schema = schema;
@@ -127,7 +123,6 @@ public class AssignShardIdFn
     this.shardingCustomParameters = shardingCustomParameters;
     this.maxConnectionsAcrossAllShards = maxConnectionsAcrossAllShards;
     this.sourceType = sourceType;
-    this.cassandraConfig = cassandraConfig;
     this.maxConnections = maxConnections;
   }
 
@@ -255,11 +250,11 @@ public class AssignShardIdFn
 
         record.setShard(qualifiedShard);
         String finalKeyString = tableName + "_" + keysJsonStr + "_" + qualifiedShard;
-        finalKey =
-            finalKeyString.hashCode() % maxConnectionsAcrossAllShards; // The total parallelism is
-        // maxConnectionsAcrossAllShards
+        finalKey = finalKeyString.hashCode() % maxConnectionsAcrossAllShards;
       } else {
-        String finalKeyString = tableName + "_" + keysJsonStr;
+        record.setShard(this.shardName);
+        qualifiedShard = this.shardName;
+        String finalKeyString = tableName + "_" + keysJsonStr + "_" + qualifiedShard;
         finalKey = finalKeyString.hashCode() % maxConnections;
       }
       c.output(KV.of(finalKey, record));

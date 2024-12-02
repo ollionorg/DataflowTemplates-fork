@@ -78,7 +78,7 @@ The pipeline has the following optional parameters:
   NOTE: Must match format names exactly found [here](http://commons.apache.org/proper/commons-csv/apidocs/org/apache/commons/csv/CSVFormat.Predefined.html#Default).
 * delimiter: Delimiter for the CSV file. Default: comma (,).
 * outputFilePrefix: The prefix of the files to write to. Default: output.
-* numShards: The maximum number of output shards produced when writing. Default: decided by runner.
+* numShards: The maximum number of output mySqlShards produced when writing. Default: decided by runner.
 
 #### Avro to Parquet
 
@@ -91,7 +91,7 @@ The pipeline requires the following parameters:
 
 The pipeline has the following optional parameters:
 * outputFilenamePrefix: The prefix of the files to write to. Default: output.
-* numShards: The maximum number of output shards produced when writing. Default: decided by runner.
+* numShards: The maximum number of output mySqlShards produced when writing. Default: decided by runner.
 
 #### Parquet to Avro
 
@@ -104,7 +104,7 @@ The pipeline requires the following parameters:
 
 The pipeline has the following optional parameters:
 * outputFilenamePrefix: The prefix of the files to write to. Default: output.
-* numShards: The maximum number of output shards produced when writing. Default: decided by runner.
+* numShards: The maximum number of output mySqlShards produced when writing. Default: decided by runner.
 
 ### Executing template
 

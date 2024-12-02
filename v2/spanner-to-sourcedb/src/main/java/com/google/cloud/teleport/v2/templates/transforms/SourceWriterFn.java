@@ -25,11 +25,10 @@ import com.google.cloud.spanner.SpannerException;
 import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
 import com.google.cloud.teleport.v2.spanner.ddl.IndexColumn;
 import com.google.cloud.teleport.v2.spanner.ddl.Table;
-import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
 import com.google.cloud.teleport.v2.spanner.migrations.convertors.ChangeEventSpannerConvertor;
 import com.google.cloud.teleport.v2.spanner.migrations.exceptions.ChangeEventConvertorException;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.cloud.teleport.v2.templates.changestream.ChangeStreamErrorRecord;
 import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataChangeRecord;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
@@ -41,27 +40,23 @@ import com.google.cloud.teleport.v2.templates.dbutils.processor.SourceProcessorF
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 import com.google.cloud.teleport.v2.templates.exceptions.UnsupportedSourceException;
 import com.google.cloud.teleport.v2.templates.utils.ShadowTableRecord;
-import com.google.cloud.teleport.v2.templates.dbutils.dao.spanner.SpannerDao;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
 import org.apache.beam.sdk.metrics.Counter;
 import org.apache.beam.sdk.metrics.Distribution;
 import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.transforms.DoFn;
-import org.apache.beam.sdk.transforms.DoFn.ProcessContext;
-import org.apache.beam.sdk.transforms.DoFn.ProcessElement;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.TupleTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** This class writes to source based on commit timestamp captured in shadow table. */
 public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord>, String>
@@ -85,7 +80,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
 
   private final Schema schema;
   private final String sourceDbTimezoneOffset;
-  private final List<Shard> shards;
+  private final List<IShard> iShards;
   private final SpannerConfig spannerConfig;
   private transient SpannerDao spannerDao;
   private final Ddl ddl;
@@ -94,13 +89,12 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
   private final int maxThreadPerDataflowWorker;
   private final String source;
   private SourceProcessor sourceProcessor;
-  private CassandraConfig cassandraConfig;
   private transient Cluster cluster;
   private transient Session session;
 
 
   public SourceWriterFn(
-      List<Shard> shards,
+      List<IShard> iShards,
       Schema schema,
       SpannerConfig spannerConfig,
       String sourceDbTimezoneOffset,
@@ -108,20 +102,18 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
       String shadowTablePrefix,
       String skipDirName,
       int maxThreadPerDataflowWorker,
-      String source,
-      CassandraConfig cassandraConfig
+      String source
   ) {
 
     this.schema = schema;
     this.sourceDbTimezoneOffset = sourceDbTimezoneOffset;
-    this.shards = shards;
+    this.iShards = iShards;
     this.spannerConfig = spannerConfig;
     this.ddl = ddl;
     this.shadowTablePrefix = shadowTablePrefix;
     this.skipDirName = skipDirName;
     this.maxThreadPerDataflowWorker = maxThreadPerDataflowWorker;
     this.source = source;
-    this.cassandraConfig = cassandraConfig;
   }
 
   // for unit testing purposes
@@ -145,7 +137,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
     mapper = new ObjectMapper();
     mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
     sourceProcessor =
-        SourceProcessorFactory.createSourceProcessor(source, shards, maxThreadPerDataflowWorker);
+        SourceProcessorFactory.createSourceProcessor(source, iShards, maxThreadPerDataflowWorker);
     spannerDao = new SpannerDao(spannerConfig);
   }
 

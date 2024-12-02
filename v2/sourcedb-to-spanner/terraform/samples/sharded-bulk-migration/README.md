@@ -59,7 +59,7 @@ provides instructions to add these roles to an existing service account.
 ## Dataflow permissions
 
 The Dataflow service account needs to be provided the `roles/storage.objectAdmin` and `roles/spanner.databaseAdmin`
-roles. Also ensure that the workers can access the source shards.
+roles. Also ensure that the workers can access the source mySqlShards.
 
 ## Assumptions
 
@@ -69,7 +69,7 @@ It makes the following assumptions -
 [SMT](https://googlecloudplatform.github.io/spanner-migration-tool/quickstart.html)
 > can be used for converting a MySQL schema to a Spanner compatible schema.
 
-1. Dataflow can establish network connectivity with the MySQL source shards.
+1. Dataflow can establish network connectivity with the MySQL source mySqlShards.
 2. Appropriate permissions are added to the service account running Terraform to allow resource creation.
 3. Appropriate permissions are provided to the service account running Dataflow to write to Spanner.
 4. A GCS working directory has been created for the terraform template. The dataflow jobs will write the output
@@ -79,8 +79,8 @@ It makes the following assumptions -
 6. An SMT generated session file is provided containing the schema mapping information is created locally. This is
    mandatory for sharded migrations. Check out the FAQ
    on [how to generate a session file](#specifying-schema-overrides).
-7. A sharding config containing source connection information of all the physical and logical shards is created locally.
-8. The Source Schema should be the same across all shards.
+7. A sharding config containing source connection information of all the physical and logical mySqlShards is created locally.
+8. The Source Schema should be the same across all mySqlShards.
 
 Given these assumptions, it copies data from multiple source MySQL databases to the configured Spanner database.
 
@@ -99,7 +99,7 @@ This sample contains the following files -
    to run this example.
 6. `terraform_simple.tfvars` - This contains the minimal list of dummy inputs
    that need to be populated to run this example.
-7. `shardingConfig.json` - This contains a sample sharding config that need to be populated with the source shards
+7. `shardingConfig.json` - This contains a sample sharding config that need to be populated with the source mySqlShards
    connection details.
 
 ## Resources Created
@@ -107,8 +107,8 @@ This sample contains the following files -
 Given these assumptions, it uses a supplied source database connection
 configuration and creates the following resources -
 
-1. **Dataflow job(s)** - The Dataflow job(s) which reads from source shards and writes to
-   Spanner. One dataflow job can migrate multiple physical shards based on the `batch_size` parameter.
+1. **Dataflow job(s)** - The Dataflow job(s) which reads from source mySqlShards and writes to
+   Spanner. One dataflow job can migrate multiple physical mySqlShards based on the `batch_size` parameter.
 2. **GCS Session File** - The GCS object created by uploading the local session file.
 3. **GCS Source Configs** - The GCS object(s) created by splitting the local sharding config into various batches, with
    1 source config per dataflow job.
@@ -158,7 +158,7 @@ dataflow_job_urls = [
 ]
 ```
 
-**Note 1:** Each of the jobs will have a random name which will be migrating 1 or more physical shards.
+**Note 1:** Each of the jobs will have a random name which will be migrating 1 or more physical mySqlShards.
 
 **Note 2:** Terraform, by default, creates at most 10 resources in parallel. If you want to run more than 10 dataflow
 jobs in parallel, run terraform using the `-parallelism=n` flag. However, more parallel dataflow jobs linearly increases
@@ -192,11 +192,11 @@ to take over 10 mins:
   job logs. This likely due to private google access is not enabled for the
   subnetwork. Please enable private google access in your network.
 - **Job logs not present after "Discovering tables for DataSource":** This means dataflow is unable to access the mysql
-  shard. Please check your network configuration and credentials.
+  mySqlShard. Please check your network configuration and credentials.
 - If you are still getting a Timeout after this, this means the job graph construction is taking too long. You could
   potentially have too many tables allocated in a single Dataflow job. The recommendation is to set the `batch_size`
-  such that the total number of tables in a single job does not exceed `150`. This means if a logical shard has 15
-  tables, and a physical shard has 2 logical shards, do not set the batch_size more than 5.
+  such that the total number of tables in a single job does not exceed `150`. This means if a logical mySqlShard has 15
+  tables, and a physical mySqlShard has 2 logical mySqlShards, do not set the batch_size more than 5.
 
 ### Job graph is not loading/Custom counters not visible on Dataflow panel
 
@@ -208,7 +208,7 @@ on [Cloud monitoring](https://cloud.google.com/dataflow/docs/guides/using-monito
 
 There can be multiple reasons for this.
 
-- **Check source shard metrics:** Are memory/CPU limits being hit? Consider increasing the shard resources.
+- **Check source mySqlShard metrics:** Are memory/CPU limits being hit? Consider increasing the mySqlShard resources.
 - **Check Spanner metrics:** Are memory/CPU limits being hit? Consider increasing the number of nodes.
 - **Check Dataflow metrics:** Are memory/CPU limits being hit? Dataflow should autoscale to required number of
   nodes.
@@ -326,7 +326,7 @@ To specify a session file -
 This will automatically upload it to the working directory and configure it in the Dataflow
 job.
 
-### Overriding Dataflow workers per shard/job
+### Overriding Dataflow workers per mySqlShard/job
 
 Currently, per job configurations are not supported in this terraform template.
 

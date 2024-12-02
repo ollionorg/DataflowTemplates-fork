@@ -26,10 +26,8 @@ import com.google.cloud.teleport.v2.cdc.dlq.StringDeadLetterQueueSanitizer;
 import com.google.cloud.teleport.v2.coders.FailsafeElementCoder;
 import com.google.cloud.teleport.v2.common.UncaughtExceptionLogger;
 import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
-import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
 import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.spanner.migrations.spanner.SpannerSchema;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.CassandraConfigFileReader;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SecretManagerAccessorImpl;
@@ -38,19 +36,10 @@ import com.google.cloud.teleport.v2.spanner.migrations.utils.ShardFileReader;
 import com.google.cloud.teleport.v2.templates.SpannerToSourceDb.Options;
 import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataChangeRecord;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
-import com.google.cloud.teleport.v2.templates.transforms.AssignShardIdFn;
-import com.google.cloud.teleport.v2.templates.transforms.ConvertChangeStreamErrorRecordToFailsafeElementFn;
-import com.google.cloud.teleport.v2.templates.transforms.ConvertDlqRecordToTrimmedShardedDataChangeRecordFn;
-import com.google.cloud.teleport.v2.templates.transforms.FilterRecordsFn;
-import com.google.cloud.teleport.v2.templates.transforms.PreprocessRecordsFn;
-import com.google.cloud.teleport.v2.templates.transforms.SourceWriterTransform;
-import com.google.cloud.teleport.v2.templates.transforms.UpdateDlqMetricsFn;
+import com.google.cloud.teleport.v2.templates.transforms.*;
 import com.google.cloud.teleport.v2.templates.utils.ShadowTableCreator;
 import com.google.cloud.teleport.v2.transforms.DLQWriteTransform;
 import com.google.cloud.teleport.v2.values.FailsafeElement;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineDebugOptions;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineWorkerPoolOptions;
@@ -66,11 +55,7 @@ import org.apache.beam.sdk.io.fs.ResolveOptions.StandardResolveOptions;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerAccessor;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerIO;
-import org.apache.beam.sdk.options.Default;
-import org.apache.beam.sdk.options.PipelineOptions;
-import org.apache.beam.sdk.options.PipelineOptionsFactory;
-import org.apache.beam.sdk.options.StreamingOptions;
-import org.apache.beam.sdk.options.ValueProvider;
+import org.apache.beam.sdk.options.*;
 import org.apache.beam.sdk.transforms.Flatten;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -80,6 +65,10 @@ import org.apache.beam.sdk.values.PCollectionList;
 import org.apache.beam.sdk.values.PCollectionTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /** This pipeline reads Spanner Change streams data and writes them to a source DB. */
 @Template(
@@ -421,7 +410,7 @@ public class SpannerToSourceDb {
     if ("mysql".equals(options.getSourceType())) {
       connectionPoolSizePerWorker = (int) (options.getMaxShardConnections() / maxNumWorkers);
     } else {
-      connectionPoolSizePerWorker = (int) (options.getMaxConnections() / maxNumWorkers);
+      connectionPoolSizePerWorker = (int) (options.getMaxShardConnections() / maxNumWorkers);
     }
 
     if (connectionPoolSizePerWorker < 1) {
@@ -512,7 +501,7 @@ public class SpannerToSourceDb {
                   "Logical shard id was not found, hence setting it to : " + Constants.DEFAULT_SHARD_ID);
         }
       }else{
-        throw new IllegalArgumentException("Not Supporting more than one shard for cassandra")
+        throw new IllegalArgumentException("Not Supporting more than one shard for cassandra");
       }
     }
     boolean isRegularMode = "regular".equals(options.getRunMode());

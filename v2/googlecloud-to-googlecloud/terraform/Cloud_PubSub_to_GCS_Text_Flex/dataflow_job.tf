@@ -71,13 +71,13 @@ variable "outputFilenameSuffix" {
 
 variable "outputShardTemplate" {
   type        = string
-  description = "Defines the unique/dynamic portion of each windowed file. Recommended: use the default (W-P-SS-of-NN). At runtime, 'W' is replaced with the window date range and 'P' is replaced with the pane info. Repeating sequences of the letters 'S' or 'N' are replaced with the mySqlShard number and number of mySqlShards respectively. The pipeline assumes a single file output and will produce the text of '00-of-01' by default."
+  description = "Defines the unique/dynamic portion of each windowed file. Recommended: use the default (W-P-SS-of-NN). At runtime, 'W' is replaced with the window date range and 'P' is replaced with the pane info. Repeating sequences of the letters 'S' or 'N' are replaced with the shard number and number of shards respectively. The pipeline assumes a single file output and will produce the text of '00-of-01' by default."
   default     = null
 }
 
 variable "numShards" {
   type        = string
-  description = "The maximum number of output mySqlShards produced when writing. A higher number of mySqlShards means higher throughput for writing to Cloud Storage, but potentially higher data aggregation cost across mySqlShards when processing output Cloud Storage files. Defaults to: 0."
+  description = "The maximum number of output shards produced when writing. A higher number of shards means higher throughput for writing to Cloud Storage, but potentially higher data aggregation cost across shards when processing output Cloud Storage files. Defaults to: 0."
   default     = null
 }
 

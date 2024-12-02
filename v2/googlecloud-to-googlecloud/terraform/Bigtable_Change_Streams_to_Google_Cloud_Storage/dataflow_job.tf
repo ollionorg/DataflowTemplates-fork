@@ -79,7 +79,7 @@ variable "outputBatchSize" {
 
 variable "outputShardsCount" {
   type        = number
-  description = "The maximum number of output mySqlShards produced when writing to Cloud Storage. A higher number of mySqlShards means higher throughput for writing to Cloud Storage, but potentially higher data aggregation cost across mySqlShards when processing output Cloud Storage files. Defaults to: 20."
+  description = "The maximum number of output shards produced when writing to Cloud Storage. A higher number of shards means higher throughput for writing to Cloud Storage, but potentially higher data aggregation cost across shards when processing output Cloud Storage files. Defaults to: 20."
   default     = null
 }
 

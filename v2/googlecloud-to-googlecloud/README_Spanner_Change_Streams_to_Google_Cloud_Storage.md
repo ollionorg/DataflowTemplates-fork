@@ -9,8 +9,8 @@ The pipeline groups Spanner change stream records into windows based on their
 timestamp, with each window representing a time duration whose length you can
 configure with this template. All records with timestamps belonging to the window
 are guaranteed to be in the window; there can be no late arrivals. You can also
-define a number of output mySqlShards; the pipeline creates one Cloud Storage output
-file per window per mySqlShard. Within an output file, records are unordered. Output
+define a number of output shards; the pipeline creates one Cloud Storage output
+file per window per shard. Within an output file, records are unordered. Output
 files can be written in either JSON or AVRO format, depending on the user
 configuration.
 
@@ -61,7 +61,7 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 * **windowDuration** : The window duration is the interval in which data is written to the output directory. Configure the duration based on the pipeline's throughput. For example, a higher throughput might require smaller window sizes so that the data fits into memory. Defaults to 5m (five minutes), with a minimum of 1s (one second). Allowed formats are: [int]s (for seconds, example: 5s), [int]m (for minutes, example: 12m), [int]h (for hours, example: 2h). (Example: 5m).
 * **rpcPriority** : The request priority for Spanner calls. The value must be HIGH, MEDIUM, or LOW. Defaults to HIGH.
 * **outputFilenamePrefix** : The prefix to place on each windowed file. (Example: output-). Defaults to: output.
-* **numShards** : The maximum number of output mySqlShards produced when writing. A higher number of mySqlShards means higher throughput for writing to Cloud Storage, but potentially higher data aggregation cost across mySqlShards when processing output Cloud Storage files. Defaults to: 20.
+* **numShards** : The maximum number of output shards produced when writing. A higher number of shards means higher throughput for writing to Cloud Storage, but potentially higher data aggregation cost across shards when processing output Cloud Storage files. Defaults to: 20.
 
 
 

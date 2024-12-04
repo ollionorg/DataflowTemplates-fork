@@ -42,11 +42,15 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 public final class JdbcDaoTest {
-  @Rule public final MockitoRule mockito = MockitoJUnit.rule();
+  @Rule
+  public final MockitoRule mockito = MockitoJUnit.rule();
 
-  @Mock private HikariDataSource mockHikariDataSource;
-  @Mock private Connection mockConnection;
-  @Mock private Statement mockStatement;
+  @Mock
+  private HikariDataSource mockHikariDataSource;
+  @Mock
+  private Connection mockConnection;
+  @Mock
+  private Statement mockStatement;
 
   @Before
   public void doBeforeEachTest() throws java.sql.SQLException {
@@ -72,5 +76,11 @@ public final class JdbcDaoTest {
     JdbcDao sqlDao = new JdbcDao("url", "user", jdbcConnectionHelper);
     sqlDao.write("sql");
     verify(mockStatement).executeUpdate(eq("sql"));
+  }
+
+  @Test(expected = ConnectionException.class)
+  public void testNullConnectionForRead() throws Exception {
+    JdbcDao sqlDao = new JdbcDao("url", "user", new JdbcConnectionHelper());
+    sqlDao.read("sql");
   }
 }

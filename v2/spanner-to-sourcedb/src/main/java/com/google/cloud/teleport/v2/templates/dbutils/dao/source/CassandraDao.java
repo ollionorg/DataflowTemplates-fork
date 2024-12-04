@@ -1,46 +1,59 @@
 package com.google.cloud.teleport.v2.templates.dbutils.dao.source;
 
-import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.google.cloud.teleport.v2.templates.dbutils.connection.IConnectionHelper;
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
+import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
+import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class CassandraDao implements IDao<String> {
+import java.util.List;
+
+public class CassandraDao implements IDao<DMLGeneratorResponse, ResultSet> {
+  private static final Logger LOG = LoggerFactory.getLogger(CassandraDao.class);
   private final String cassandraUrl;
+  private final String cassandraUser;
   private final IConnectionHelper connectionHelper;
+
 
   public CassandraDao(String cassandraUrl, String cassandraUser, IConnectionHelper connectionHelper) {
     this.cassandraUrl = cassandraUrl;
+    this.cassandraUser = cassandraUser;
     this.connectionHelper = connectionHelper;
   }
 
   @Override
-  public void write(String cqlStatement) throws Exception {
-    CqlSession session = null;
-
-    try {
-      session = (CqlSession) connectionHelper.getConnection(this.cassandraUrl);
+  public ResultSet execute(DMLGeneratorResponse dmlGeneratorResponse) throws Exception {
+    try (CqlSession session = (CqlSession) connectionHelper.getConnection(this.cassandraUrl)) { // Ensure connection is obtained
       if (session == null) {
         throw new ConnectionException("Connection is null");
       }
-      SimpleStatement statement = SimpleStatement.newInstance(cqlStatement);
-      session.execute(statement);
-    } finally {
-      if (session != null) {
-        session.close();
+      if (dmlGeneratorResponse instanceof PreparedStatementGeneratedResponse) {
+        PreparedStatementGeneratedResponse preparedStatementGeneratedResponse = (PreparedStatementGeneratedResponse) dmlGeneratorResponse;
+        try {
+          String dmlStatement = preparedStatementGeneratedResponse.getDmlStatement();
+          PreparedStatement preparedStatement = session.prepare(dmlStatement);
+
+          List<Object> values = preparedStatementGeneratedResponse.getValues();
+          if (dmlStatement.chars().filter(ch -> ch == '?').count() != values.size()) {
+            throw new IllegalArgumentException("Mismatch between placeholders and parameter count.");
+          }
+          BoundStatement boundStatement = preparedStatement.bind(values.toArray());
+          return session.execute(boundStatement);
+        } catch (Exception e) {
+          LOG.error(e.getMessage());
+        }
+
+      } else {
+        String simpleStatement = dmlGeneratorResponse.getDmlStatement();
+        return session.execute(simpleStatement);
       }
     }
-  }
-
-  public String read(String cqlStatement) throws Exception {
-
-    try (CqlSession session = (CqlSession) connectionHelper.getConnection(this.cassandraUrl)) {
-      if (session == null) {
-        throw new ConnectionException("Connection is null");
-      }
-      SimpleStatement statement = SimpleStatement.newInstance(cqlStatement);
-      return session.execute(statement).toString();
-    }
+    return null;
   }
 }

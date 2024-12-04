@@ -17,11 +17,15 @@ package com.google.cloud.teleport.v2.templates.dbutils.dao.source;
 
 import com.google.cloud.teleport.v2.templates.dbutils.connection.IConnectionHelper;
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
+import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
+import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class JdbcDao implements IDao<String> {
+import java.sql.*;
+
+public class JdbcDao implements IDao<DMLGeneratorResponse,ResultSet> {
+  private static final Logger LOG = LoggerFactory.getLogger(JdbcDao.class);
   private String sqlUrl;
   private String sqlUser;
 
@@ -34,28 +38,41 @@ public class JdbcDao implements IDao<String> {
   }
 
   @Override
-  public void write(String sqlStatement) throws SQLException, ConnectionException {
+  public ResultSet execute(DMLGeneratorResponse dmlGeneratorResponse) throws SQLException, ConnectionException {
     Connection connObj = null;
-    Statement statement = null;
-
     try {
-
       connObj = (Connection) connectionHelper.getConnection(this.sqlUrl + "/" + this.sqlUser);
       if (connObj == null) {
         throw new ConnectionException("Connection is null");
       }
-      statement = connObj.createStatement();
-      statement.executeUpdate(sqlStatement);
-
-    } finally {
-
-      if (statement != null) {
-        statement.close();
+      if (dmlGeneratorResponse instanceof PreparedStatementGeneratedResponse) {
+        PreparedStatementGeneratedResponse preparedStatementGeneratedResponse = (PreparedStatementGeneratedResponse) dmlGeneratorResponse;
+        try (PreparedStatement statement = connObj.prepareStatement(preparedStatementGeneratedResponse.getDmlStatement())) {
+          int index = 1;
+          for (Object value : preparedStatementGeneratedResponse.getValues()) {
+            statement.setObject(index++, value); // Bind values to placeholders
+          }
+          statement.executeUpdate();
+          return  null;
+        }
+      } else {
+        try (Statement statement = connObj.createStatement()) {
+          statement.executeUpdate(dmlGeneratorResponse.getDmlStatement());
+          return  null;
+        }
       }
+    } catch (SQLException e) {
+      LOG.error(e.getMessage());
+    } finally {
       if (connObj != null) {
-        connObj.close();
+        try {
+          connObj.close();
+        } catch (SQLException e) {
+          LOG.error(e.getMessage());
+        }
       }
     }
+    return null;
   }
 
   @Override

@@ -15,14 +15,12 @@
  */
 package com.google.cloud.teleport.v2.templates.dbutils.dao.source;
 
-public interface IDao<T> {
+public interface IDao<T,R> {
   /**
    * Executes a given write statement against the data source.
    *
-   * @param statement Query statement.
+   * @param dmlResponseGenerator Query statement.
    * @throws Exception If there is an error executing the statement.
    */
-  void write(T statement) throws Exception;
-
-  T read(T statement) throws Exception;
+  R execute(T dmlResponseGenerator) throws Exception;
 }

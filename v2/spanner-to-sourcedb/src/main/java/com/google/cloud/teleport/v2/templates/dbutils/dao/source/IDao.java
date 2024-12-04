@@ -23,7 +23,6 @@ public interface IDao<T> {
    * @throws Exception If there is an error executing the statement.
    */
   void write(T dmlResponseGenerator) throws Exception;
-}
 
-  T read(T statement) throws Exception;
+T read(T statement) throws Exception;
 }

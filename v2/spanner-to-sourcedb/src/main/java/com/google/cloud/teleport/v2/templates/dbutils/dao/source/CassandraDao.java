@@ -1,5 +1,6 @@
 package com.google.cloud.teleport.v2.templates.dbutils.dao.source;
 
+import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
@@ -51,4 +52,20 @@ public class CassandraDao implements IDao<DMLGeneratorResponse> {
           }
       }
   }
+
+    @Override
+    public DMLGeneratorResponse read(DMLGeneratorResponse statement) throws Exception {
+        return null;
+    }
+
+    public String read(String cqlStatement) throws Exception {
+
+        try (CqlSession session = (CqlSession) connectionHelper.getConnection(this.cassandraUrl)) {
+            if (session == null) {
+                throw new ConnectionException("Connection is null");
+            }
+            SimpleStatement statement = SimpleStatement.newInstance(cqlStatement);
+            return session.execute(statement).toString();
+        }
+    }
 }

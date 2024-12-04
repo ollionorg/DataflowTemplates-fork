@@ -22,12 +22,9 @@ import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedR
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
-public class JdbcDao implements IDao<DMLGeneratorResponse> {
+public class JdbcDao implements IDao<DMLGeneratorResponse,ResultSet> {
   private static final Logger LOG = LoggerFactory.getLogger(JdbcDao.class);
   private String sqlUrl;
   private String sqlUser;
@@ -41,7 +38,7 @@ public class JdbcDao implements IDao<DMLGeneratorResponse> {
   }
 
   @Override
-  public void write(DMLGeneratorResponse dmlGeneratorResponse) throws SQLException, ConnectionException {
+  public ResultSet execute(DMLGeneratorResponse dmlGeneratorResponse) throws SQLException, ConnectionException {
     Connection connObj = null;
     try {
       connObj = (Connection) connectionHelper.getConnection(this.sqlUrl + "/" + this.sqlUser);
@@ -56,10 +53,12 @@ public class JdbcDao implements IDao<DMLGeneratorResponse> {
             statement.setObject(index++, value); // Bind values to placeholders
           }
           statement.executeUpdate();
+          return  null;
         }
       } else {
         try (Statement statement = connObj.createStatement()) {
           statement.executeUpdate(dmlGeneratorResponse.getDmlStatement());
+          return  null;
         }
       }
     } catch (SQLException e) {
@@ -73,11 +72,6 @@ public class JdbcDao implements IDao<DMLGeneratorResponse> {
         }
       }
     }
-  }
-
-  // This is not required
-  @Override
-  public DMLGeneratorResponse read(DMLGeneratorResponse statement) throws Exception {
     return null;
   }
 }

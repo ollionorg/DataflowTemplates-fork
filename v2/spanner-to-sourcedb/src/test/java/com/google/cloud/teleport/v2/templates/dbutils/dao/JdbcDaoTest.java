@@ -25,10 +25,6 @@ import com.google.cloud.teleport.v2.templates.dbutils.connection.JdbcConnectionH
 import com.google.cloud.teleport.v2.templates.dbutils.dao.source.JdbcDao;
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 
-import com.google.cloud.teleport.v2.templates.dbutils.connection.JdbcConnectionHelper;
-import com.google.cloud.teleport.v2.templates.dbutils.dao.source.JdbcDao;
-import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
-
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.Statement;
@@ -64,7 +60,7 @@ public final class JdbcDaoTest {
   @Test(expected = ConnectionException.class)
   public void testNullConnection() throws java.sql.SQLException, ConnectionException {
     JdbcDao sqlDao = new JdbcDao("url", "user", new JdbcConnectionHelper());
-    sqlDao.write("sql");
+    sqlDao.execute("sql");
   }
 
   @Test
@@ -74,7 +70,7 @@ public final class JdbcDaoTest {
     JdbcConnectionHelper jdbcConnectionHelper = new JdbcConnectionHelper();
     jdbcConnectionHelper.setConnectionPoolMap(connectionPoolMap);
     JdbcDao sqlDao = new JdbcDao("url", "user", jdbcConnectionHelper);
-    sqlDao.write("sql");
+    sqlDao.execute("sql");
     verify(mockStatement).executeUpdate(eq("sql"));
   }
 

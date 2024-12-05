@@ -52,18 +52,17 @@ public class CassandraSourceMetadataTest {
         Map<String, Map<String, SourceColumn>> schemaMapMock = mock(Map.class);
         Map<String, SourceColumn> columnMapMock = mock(Map.class);
 
-        when(schemaMock.getSrcSchema()).thenReturn(schemaMapMock);
         when(schemaMapMock.get("test_table")).thenReturn(columnMapMock);
         when(schemaMapMock.containsKey("test_table")).thenReturn(true);
 
         SourceColumn sourceColumnMock = mock(SourceColumn.class);
-
-        when(columnMapMock.get("test_column")).thenReturn(sourceColumnMock);
         when(sourceColumnMock.getSourceType()).thenReturn("text");
         when(sourceColumnMock.isPrimaryKey()).thenReturn(true);
 
-        when(cassandraSourceMetadataMock.getMetadata()).thenReturn(schemaMock);
+        when(columnMapMock.get("test_column")).thenReturn(sourceColumnMock);
 
+        when(cassandraSourceMetadataMock.getMetadata()).thenReturn(schemaMock);
+        when(schemaMock.getSrcSchema()).thenReturn(schemaMapMock);
         SourceSchema schema = cassandraSourceMetadataMock.getMetadata();
         Map<String, Map<String, SourceColumn>> schemaMap = schema.getSrcSchema();
 

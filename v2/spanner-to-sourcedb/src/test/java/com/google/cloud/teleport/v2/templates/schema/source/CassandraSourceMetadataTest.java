@@ -48,27 +48,27 @@ public class CassandraSourceMetadataTest {
         when(rowMock.getString("type")).thenReturn("text");
         when(rowMock.getString("kind")).thenReturn("partition_key");
         SourceSchema schemaMock = mock(SourceSchema.class);
+        Map<String, Map<String, SourceColumn>> schemaMap = new HashMap<>();
 
-        Map<String, Map<String, SourceColumn>> schemaMapMock = mock(Map.class);
-        Map<String, SourceColumn> columnMapMock = mock(Map.class);
+        SourceColumn columnMock = mock(SourceColumn.class);
+        when(columnMock.getSourceType()).thenReturn("text");
+        when(columnMock.isPrimaryKey()).thenReturn(true);
 
-        when(schemaMapMock.get("test_table")).thenReturn(columnMapMock);
-        when(schemaMapMock.containsKey("test_table")).thenReturn(true);
+        // Create a map for the schema and set it up
+        Map<String, SourceColumn> columnMap = new HashMap<>();
+        columnMap.put("test_column", columnMock);
+        schemaMap.put("test_table", columnMap);
 
-        SourceColumn sourceColumnMock = mock(SourceColumn.class);
-        when(sourceColumnMock.getSourceType()).thenReturn("text");
-        when(sourceColumnMock.isPrimaryKey()).thenReturn(true);
-
-        when(columnMapMock.get("test_column")).thenReturn(sourceColumnMock);
+        // Mock getSrcSchema() to return the prepared map
+        when(schemaMock.getSrcSchema()).thenReturn(schemaMap);
 
         when(cassandraSourceMetadataMock.getMetadata()).thenReturn(schemaMock);
-        when(schemaMock.getSrcSchema()).thenReturn(schemaMapMock);
         SourceSchema schema = cassandraSourceMetadataMock.getMetadata();
-        Map<String, Map<String, SourceColumn>> schemaMap = schema.getSrcSchema();
+        Map<String, Map<String, SourceColumn>> currentSchemaMap = schema.getSrcSchema();
 
-        assertTrue(schemaMap.containsKey("test_table"));
-        assertTrue(schemaMap.get("test_table").containsKey("test_column"));
-        SourceColumn column = schemaMap.get("test_table").get("test_column");
+        assertTrue(currentSchemaMap.containsKey("test_table"));
+        assertTrue(currentSchemaMap.get("test_table").containsKey("test_column"));
+        SourceColumn column = currentSchemaMap.get("test_table").get("test_column");
         assertEquals("text", column.getSourceType());
         assertTrue(column.isPrimaryKey());
     }

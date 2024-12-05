@@ -230,7 +230,7 @@ class TypeHandler {
     public static List<Timestamp> handleTimestampArrayType(String colName, JSONObject valuesJson) {
         return valuesJson.getJSONArray(colName).toList().stream()
                 .map(value -> {
-                    return Timestamp.valueOf(parseDate(colName, value, "yyyy-MM-dd'T'HH:mm:ss.SSSZ").toString());
+                    return new Timestamp(parseDate(colName, value, "yyyy-MM-dd'T'HH:mm:ss.SSSX").getTime());
                 })
                 .collect(Collectors.toList());
     }

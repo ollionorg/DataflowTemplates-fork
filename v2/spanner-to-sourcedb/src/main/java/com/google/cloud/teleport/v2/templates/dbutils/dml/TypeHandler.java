@@ -25,19 +25,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 class TypeHandler {
-    private static Boolean handleCassandraBoolType(String colName, JSONObject valuesJson) {
+    public static Boolean handleCassandraBoolType(String colName, JSONObject valuesJson) {
         return valuesJson.getBoolean(colName);
     }
 
-    private static Float handleCassandraFloatType(String colName, JSONObject valuesJson) {
+    public static Float handleCassandraFloatType(String colName, JSONObject valuesJson) {
         return valuesJson.getBigDecimal(colName).floatValue();
     }
 
-    private static Double handleCassandraDoubleType(String colName, JSONObject valuesJson) {
+    public static Double handleCassandraDoubleType(String colName, JSONObject valuesJson) {
         return valuesJson.getBigDecimal(colName).doubleValue();
     }
 
-    private static ByteBuffer handleCassandraBlobType(String colName, JSONObject valuesJson) {
+    public static ByteBuffer handleCassandraBlobType(String colName, JSONObject valuesJson) {
         Object colValue = valuesJson.opt(colName);
         if (colValue == null) {
             return null;
@@ -60,11 +60,11 @@ class TypeHandler {
         return ByteBuffer.wrap(byteArray);
     }
 
-    private static Date handleCassandraDateType(String colName, JSONObject valuesJson) {
+    public static Date handleCassandraDateType(String colName, JSONObject valuesJson) {
         return handleCassandraGenericDateType(colName, valuesJson, "yyyy-MM-dd");
     }
 
-    private static Date handleCassandraTimestampType(String colName, JSONObject valuesJson) {
+    public static Date handleCassandraTimestampType(String colName, JSONObject valuesJson) {
         return handleCassandraGenericDateType(colName, valuesJson, "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     }
 
@@ -101,11 +101,11 @@ class TypeHandler {
         return date;
     }
 
-    private static String handleCassandraTextType(String colName, JSONObject valuesJson) {
+    public static String handleCassandraTextType(String colName, JSONObject valuesJson) {
         return valuesJson.optString(colName, null); // Get the value or null if the key is not found or the value is null
     }
 
-    private static UUID handleCassandraUuidType(String colName, JSONObject valuesJson) {
+    public static UUID handleCassandraUuidType(String colName, JSONObject valuesJson) {
         String uuidString = valuesJson.optString(colName, null); // Get the value or null if the key is not found or the value is null
 
         if (uuidString == null) {
@@ -116,15 +116,15 @@ class TypeHandler {
 
     }
 
-    private static Long handleCassandraBigintType(String colName, JSONObject valuesJson) {
+    public static Long handleCassandraBigintType(String colName, JSONObject valuesJson) {
         return valuesJson.getBigInteger(colName).longValue();
     }
 
-    private static Integer handleCassandraIntType(String colName, JSONObject valuesJson) {
+    public static Integer handleCassandraIntType(String colName, JSONObject valuesJson) {
         return valuesJson.getBigInteger(colName).intValue();
     }
 
-    private static List<Long> handleInt64ArrayType(String colName, JSONObject valuesJson) {
+    public static List<Long> handleInt64ArrayType(String colName, JSONObject valuesJson) {
         JSONArray jsonArray = valuesJson.getJSONArray(colName);
         List<Long> colValueList = new ArrayList<>();
 
@@ -136,44 +136,44 @@ class TypeHandler {
         return colValueList;
     }
 
-    private static Set<Long> handleInt64SetType(String colName, JSONObject valuesJson) {
+    public static Set<Long> handleInt64SetType(String colName, JSONObject valuesJson) {
         return new HashSet<>(handleInt64ArrayType(colName, valuesJson));
     }
 
-    private static List<Integer> handleInt64ArrayAsInt32Array(String colName, JSONObject valuesJson) {
+    public static List<Integer> handleInt64ArrayAsInt32Array(String colName, JSONObject valuesJson) {
         return handleInt64ArrayType(colName, valuesJson).stream().map(Long::intValue).collect(Collectors.toList());
     }
 
-    private static Set<Integer> handleInt64ArrayAsInt32Set(String colName, JSONObject valuesJson) {
+    public static Set<Integer> handleInt64ArrayAsInt32Set(String colName, JSONObject valuesJson) {
         return handleInt64ArrayType(colName, valuesJson).stream().map(Long::intValue).collect(Collectors.toSet());
     }
 
-    private static Set<String> handleStringArrayType(String colName, JSONObject valuesJson) {
+    public static Set<String> handleStringArrayType(String colName, JSONObject valuesJson) {
         return valuesJson.getJSONArray(colName).toList().stream()
                 .map(String::valueOf)
                 .collect(Collectors.toSet());
     }
 
-    private static List<String> handleStringSetType(String colName, JSONObject valuesJson) {
+    public static List<String> handleStringSetType(String colName, JSONObject valuesJson) {
         return valuesJson.getJSONArray(colName).toList().stream()
                 .map(String::valueOf)
                 .collect(Collectors.toList());
     }
 
     // Handler for ARRAY<Boolean> (also serves as Set<Boolean>)
-    private static List<Boolean> handleBoolArrayType(String colName, JSONObject valuesJson) {
+    public static List<Boolean> handleBoolArrayType(String colName, JSONObject valuesJson) {
         return valuesJson.getJSONArray(colName).toList().stream()
                 .map(obj -> obj instanceof String && Boolean.parseBoolean((String) obj))
                 .collect(Collectors.toList());
     }
 
-    private static Set<Boolean> handleBoolSetTypeString(String colName, JSONObject valuesJson) {
+    public static Set<Boolean> handleBoolSetTypeString(String colName, JSONObject valuesJson) {
         return valuesJson.getJSONArray(colName).toList().stream()
                 .map(obj -> obj instanceof String && Boolean.parseBoolean((String) obj))
                 .collect(Collectors.toSet());
     }
 
-    private static List<Double> handleFloat64ArrayType(String colName, JSONObject valuesJson) {
+    public static List<Double> handleFloat64ArrayType(String colName, JSONObject valuesJson) {
         return valuesJson.getJSONArray(colName).toList().stream()
                 .map(obj -> {
                     if (obj instanceof Number) {
@@ -191,7 +191,7 @@ class TypeHandler {
                 .collect(Collectors.toList());
     }
 
-    private static Set<Double> handleFloat64SetType(String colName, JSONObject valuesJson) {
+    public static Set<Double> handleFloat64SetType(String colName, JSONObject valuesJson) {
         return valuesJson.getJSONArray(colName).toList().stream()
                 .map(obj -> {
                     if (obj instanceof Number) {
@@ -209,25 +209,25 @@ class TypeHandler {
                 .collect(Collectors.toSet());
     }
 
-    private static List<Float> handleFloatArrayType(String colName, JSONObject valuesJson) {
+    public static List<Float> handleFloatArrayType(String colName, JSONObject valuesJson) {
         return handleFloat64ArrayType(colName, valuesJson).stream().map(Double::floatValue).collect(Collectors.toList());
     }
 
-    private static Set<Float> handleFloatSetType(String colName, JSONObject valuesJson) {
+    public static Set<Float> handleFloatSetType(String colName, JSONObject valuesJson) {
         return handleFloat64SetType(colName, valuesJson).stream().map(Double::floatValue).collect(Collectors.toSet());
     }
 
-    private static List<Date> handleDateArrayType(String colName, JSONObject valuesJson) {
+    public static List<Date> handleDateArrayType(String colName, JSONObject valuesJson) {
         return valuesJson.getJSONArray(colName).toList().stream()
                 .map(obj -> parseDate(colName, obj, "yyyy-MM-dd"))
                 .collect(Collectors.toList());
     }
 
-    private static Set<Date> handleDateSetType(String colName, JSONObject valuesJson) {
+    public static Set<Date> handleDateSetType(String colName, JSONObject valuesJson) {
         return new HashSet<>(handleDateArrayType(colName, valuesJson));
     }
 
-    private static List<Timestamp> handleTimestampArrayType(String colName, JSONObject valuesJson) {
+    public static List<Timestamp> handleTimestampArrayType(String colName, JSONObject valuesJson) {
         return valuesJson.getJSONArray(colName).toList().stream()
                 .map(value -> {
                     return Timestamp.valueOf(parseDate(colName, value, "yyyy-MM-dd'T'HH:mm:ss.SSSZ").toString());
@@ -235,11 +235,11 @@ class TypeHandler {
                 .collect(Collectors.toList());
     }
 
-    private static Set<Timestamp> handleTimestampSetType(String colName, JSONObject valuesJson) {
+    public static Set<Timestamp> handleTimestampSetType(String colName, JSONObject valuesJson) {
         return new HashSet<>(handleTimestampArrayType(colName, valuesJson));
     }
 
-    private static List<ByteBuffer> handleByteArrayType(String colName, JSONObject valuesJson) {
+    public static List<ByteBuffer> handleByteArrayType(String colName, JSONObject valuesJson) {
         return valuesJson.getJSONArray(colName).toList().stream()
                 .map(value -> {
                     return parseBlobType(colName, value);
@@ -247,7 +247,7 @@ class TypeHandler {
                 .collect(Collectors.toList());
     }
 
-    private static Set<ByteBuffer> handleByteSetType(String colName, JSONObject valuesJson) {
+    public static Set<ByteBuffer> handleByteSetType(String colName, JSONObject valuesJson) {
         return new HashSet<>(handleByteArrayType(colName, valuesJson));
     }
 }

@@ -120,6 +120,8 @@ public class AssignMySqlShardIdFnTest {
             "",
             "",
             "",
+                null,
+                "",
             10000L);
     List<String> columns =
         List.of("accountId", "accountName", "migration_shard_id", "accountNumber");
@@ -145,6 +147,8 @@ public class AssignMySqlShardIdFnTest {
             "",
             "",
             "",
+            null,
+            "",
             10000L);
     List<String> columns =
         List.of("accountId", "accountName", "migration_shard_id", "accountNumber", "missingColumn");
@@ -165,6 +169,8 @@ public class AssignMySqlShardIdFnTest {
             "skip",
             "",
             "",
+            "",
+            null,
             "",
             10000L);
 
@@ -198,6 +204,8 @@ public class AssignMySqlShardIdFnTest {
             "",
             "",
             "",
+                null,
+                "",
             10000L);
 
     record.setShard("shard1");
@@ -230,6 +238,8 @@ public class AssignMySqlShardIdFnTest {
             "",
             "",
             "",
+                null,
+                "",
             10000L);
 
     record.setShard("test");
@@ -256,6 +266,8 @@ public class AssignMySqlShardIdFnTest {
             customJarPath,
             shardingCustomClassName,
             "",
+                null,
+                "",
             10000L);
     assignShardIdFn.setShardIdFetcher(
         ShardingLogicImplFetcher.getShardingLogicImpl(
@@ -310,6 +322,8 @@ public class AssignMySqlShardIdFnTest {
             "",
             "",
             "",
+                null,
+                "",
             10000L);
 
     record.setShard("shard1");
@@ -344,6 +358,8 @@ public class AssignMySqlShardIdFnTest {
             "",
             "",
             "",
+                null,
+                "",
             10000L);
 
     record.setShard("shard1");
@@ -378,6 +394,8 @@ public class AssignMySqlShardIdFnTest {
             "",
             "",
             "",
+                null,
+                "",
             10000L);
     String keyStr = "tableName" + "_" + record.getMod().getKeysJson() + "_" + "skip";
     Long key = keyStr.hashCode() % 10000L;
@@ -405,6 +423,8 @@ public class AssignMySqlShardIdFnTest {
             "",
             "",
             "",
+                null,
+                "",
             10000L);
     String keyStr = "tableName" + "_" + record.getMod().getKeysJson() + "_" + "skip";
     Long key = keyStr.hashCode() % 10000L;
@@ -431,6 +451,8 @@ public class AssignMySqlShardIdFnTest {
             "",
             "",
             "",
+                null,
+                "",
             10000L);
     String keyStr = "tableName" + "_" + record.getMod().getKeysJson() + "_" + "skip";
     Long key = keyStr.hashCode() % 10000L;
@@ -457,6 +479,8 @@ public class AssignMySqlShardIdFnTest {
             "",
             "",
             "",
+                null,
+                "",
             10000L);
     String keyStr = "tableName" + "_" + record.getMod().getKeysJson() + "_" + "skip";
     Long key = keyStr.hashCode() % 10000L;
@@ -482,6 +506,8 @@ public class AssignMySqlShardIdFnTest {
             "",
             "",
             "",
+                null,
+                "",
             10000L);
 
     record.setShard("shard1");
@@ -519,6 +545,8 @@ public class AssignMySqlShardIdFnTest {
             "",
             "",
             "",
+                null,
+                "",
             10000L);
 
     record.setShard("shard1");

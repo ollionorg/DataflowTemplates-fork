@@ -18,6 +18,7 @@ package com.google.cloud.teleport.v2.templates.dbutils.processor;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
 import com.google.cloud.teleport.v2.templates.dbutils.connection.JdbcConnectionHelper;
@@ -37,7 +38,7 @@ import org.mockito.Mockito;
 public class SourceProcessorFactoryTest {
   @Test
   public void testCreateSourceProcessor_validSource() throws Exception {
-    List<MySqlShard> mySqlShards =
+    List<IShard> mySqlShards =
         Arrays.asList(
             new MySqlShard(
                 "shard1",
@@ -66,7 +67,7 @@ public class SourceProcessorFactoryTest {
 
   @Test(expected = UnsupportedSourceException.class)
   public void testCreateSourceProcessor_invalidSource() throws Exception {
-    List<MySqlShard> mySqlShards =
+    List<IShard> mySqlShards =
         Arrays.asList(
             new MySqlShard(
                 "shard1",

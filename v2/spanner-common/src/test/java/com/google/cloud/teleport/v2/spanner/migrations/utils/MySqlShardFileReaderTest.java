@@ -21,6 +21,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ public final class MySqlShardFileReaderTest {
   @Test
   public void shardFileReading() {
     ShardFileReader shardFileReader = new ShardFileReader(new SecretManagerAccessorImpl());
-    List<MySqlShard> mySqlShards = shardFileReader.getOrderedShardDetails("src/test/resources/shard.json");
+    List<IShard> mySqlShards = shardFileReader.getOrderedShardDetails("src/test/resources/shard.json");
     List<MySqlShard> expectedMySqlShards =
         Arrays.asList(
             new MySqlShard(
@@ -74,7 +75,7 @@ public final class MySqlShardFileReaderTest {
         .thenReturn("secretC");
 
     ShardFileReader shardFileReader = new ShardFileReader(secretManagerAccessorMockImpl);
-    List<MySqlShard> mySqlShards =
+    List<IShard> mySqlShards =
         shardFileReader.getOrderedShardDetails("src/test/resources/shard-with-secret.json");
     List<MySqlShard> expectedMySqlShards =
         Arrays.asList(
@@ -148,7 +149,7 @@ public final class MySqlShardFileReaderTest {
     String testConnectionProperties =
         "useUnicode=yes&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull";
     ShardFileReader shardFileReader = new ShardFileReader(new SecretManagerAccessorImpl());
-    List<MySqlShard> mySqlShards =
+    List<IShard> mySqlShards =
         shardFileReader.readForwardMigrationShardingConfig(
             "src/test/resources/bulk-migration-mySqlShards.json");
     MySqlShard mySqlShard1 =
@@ -188,7 +189,7 @@ public final class MySqlShardFileReaderTest {
     when(secretManagerAccessorMockImpl.getSecret("projects/123/secrets/secretB/versions/latest"))
         .thenReturn("secretB");
     ShardFileReader shardFileReader = new ShardFileReader(secretManagerAccessorMockImpl);
-    List<MySqlShard> mySqlShards =
+    List<IShard> mySqlShards =
         shardFileReader.readForwardMigrationShardingConfig(
             "src/test/resources/bulk-migration-mySqlShards-secret.json");
     MySqlShard mySqlShard1 =

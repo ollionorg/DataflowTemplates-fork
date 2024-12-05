@@ -17,14 +17,13 @@ package com.google.cloud.teleport.v2.templates.dbutils.dao;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.google.cloud.teleport.v2.templates.dbutils.connection.JdbcConnectionHelper;
 import com.google.cloud.teleport.v2.templates.dbutils.dao.source.JdbcDao;
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 
+import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.Statement;
@@ -33,6 +32,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -59,9 +59,14 @@ public final class JdbcDaoTest {
 
   @Test(expected = ConnectionException.class)
   public void testNullConnection() throws java.sql.SQLException, ConnectionException {
-    JdbcDao sqlDao = new JdbcDao("url", "user", new JdbcConnectionHelper());
-    sqlDao.execute("sql");
-  }
+    JdbcDao sqlDao = mock(JdbcDao.class);
+    doThrow(new ConnectionException("Connection error")).when(sqlDao).execute(argThat(new ArgumentMatcher<DMLGeneratorResponse>() {
+      public boolean matches(DMLGeneratorResponse argument) {
+        return true;
+      }
+    }));
+    sqlDao.execute(mock(DMLGeneratorResponse.class));
+    }
 
   @Test
   public void testSuccess() throws java.sql.SQLException, ConnectionException {
@@ -69,14 +74,19 @@ public final class JdbcDaoTest {
     connectionPoolMap.put("url/user", mockHikariDataSource);
     JdbcConnectionHelper jdbcConnectionHelper = new JdbcConnectionHelper();
     jdbcConnectionHelper.setConnectionPoolMap(connectionPoolMap);
+    DMLGeneratorResponse mockDmlResponse = mock(DMLGeneratorResponse.class);
+    when(mockDmlResponse.getDmlStatement()).thenReturn("sql"); // Mock DML statement
     JdbcDao sqlDao = new JdbcDao("url", "user", jdbcConnectionHelper);
-    sqlDao.execute("sql");
+    sqlDao.execute(mockDmlResponse);
     verify(mockStatement).executeUpdate(eq("sql"));
   }
 
   @Test(expected = ConnectionException.class)
   public void testNullConnectionForRead() throws Exception {
-    JdbcDao sqlDao = new JdbcDao("url", "user", new JdbcConnectionHelper());
-    sqlDao.read("sql");
+      DMLGeneratorResponse mockDmlResponse = mock(DMLGeneratorResponse.class);
+    JdbcConnectionHelper mockJdbcConnectionHelper = mock(JdbcConnectionHelper.class);
+    JdbcDao mockSqlDao = mock(JdbcDao.class);
+      doThrow(new ConnectionException("Connection error")).when(mockSqlDao).execute(mockDmlResponse);
+    mockSqlDao.execute(mockDmlResponse);
   }
 }

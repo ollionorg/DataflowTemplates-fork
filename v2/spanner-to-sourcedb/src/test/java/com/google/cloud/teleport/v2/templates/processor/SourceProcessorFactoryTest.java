@@ -18,6 +18,7 @@ package com.google.cloud.teleport.v2.templates.processor;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
 import java.util.Arrays;
@@ -29,6 +30,7 @@ import com.google.cloud.teleport.v2.templates.dbutils.dao.source.JdbcDao;
 import com.google.cloud.teleport.v2.templates.dbutils.dml.MySQLDMLGenerator;
 import com.google.cloud.teleport.v2.templates.dbutils.processor.SourceProcessor;
 import com.google.cloud.teleport.v2.templates.dbutils.processor.SourceProcessorFactory;
+import com.google.cloud.teleport.v2.templates.exceptions.UnsupportedSourceException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,7 +41,7 @@ import org.mockito.Mockito;
 public class SourceProcessorFactoryTest {
   @Test
   public void testCreateSourceProcessor_validSource() throws Exception {
-    List<MySqlShard> mySqlShards =
+    List<IShard> mySqlShards =
         Arrays.asList(
             new MySqlShard(
                 "shard1",
@@ -66,9 +68,9 @@ public class SourceProcessorFactoryTest {
     Assert.assertTrue(processor.getSourceDaoMap().get("shard1") instanceof JdbcDao);
   }
 
-  @Test(expected = InvalidSourceException.class)
+  @Test(expected = UnsupportedSourceException.class)
   public void testCreateSourceProcessor_invalidSource() throws Exception {
-    List<MySqlShard> mySqlShards =
+    List<IShard> mySqlShards =
         Arrays.asList(
             new MySqlShard(
                 "shard1",

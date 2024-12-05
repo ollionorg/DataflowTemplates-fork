@@ -80,7 +80,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
 
   private final Schema schema;
   private final String sourceDbTimezoneOffset;
-  private final List<IShard> iShards;
+  private final List<IShard> shards;
   private final SpannerConfig spannerConfig;
   private transient SpannerDao spannerDao;
   private final Ddl ddl;
@@ -94,7 +94,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
 
 
   public SourceWriterFn(
-      List<IShard> iShards,
+      List<IShard> shards,
       Schema schema,
       SpannerConfig spannerConfig,
       String sourceDbTimezoneOffset,
@@ -107,7 +107,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
 
     this.schema = schema;
     this.sourceDbTimezoneOffset = sourceDbTimezoneOffset;
-    this.iShards = iShards;
+    this.shards = shards;
     this.spannerConfig = spannerConfig;
     this.ddl = ddl;
     this.shadowTablePrefix = shadowTablePrefix;
@@ -137,7 +137,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
     mapper = new ObjectMapper();
     mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
     sourceProcessor =
-        SourceProcessorFactory.createSourceProcessor(source, iShards, maxThreadPerDataflowWorker);
+        SourceProcessorFactory.createSourceProcessor(source, shards, maxThreadPerDataflowWorker);
     spannerDao = new SpannerDao(spannerConfig);
   }
 

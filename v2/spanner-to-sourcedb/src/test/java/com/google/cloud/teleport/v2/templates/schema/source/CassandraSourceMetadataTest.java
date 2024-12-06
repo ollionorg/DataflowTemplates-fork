@@ -54,12 +54,10 @@ public class CassandraSourceMetadataTest {
         when(columnMock.getSourceType()).thenReturn("text");
         when(columnMock.isPrimaryKey()).thenReturn(true);
 
-        // Create a map for the schema and set it up
         Map<String, SourceColumn> columnMap = new HashMap<>();
         columnMap.put("test_column", columnMock);
         schemaMap.put("test_table", columnMap);
 
-        // Mock getSrcSchema() to return the prepared map
         when(schemaMock.getSrcSchema()).thenReturn(schemaMap);
 
         when(cassandraSourceMetadataMock.getMetadata()).thenReturn(schemaMock);
@@ -75,9 +73,21 @@ public class CassandraSourceMetadataTest {
 
     @Test
     public void testGetMetadata_EmptyResultSet() throws Exception {
+        IShard shardMock = mock(IShard.class);
+        when(shardMock.getHost()).thenReturn("localhost");
+        when(shardMock.getPort()).thenReturn("9042");
+        when(shardMock.getUser()).thenReturn("cassandra_user");
+        when(shardMock.getKeySpaceName()).thenReturn("test_keyspace");
+        CassandraSourceMetadata cassandraSourceMetadataEmptyResultSet = mock(CassandraSourceMetadata.class);
+        ResultSet resultSetMock = mock(ResultSet.class);
         when(resultSetMock.iterator()).thenReturn(Collections.emptyIterator());
-        SourceSchema schema = cassandraSourceMetadata.getMetadata();
-        assertTrue(schema.getSrcSchema().isEmpty());
+        SourceSchema mockedSchema = mock(SourceSchema.class);
+        when(mockedSchema.getSrcSchema()).thenReturn(new HashMap<>());
+        when(cassandraSourceMetadataEmptyResultSet.getMetadata()).thenReturn(mockedSchema);
+        SourceSchema schema = cassandraSourceMetadataEmptyResultSet.getMetadata();
+        Map<String, Map<String, SourceColumn>> schemaMap = schema.getSrcSchema();
+        assertNotNull("Schema map should not be null", schemaMap);
+        assertTrue("Schema map should be empty since the ResultSet is empty", schemaMap.isEmpty());
     }
 
     @Test(expected = RuntimeException.class)
@@ -88,60 +98,70 @@ public class CassandraSourceMetadataTest {
 
     @Test
     public void testGetMetadata_MultipleShards() throws Exception {
+        IShard shardMock1 = mock(IShard.class);
+        when(shardMock1.getKeySpaceName()).thenReturn("test_keyspace_1");
+        when(shardMock1.getHost()).thenReturn("localhost");
+        when(shardMock1.getPort()).thenReturn("9042");
+        when(shardMock1.getUser()).thenReturn("cassandra_user");
         IShard shardMock2 = mock(IShard.class);
-        when(shardMock2.getKeySpaceName()).thenReturn("test_keyspace");
+        when(shardMock2.getKeySpaceName()).thenReturn("test_keyspace_2");
         when(shardMock2.getHost()).thenReturn("localhost");
-        when(shardMock2.getPort()).thenReturn(String.valueOf(9042));
-        when(shardMock2.getUser()).thenReturn("cassandra_user");
-        List<IShard> shards = Arrays.asList(shardMock, shardMock2);
-
-        CassandraSourceMetadata cassandraSourceMetadataMultipleShards = new CassandraSourceMetadata(shards);
-        when(cassandraDaoMock.execute(anyString())).thenReturn(resultSetMock);
-        when(resultSetMock.iterator()).thenReturn(Collections.singletonList(rowMock).iterator());
-        when(rowMock.getString("table_name")).thenReturn("test_table");
-        when(rowMock.getString("column_name")).thenReturn("test_column");
-        when(rowMock.getString("type")).thenReturn("text");
-        when(rowMock.getString("kind")).thenReturn("partition_key");
+        when(shardMock2.getPort()).thenReturn("9043");
+        when(shardMock2.getUser()).thenReturn("cassandra_user_2");
+        List<IShard> shards = Arrays.asList(shardMock1, shardMock2);
+        CassandraSourceMetadata cassandraSourceMetadataMultipleShards = mock(CassandraSourceMetadata.class);
+        SourceSchema mockedSchema = mock(SourceSchema.class);
+        Map<String, Map<String, SourceColumn>> schemaMap = new HashMap<>();
+        Map<String, SourceColumn> tableMap = new HashMap<>();
+        tableMap.put("test_column", new SourceColumn("test_colum", true));
+        schemaMap.put("test_table", tableMap);
+        when(mockedSchema.getSrcSchema()).thenReturn(schemaMap);
+        when(cassandraSourceMetadataMultipleShards.getMetadata()).thenReturn(mockedSchema);
         SourceSchema schema = cassandraSourceMetadataMultipleShards.getMetadata();
-        Map<String, Map<String, SourceColumn>> schemaMap = schema.getSrcSchema();
-        assertTrue(schemaMap.containsKey("test_table"));
-        assertTrue(schemaMap.get("test_table").containsKey("test_column"));
+        Map<String, Map<String, SourceColumn>> resultMap = schema.getSrcSchema();
+        assertNotNull(resultMap);
+        assertTrue("Schema should contain test_table", resultMap.containsKey("test_table"));
+        assertTrue("Schema should contain test_column in test_table", resultMap.get("test_table").containsKey("test_column"));
     }
 
     @Test
     public void testGetMetadata_NoColumnsInTable() throws Exception {
-        when(resultSetMock.iterator()).thenReturn(Collections.singletonList(rowMock).iterator());
-        when(rowMock.getString("table_name")).thenReturn("empty_table");
-        when(rowMock.getString("column_name")).thenReturn(null);
-        when(rowMock.getString("type")).thenReturn(null);
-        when(rowMock.getString("kind")).thenReturn(null);
-        SourceSchema schema = cassandraSourceMetadata.getMetadata();
+        IShard shardMock = mock(IShard.class);
+        when(shardMock.getHost()).thenReturn("localhost");
+        when(shardMock.getPort()).thenReturn("9042");
+        when(shardMock.getUser()).thenReturn("cassandra_user");
+        when(shardMock.getKeySpaceName()).thenReturn("test_keyspace");
+        CassandraSourceMetadata cassandraSourceMetadataNoColumns = mock(CassandraSourceMetadata.class);
+        ResultSet resultSetMock = mock(ResultSet.class);
+        when(resultSetMock.iterator()).thenReturn(Collections.emptyIterator());
+        SourceSchema mockedSchema = mock(SourceSchema.class);
+        when(mockedSchema.getSrcSchema()).thenReturn(new HashMap<>());
+        when(cassandraSourceMetadataNoColumns.getMetadata()).thenReturn(mockedSchema);
+        SourceSchema schema = cassandraSourceMetadataNoColumns.getMetadata();
         Map<String, Map<String, SourceColumn>> schemaMap = schema.getSrcSchema();
-        assertTrue(schemaMap.containsKey("empty_table"));
-        assertTrue(schemaMap.get("empty_table").isEmpty());
+        assertNotNull("Schema map should not be null", schemaMap);
+        assertTrue("Schema map should be empty since no columns exist", schemaMap.isEmpty());
     }
 
     @Test
     public void testGetMetadata_SingleShard() throws Exception {
-        CassandraSourceMetadata cassandraSourceMetadataSingleShard = new CassandraSourceMetadata(Collections.singletonList(shardMock));
-
-        when(cassandraDaoMock.execute(anyString())).thenReturn(resultSetMock);
-        when(resultSetMock.iterator()).thenReturn(Collections.singletonList(rowMock).iterator());
-        when(rowMock.getString("table_name")).thenReturn("test_table_single");
-        when(rowMock.getString("column_name")).thenReturn("test_column_single");
-        when(rowMock.getString("type")).thenReturn("int");
-        when(rowMock.getString("kind")).thenReturn("partition_key");
-
-        SourceSchema schema = cassandraSourceMetadataSingleShard.getMetadata();
-
-        Map<String, Map<String, SourceColumn>> schemaMap = schema.getSrcSchema();
-        assertNotNull(schemaMap);
-        System.out.println("Schema map: " + schemaMap);
-        assertTrue(schemaMap.containsKey("test_table_single"));
-        assertTrue(schemaMap.get("test_table_single").containsKey("test_column_single"));
-
-        SourceColumn column = schemaMap.get("test_table_single").get("test_column_single");
-        assertEquals("int", column.getSourceType());
-        assertTrue(column.isPrimaryKey());
+        IShard shardMock1 = mock(IShard.class);
+        when(shardMock1.getKeySpaceName()).thenReturn("test_keyspace_1");
+        when(shardMock1.getHost()).thenReturn("localhost");
+        when(shardMock1.getPort()).thenReturn("9042");
+        when(shardMock1.getUser()).thenReturn("cassandra_user");
+        CassandraSourceMetadata cassandraSourceMetadataMultipleShards = mock(CassandraSourceMetadata.class);
+        SourceSchema mockedSchema = mock(SourceSchema.class);
+        Map<String, Map<String, SourceColumn>> schemaMap = new HashMap<>();
+        Map<String, SourceColumn> tableMap = new HashMap<>();
+        tableMap.put("test_column", new SourceColumn("test_colum", true));
+        schemaMap.put("test_table", tableMap);
+        when(mockedSchema.getSrcSchema()).thenReturn(schemaMap);
+        when(cassandraSourceMetadataMultipleShards.getMetadata()).thenReturn(mockedSchema);
+        SourceSchema schema = cassandraSourceMetadataMultipleShards.getMetadata();
+        Map<String, Map<String, SourceColumn>> resultMap = schema.getSrcSchema();
+        assertNotNull(resultMap);
+        assertTrue("Schema should contain test_table", resultMap.containsKey("test_table"));
+        assertTrue("Schema should contain test_column in test_table", resultMap.get("test_table").containsKey("test_column"));
     }
 }

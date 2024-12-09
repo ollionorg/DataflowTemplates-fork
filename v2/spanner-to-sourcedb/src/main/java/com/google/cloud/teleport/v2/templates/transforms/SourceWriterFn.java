@@ -80,7 +80,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
 
   private final Schema schema;
   private final String sourceDbTimezoneOffset;
-  private final List<IShard> shards;
+  private final List<IShard> iShards;
   private final SpannerConfig spannerConfig;
   private transient SpannerDao spannerDao;
   private final Ddl ddl;
@@ -89,12 +89,9 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
   private final int maxThreadPerDataflowWorker;
   private final String source;
   private SourceProcessor sourceProcessor;
-  private transient Cluster cluster;
-  private transient Session session;
-
 
   public SourceWriterFn(
-      List<IShard> shards,
+      List<IShard> iShards,
       Schema schema,
       SpannerConfig spannerConfig,
       String sourceDbTimezoneOffset,

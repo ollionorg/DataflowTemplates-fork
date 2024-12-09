@@ -15,6 +15,7 @@
  */
 package com.google.cloud.teleport.v2.templates.models;
 
+import com.google.cloud.teleport.v2.spanner.migrations.cassandra.CassandraConfig;
 import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 
 import java.util.List;

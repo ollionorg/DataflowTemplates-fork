@@ -34,7 +34,7 @@ These steps are achieved by the Spanner to SourceDb dataflow template.
 
 #### Consistency guarantees
 
-The pipeline guarantees consistency at a primary key level. The pipeline creates shadow tables in Cloud Spanner, which contain the Spanner commit timestamp of the latest record that was successfully written on the mySqlShard for that table. The writes are guaranteed to be consistent up-to this commit timestamp for the given primary key.
+The pipeline guarantees consistency at a primary key level. The pipeline creates shadow tables in Cloud Spanner, which contain the Spanner commit timestamp of the latest record that was successfully written on the shard for that table. The writes are guaranteed to be consistent up-to this commit timestamp for the given primary key.
 
 However, there is no order maintained across tables or even across various primary keys in the same table. This helps achieve faster replication.
 
@@ -67,9 +67,9 @@ A few prerequisites must be considered before starting with reverse replication.
 
 1. Ensure network connectivity between the source database and your GCP project, where your Dataflow jobs will run.
   - Allowlist Dataflow worker IPs on the MySQL instance so that they can access the MySQL IPs.
-  - Check that the MySQL credentials are correctly specified in the [source mySqlShards file](#sample-source-mySqlShards-file).
+  - Check that the MySQL credentials are correctly specified in the [source shards file](#sample-source-shards-file).
   - Check that the MySQL server is up.
-  - The MySQL user configured in the [source mySqlShards file](#sample-source-mySqlShards-file) should have [INSERT](https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_insert), [UPDATE](https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_update) and [DELETE](https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_delete) privileges on the database.
+  - The MySQL user configured in the [source shards file](#sample-source-shards-file) should have [INSERT](https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_insert), [UPDATE](https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_update) and [DELETE](https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_delete) privileges on the database.
 2. Ensure that Dataflow permissions are present.[Basic permissions](https://cloud.google.com/dataflow/docs/guides/templates/using-flex-templates#before_you_begin:~:text=Grant%20roles%20to%20your%20Compute%20Engine%20default%20service%20account.%20Run%20the%20following%20command%20once%20for%20each%20of%20the%20following%20IAM%20roles%3A%20roles/dataflow.admin%2C%20roles/dataflow.worker%2C%20roles/bigquery.dataEditor%2C%20roles/pubsub.editor%2C%20roles/storage.objectAdmin%2C%20and%20roles/artifactregistry.reader) and [Flex template permissions](https://cloud.google.com/dataflow/docs/guides/templates/configuring-flex-templates#permissions).
 3. Ensure that the port 12345 is open for communication among the Dataflow worker VMs.Please refer the Dataflow firewall [documentation](https://cloud.google.com/dataflow/docs/guides/routes-firewall#firewall_rules) for more.
 4. Ensure the compute engine service account has the following permission:
@@ -82,9 +82,9 @@ A few prerequisites must be considered before starting with reverse replication.
 6. Ensure that gcloud authentication is done,refer [here](https://cloud.google.com/spanner/docs/getting-started/set-up#set_up_authentication_and_authorization).
 7. Ensure that the target Spanner instance is ready.
 8. Ensure that that [session file](https://googlecloudplatform.github.io/spanner-migration-tool/reports.html#session-file-ending-in-sessionjson) is uploaded to GCS (this requires a schema conversion to be done).
-9. [Source mySqlShards file](./RunnigReverseReplication.md#sample-sourceshards-file) already uploaded to GCS.
+9. [Source shards file](./RunnigReverseReplication.md#sample-sourceshards-file) already uploaded to GCS.
 10. Resources needed for reverse replication incur cost. Make sure to read [cost](#cost).
-11. Reverse replication uses mySqlShard identifier column per table to route the Spanner records to a given source mySqlShard.The column identified as the sharding column needs to be selected via Spanner Migration Tool when performing migration.The value of this column should be the logicalShardId value specified in the [source mySqlShard file](#sample-source-mySqlShards-file).In the event that the mySqlShard identifier column is not an existing column,the application code needs to be changed to populate this mySqlShard identifier column when writing to Spanner. Or use a custom mySqlShard identifier plugin to supply the mySqlShard identifier.
+11. Reverse replication uses shard identifier column per table to route the Spanner records to a given source shard.The column identified as the sharding column needs to be selected via Spanner Migration Tool when performing migration.The value of this column should be the logicalShardId value specified in the [source shard file](#sample-source-shards-file).In the event that the shard identifier column is not an existing column,the application code needs to be changed to populate this shard identifier column when writing to Spanner. Or use a custom shard identifier plugin to supply the shard identifier.
 12. The reverse replication pipeline uses GCS for dead letter queue handling. Ensure that the DLQ directory exists in GCS.
 13. Create PubSub notification on the 'retry' folder of the DLQ directory. For this, create a [PubSub topic](https://cloud.google.com/pubsub/docs/create-topic), create a [PubSub subscription](https://cloud.google.com/pubsub/docs/create-subscription) for that topic. Configure [GCS notification](https://cloud.google.com/storage/docs/reporting-changes#command-line). The resulting subscription should be supplied as the dlqGcsPubSubSubscription Dataflow input parameter.
 
@@ -126,27 +126,27 @@ A few prerequisites must be considered before starting with reverse replication.
   --subnetwork=https://www.googleapis.com/compute/v1/projects/<project name>/regions/<region name>/subnetworks/<subnetwork name>
   ```
 
-### Sample source mySqlShards File
+### Sample source shards File
 
-This file contains meta data regarding the source MYSQL mySqlShards, which is used to connect to them. This should be present even if there is a single source database mySqlShard.
+This file contains meta data regarding the source MYSQL shards, which is used to connect to them. This should be present even if there is a single source database shard.
 The database user password should be kept in [Secret Manager](#https://cloud.google.com/security/products/secret-manager) and it's URI needs to be specified in the file.
 The file should be a list of JSONs as:
 
 ```json
 [
     {
-    "logicalShardId": "mySqlShard1",
+    "logicalShardId": "shard1",
     "host": "10.11.12.13",
     "user": "root",
-    "secretManagerUri":"projects/123/secrets/rev-cmek-cred-mySqlShard1/versions/latest",
+    "secretManagerUri":"projects/123/secrets/rev-cmek-cred-shard1/versions/latest",
     "port": "3306",
     "dbName": "db1"
     },
     {
-    "logicalShardId": "mySqlShard2",
+    "logicalShardId": "shard2",
     "host": "10.11.12.14",
     "user": "root",
-    "secretManagerUri":"projects/123/secrets/rev-cmek-cred-mySqlShard2/versions/latest",
+    "secretManagerUri":"projects/123/secrets/rev-cmek-cred-shard2/versions/latest",
     "port": "3306",
     "dbName": "db2"
     }
@@ -179,12 +179,12 @@ In addition, there are following application metrics exposed by the job:
 
 | Metric Name                           | Description                                                                                                                      |
 |---------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
-| custom_shard_id_impl_latency_ms | Time taken for the execution of custom mySqlShard identifier logic. |
+| custom_shard_id_impl_latency_ms | Time taken for the execution of custom shard identifier logic. |
 | data_record_count | The number of change stream records read. |
 | element_requeued_for_retry_count | Relevant for retryDLQ run mode, when the record gets enqueded back to severe folder for retry. |
 | elementsReconsumedFromDeadLetterQueue | The number of records read from the retry folder of DLQ directory. |
-| records_written_to_source_\<logical mySqlShard name\> | Number of records successfully written for the mySqlShard. |
-| replication_lag_in_seconds_\<logical mySqlShard name\>| Replication lag min,max and count value for the mySqlShard.|
+| records_written_to_source_\<logical shard name\> | Number of records successfully written for the shard. |
+| replication_lag_in_seconds_\<logical shard name\>| Replication lag min,max and count value for the shard.|
 | retryable_record_count | The number of records that are up for retry. |
 | severe_error_count | The number of permanent errors. |
 | skipped_record_count | The count of records that were skipped from reverse replication. |
@@ -243,10 +243,10 @@ In this case, check if you observe the following:
 Records of below nature are dropped from reverse replication. Check the Dataflow logs to see if they are dropped:
 
 1. Records which are forward migrated.
-2. Shard Id based routing could not be performed since the mySqlShard id value could not be determined.
+2. Shard Id based routing could not be performed since the shard id value could not be determined.
 3. The record was deleted on Cloud Spanner and the deleted record was removed from Cloud Spanner due to lapse of retention period by the time the record was to be reverse replicated.
 4. Check for issues in the dataflow job. This can include scaling issues, CPU utilization being more than 70% consistently. This can be checked via [CPU utilization](https://cloud.google.com/dataflow/docs/guides/using-monitoring-intf#cpu-use) section on the Dataflow job UI.Check for any errors in the jobor worker logs which could indicate restarts. Sometimes a worker might restart causing a delay in record processing. The CPU utilization would show multiple workers during the restart period. The number of workers could also be viewed via [here](https://cloud.google.com/dataflow/docs/guides/using-monitoring-intf#autoscaling).
-5. When working with session file based mySqlShard identification logic, if the table of the change record does not exist in the session file, such records are written to skip directory and not reverse replicated.
+5. When working with session file based shard identification logic, if the table of the change record does not exist in the session file, such records are written to skip directory and not reverse replicated.
 
 Check the Dataflow logs to see if records are being dropped. This can happen for records for which primary key cannot be determined on the source database. This can happen when:
 
@@ -340,7 +340,7 @@ To check if there are worker restarts - in the Dataflow UI, navigate to the Job 
 
 1. Count the number of rows in Spanner and source databae - this may take long, but is it the only definitive way. If the reverse replication is still going on - the counts would not match due to replication lag - and an acceptable RPO should be considered to cut-back.
 
-2. If the count of records is not possible - check the DataWatermark of the Write to SourceDb stage. This gives a rough estimate of the lag between Spanner and Source. Consider taking some buffer - say 5 minutes and add this to the lag. If this lag is acceptable - perform the cutback else wait for the pipeline to catchup. In addition to the DataWatermark, also check the DataFreshness and the mean replication lag for the mySqlShards, and once it is under acceptable RPO, cut-back can be done. Querying these metrics is listed in the [metrics](#metrics-for-dataflow-job) section.
+2. If the count of records is not possible - check the DataWatermark of the Write to SourceDb stage. This gives a rough estimate of the lag between Spanner and Source. Consider taking some buffer - say 5 minutes and add this to the lag. If this lag is acceptable - perform the cutback else wait for the pipeline to catchup. In addition to the DataWatermark, also check the DataFreshness and the mean replication lag for the shards, and once it is under acceptable RPO, cut-back can be done. Querying these metrics is listed in the [metrics](#metrics-for-dataflow-job) section.
 Also, [alerts](https://cloud.google.com/monitoring/alerts) can be set up when the replciation lag, DataFreshness or DataWatermarks cross a threshold to take debugging actions.
 
 ### What to do in case of pause and resume scenarios
@@ -383,7 +383,7 @@ The Dataflow jobs can be customized. Some use cases could be:
 
 1. To customize the logic to filter records from reverse replication.
 2. To handle some custom reverse transformation scenarios.
-3. To customize mySqlShard level routing.
+3. To customize shard level routing.
 
 To customize, checkout the open source template, add the custom logic, build and launch the open source template.
 
@@ -392,13 +392,13 @@ Refer to [Spanner to SourceDb template](https://github.com/GoogleCloudPlatform/D
 
 ### Shard routing customization
 
-In order to make it easier for users to customize the mySqlShard routing logic, the template accepts a GCS path that points to a custom jar and another input parameter that accepts the custom class name, which are used to invoke custom logic to perform mySqlShard identification.
+In order to make it easier for users to customize the shard routing logic, the template accepts a GCS path that points to a custom jar and another input parameter that accepts the custom class name, which are used to invoke custom logic to perform shard identification.
 
 Steps to perfrom customization:
-1. Write custom mySqlShard id fetcher logic [CustomShardIdFetcher.java](https://github.com/GoogleCloudPlatform/DataflowTemplates/blob/main/v2/spanner-custom-mySqlShard/src/main/java/com/custom/CustomShardIdFetcher.java). Details of the ShardIdRequest class can be found [here](https://github.com/GoogleCloudPlatform/DataflowTemplates/blob/main/v2/spanner-migrations-sdk/src/main/java/com/google/cloud/teleport/v2/spanner/utils/ShardIdRequest.java).
-2. Build the [JAR](https://github.com/GoogleCloudPlatform/DataflowTemplates/tree/main/v2/spanner-custom-mySqlShard) and upload the jar to GCS
+1. Write custom shard id fetcher logic [CustomShardIdFetcher.java](https://github.com/GoogleCloudPlatform/DataflowTemplates/blob/main/v2/spanner-custom-shard/src/main/java/com/custom/CustomShardIdFetcher.java). Details of the ShardIdRequest class can be found [here](https://github.com/GoogleCloudPlatform/DataflowTemplates/blob/main/v2/spanner-migrations-sdk/src/main/java/com/google/cloud/teleport/v2/spanner/utils/ShardIdRequest.java).
+2. Build the [JAR](https://github.com/GoogleCloudPlatform/DataflowTemplates/tree/main/v2/spanner-custom-shard) and upload the jar to GCS
 3. Invoke the reverse replication flow by passing the custom jar path and custom class path.
-4. If any custom parameters are needed in the custom mySqlShard identification logic, they can be passed via the *shardingCustomParameters* input to the runner. These parameters will be passed to the *init* method of the custom class. The *init* method is invoked once per worker setup.
+4. If any custom parameters are needed in the custom shard identification logic, they can be passed via the *shardingCustomParameters* input to the runner. These parameters will be passed to the *init* method of the custom class. The *init* method is invoked once per worker setup.
 
 
 ## Cost

@@ -87,7 +87,7 @@ configuration and creates the following resources -
 3. **Firewall rules** - Rules to allow Dataflow VMs to communicate with each
    other and Datastream to connect to the MySQL instance via private
    connectivity.
-4. **GCE VMs with MySQL mySqlShards** - Launches GCE VMs with MySQL setup on it inside
+4. **GCE VMs with MySQL shards** - Launches GCE VMs with MySQL setup on it inside
    the specified VPC subnet.
 5. **Spanner instance** - A spanner instance with the specified configuration.
 6. **Spanner database** - A spanner database inside the instance created.
@@ -154,8 +154,8 @@ resource_ids = {
 }
 resource_urls = {
   "mysql_instances" = {
-    "mysql-mySqlShard1" = "https://console.cloud.google.com/compute/instancesDetail/zones/us-central1-a/instances/mysql-mySqlShard1?project=<YOUR-PROJECT-ID>"
-    "mysql-mySqlShard2" = "https://console.cloud.google.com/compute/instancesDetail/zones/us-central1-a/instances/mysql-mySqlShard2?project=<YOUR-PROJECT-ID>"
+    "mysql-shard1" = "https://console.cloud.google.com/compute/instancesDetail/zones/us-central1-a/instances/mysql-shard1?project=<YOUR-PROJECT-ID>"
+    "mysql-shard2" = "https://console.cloud.google.com/compute/instancesDetail/zones/us-central1-a/instances/mysql-shard2?project=<YOUR-PROJECT-ID>"
     "mysql-shard3" = "https://console.cloud.google.com/compute/instancesDetail/zones/us-central1-a/instances/mysql-shard3?project=<YOUR-PROJECT-ID>"
   }
   "network" = "https://console.cloud.google.com/networking/networks/details/sample-vpc-network?project=<YOUR-PROJECT-ID>"

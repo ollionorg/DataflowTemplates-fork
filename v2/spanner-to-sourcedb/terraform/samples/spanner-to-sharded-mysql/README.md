@@ -2,7 +2,7 @@
 
 > **_SCENARIO:_** This Terraform example illustrates launching a reverse replication
 > jobs to replicate spanner writes for a sharded MySQL source, setting up all the required cloud infrastructure.
-> **Details of MySQL mySqlShards are needed as input.**
+> **Details of MySQL shards are needed as input.**
 
 ## Terraform permissions
 
@@ -143,10 +143,10 @@ Given these assumptions, it uses a supplied source database connection
 configuration and creates the following resources -
 
 1. **Firewall rules** - These rules allow Dataflow VMs to connect to each other
-   and allow Dataflow VMs to connect to the source MySQL mySqlShards.
+   and allow Dataflow VMs to connect to the source MySQL shards.
 2. **GCS buckets** - A GCS bucket to hold reverse replication metadata, such as
-   session and source mySqlShards files.
-3. **GCS objects** - Generates source mySqlShards configuration file to upload to
+   session and source shards files.
+3. **GCS objects** - Generates source shards configuration file to upload to
    GCS.
 4. **Pubsub topic and subscription** - This contains GCS object notifications as
    files are written to GCS for DLQ retrials.
@@ -298,9 +298,9 @@ If you want Terraform to only create the GCS bucket but skip its deletion
 during `terraform destroy`, you will have to use the `terraform state rm` API to
 delete GCS resource from being traced by Terraform after the `apply` command.
 
-### Source mySqlShard configuration file
+### Source shard configuration file
 
-Source mySqlShard configuration file that is supplied to the dataflow is automatically
+Source shard configuration file that is supplied to the dataflow is automatically
 created by Terraform. A sample file that this uploaded to GCS looks like
 below - 
 
@@ -309,18 +309,18 @@ below -
 ```json
 [
     {
-    "logicalShardId": "mySqlShard1",
+    "logicalShardId": "shard1",
     "host": "10.11.12.13",
     "user": "root",
-    "secretManagerUri":"projects/123/secrets/rev-cmek-cred-mySqlShard1/versions/latest",
+    "secretManagerUri":"projects/123/secrets/rev-cmek-cred-shard1/versions/latest",
     "port": "3306",
     "dbName": "db1"
     },
     {
-    "logicalShardId": "mySqlShard2",
+    "logicalShardId": "shard2",
     "host": "10.11.12.14",
     "user": "root",
-    "secretManagerUri":"projects/123/secrets/rev-cmek-cred-mySqlShard2/versions/latest",
+    "secretManagerUri":"projects/123/secrets/rev-cmek-cred-shard2/versions/latest",
     "port": "3306",
     "dbName": "db2"
     }
@@ -332,7 +332,7 @@ below -
 ```json
 [
     {
-    "logicalShardId": "mySqlShard1",
+    "logicalShardId": "shard1",
     "host": "10.11.12.13",
     "user": "root",
     "password":"<YOUR_PWD_HERE>",
@@ -340,7 +340,7 @@ below -
     "dbName": "db1"
     },
     {
-    "logicalShardId": "mySqlShard2",
+    "logicalShardId": "shard2",
     "host": "10.11.12.14",
     "user": "root",
     "password":"<YOUR_PWD_HERE>",

@@ -353,13 +353,13 @@ public class SpannerChangeStreamsToShardedFileSink {
 
     Pipeline pipeline = Pipeline.create(options);
     ShardFileReader shardFileReader = new ShardFileReader(new SecretManagerAccessorImpl());
-    List<MySqlShard> mySqlShards = shardFileReader.getOrderedShardDetails(options.getSourceShardsFilePath());
-    if (mySqlShards == null || mySqlShards.isEmpty()) {
-      throw new RuntimeException("The source mySqlShards file cannot be empty");
+    List<Shard> shards = shardFileReader.getOrderedShardDetails(options.getSourceShardsFilePath());
+    if (shards == null || shards.isEmpty()) {
+      throw new RuntimeException("The source shards file cannot be empty");
     }
 
     String shardingMode = Constants.SHARDING_MODE_SINGLE_SHARD;
-    if (mySqlShards.size() > 1) {
+    if (shards.size() > 1) {
       shardingMode = Constants.SHARDING_MODE_MULTI_SHARD;
     }
 
@@ -424,7 +424,7 @@ public class SpannerChangeStreamsToShardedFileSink {
     // updating per shard file creation progress
     FileCreationTracker fileCreationTracker =
         new FileCreationTracker(spannerDao, options.getRunIdentifier());
-    fileCreationTracker.init(mySqlShards);
+    fileCreationTracker.init(shards);
 
     spannerDao.close();
 
@@ -443,7 +443,7 @@ public class SpannerChangeStreamsToShardedFileSink {
                     schema,
                     ddl,
                     shardingMode,
-                    mySqlShards.get(0).getLogicalShardId(),
+                    shards.get(0).getLogicalShardId(),
                     options.getSkipDirectoryName(),
                     options.getShardingCustomJarPath(),
                     options.getShardingCustomClassName(),

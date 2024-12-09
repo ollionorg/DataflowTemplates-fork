@@ -45,7 +45,7 @@
         </dependency>
         <dependency>
             <groupId>com.google.cloud.teleport.v2</groupId>
-            <artifactId>spanner-custom-mySqlShard</artifactId>
+            <artifactId>spanner-custom-shard</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

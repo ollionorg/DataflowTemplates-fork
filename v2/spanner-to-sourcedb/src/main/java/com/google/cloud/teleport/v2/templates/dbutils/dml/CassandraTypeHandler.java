@@ -24,9 +24,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
-class TypeHandler {
+class CassandraTypeHandler {
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -38,7 +38,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -50,7 +50,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -62,7 +62,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -79,7 +79,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param colValue - contains all the key value for current incoming stream.
@@ -101,7 +101,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -113,7 +113,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -158,7 +158,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -170,7 +170,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -189,7 +189,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -201,7 +201,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -213,7 +213,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -233,7 +233,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -245,7 +245,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -257,7 +257,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -269,7 +269,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -281,7 +281,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -295,7 +295,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -309,7 +309,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -321,7 +321,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -347,7 +347,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -359,7 +359,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -371,7 +371,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -383,7 +383,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -397,7 +397,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -409,7 +409,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -425,7 +425,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -437,7 +437,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
@@ -453,7 +453,7 @@ class TypeHandler {
     }
 
     /**
-     * Generates a Type based on the provided {@link TypeHandler}.
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.

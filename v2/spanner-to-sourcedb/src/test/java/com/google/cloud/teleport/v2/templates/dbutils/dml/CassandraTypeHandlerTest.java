@@ -11,12 +11,12 @@ import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.util.*;
 
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.TypeHandler.*;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.TypeHandler.handleCassandraTimestampType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.*;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraTimestampType;
 import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
-public class TypeHandlerTest {
+public class CassandraTypeHandlerTest {
 
     @Test
     public void convertSpannerValueJsonToBooleanType() {
@@ -323,7 +323,7 @@ public class TypeHandlerTest {
     public void testHandleFloat64ArrayType_WithUnsupportedList() {
         String jsonStr = "{\"colName\": [[1, 2, 3], [4, 5, 6]]}";
         JSONObject valuesJson = new JSONObject(jsonStr);
-        TypeHandler.handleFloat64ArrayType("colName", valuesJson);
+        CassandraTypeHandler.handleFloat64ArrayType("colName", valuesJson);
     }
 
     @Test
@@ -437,7 +437,7 @@ public class TypeHandlerTest {
     public void testHandleBoolArrayType_ValidBooleanStrings() {
         String jsonStr = "{\"colName\": [\"true\", \"false\", \"true\"]}";
         JSONObject valuesJson = new JSONObject(jsonStr);
-        List<Boolean> result = TypeHandler.handleBoolArrayType("colName", valuesJson);
+        List<Boolean> result = CassandraTypeHandler.handleBoolArrayType("colName", valuesJson);
         assertEquals(3, result.size());
         assertTrue(result.get(0));
         assertFalse(result.get(1));
@@ -448,7 +448,7 @@ public class TypeHandlerTest {
     public void testHandleBoolArrayType_InvalidBooleanStrings() {
         String jsonStr = "{\"colName\": [\"yes\", \"no\", \"true\"]}";
         JSONObject valuesJson = new JSONObject(jsonStr);
-        List<Boolean> result = TypeHandler.handleBoolArrayType("colName", valuesJson);
+        List<Boolean> result = CassandraTypeHandler.handleBoolArrayType("colName", valuesJson);
         assertEquals(3, result.size());
         assertFalse(result.get(0));
         assertFalse(result.get(1));
@@ -459,7 +459,7 @@ public class TypeHandlerTest {
     public void testHandleBoolArrayType_EmptyArray() {
         String jsonStr = "{\"colName\": []}";
         JSONObject valuesJson = new JSONObject(jsonStr);
-        List<Boolean> result = TypeHandler.handleBoolArrayType("colName", valuesJson);
+        List<Boolean> result = CassandraTypeHandler.handleBoolArrayType("colName", valuesJson);
         assertTrue(result.isEmpty());
     }
 
@@ -468,7 +468,7 @@ public class TypeHandlerTest {
         String jsonString = "{\"timestamps\": [\"2024-12-04T12:34:56.123Z\", \"2024-12-05T13:45:00.000Z\"]}";
         JSONObject valuesJson = new JSONObject(jsonString);
 
-        Set<Timestamp> result = TypeHandler.handleTimestampSetType("timestamps", valuesJson);
+        Set<Timestamp> result = CassandraTypeHandler.handleTimestampSetType("timestamps", valuesJson);
 
         assertNotNull(result);
         assertEquals(2, result.size());

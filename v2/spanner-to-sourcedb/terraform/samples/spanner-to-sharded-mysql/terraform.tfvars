@@ -49,7 +49,7 @@ dataflow_params = {
     dlq_gcs_pub_sub_subscription = "projects/<YOUR_PROJECT_ID>/subscriptions/my-subscription" # Replace with your project ID and subscription name
     # Optional name of the directory to skip
     skip_directory_name = "skip-directory"
-    # Optional maximum number of shard connections
+    # Optional maximum number of mySqlShard connections
     max_shard_connections = "10"
     # Optional dead letter queue directory
     dead_letter_queue_directory = "gs://my-bucket/dlq"
@@ -104,35 +104,35 @@ dataflow_params = {
 
 shard_list = [
   {
-    # Logical ID of the shard
-    logicalShardId = "shard1"
-    # Hostname or IP address of the shard
-    host = "<YOUR_SHARD_HOST_OR_IP>" # Replace with the shard's hostname or IP address
-    # Username for connecting to the shard
+    # Logical ID of the mySqlShard
+    logicalShardId = "mySqlShard1"
+    # Hostname or IP address of the mySqlShard
+    host = "<YOUR_SHARD_HOST_OR_IP>" # Replace with the mySqlShard's hostname or IP address
+    # Username for connecting to the mySqlShard
     user = "root"
     # URI of the Secret Manager secret containing the password (optional)
-    secretManagerUri = "projects/<YOUR_PROJECT_ID>/secrets/shard1-password/versions/latest" # Replace with your project ID and secret name
-    # Password for connecting to the shard (optional, use either this or secretManagerUri)
+    secretManagerUri = "projects/<YOUR_PROJECT_ID>/secrets/mySqlShard1-password/versions/latest" # Replace with your project ID and secret name
+    # Password for connecting to the mySqlShard (optional, use either this or secretManagerUri)
     password = null
-    # Port number for connecting to the shard
+    # Port number for connecting to the mySqlShard
     port = "3306"
-    # Name of the database on the shard
+    # Name of the database on the mySqlShard
     dbName = "db1"
   },
   {
-    # Logical ID of the shard
-    logicalShardId = "shard2"
-    # Hostname or IP address of the shard
-    host = "<YOUR_SHARD_HOST_OR_IP>" # Replace with the shard's hostname or IP address
-    # Username for connecting to the shard
+    # Logical ID of the mySqlShard
+    logicalShardId = "mySqlShard2"
+    # Hostname or IP address of the mySqlShard
+    host = "<YOUR_SHARD_HOST_OR_IP>" # Replace with the mySqlShard's hostname or IP address
+    # Username for connecting to the mySqlShard
     user = "root"
     # URI of the Secret Manager secret containing the password (optional)
-    secretManagerUri = "projects/<YOUR_PROJECT_ID>/secrets/shard2-password/versions/latest" # Replace with your project ID and secret name
-    # Password for connecting to the shard (optional, use either this or secretManagerUri)
+    secretManagerUri = "projects/<YOUR_PROJECT_ID>/secrets/mySqlShard2-password/versions/latest" # Replace with your project ID and secret name
+    # Password for connecting to the mySqlShard (optional, use either this or secretManagerUri)
     password = null
-    # Port number for connecting to the shard
+    # Port number for connecting to the mySqlShard
     port = "3306"
-    # Name of the database on the shard
+    # Name of the database on the mySqlShard
     dbName = "db2"
   }
 ]

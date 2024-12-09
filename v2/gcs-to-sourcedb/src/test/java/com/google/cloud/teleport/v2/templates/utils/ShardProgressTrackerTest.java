@@ -36,7 +36,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 @RunWith(JUnit4.class)
-public final class ShardProgressTrackerTest {
+public final class MySqlShardProgressTrackerTest {
   @Rule public final MockitoRule mocktio = MockitoJUnit.rule();
   @Mock private SpannerDao spannerDaoMock;
 

@@ -66,7 +66,7 @@ variable "dataflow_params" {
 }
 
 variable "shard_list" {
-  description = "Details of the source shards to do the reverse replication to"
+  description = "Details of the source mySqlShards to do the reverse replication to"
   type = list(object({
     logicalShardId   = string
     host             = string

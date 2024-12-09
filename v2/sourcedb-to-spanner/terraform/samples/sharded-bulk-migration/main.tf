@@ -1,5 +1,5 @@
 locals {
-  # Generate individual source configs for each group of data shards based on batch size.
+  # Generate individual source configs for each group of data mySqlShards based on batch size.
   source_configs = [
     for batch_start in range(0, length(var.data_shards), var.common_params.batch_size) : {
       configType : "dataflow",

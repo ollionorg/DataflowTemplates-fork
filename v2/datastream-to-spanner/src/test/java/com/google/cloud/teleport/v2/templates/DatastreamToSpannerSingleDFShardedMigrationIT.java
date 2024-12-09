@@ -87,7 +87,7 @@ public class DatastreamToSpannerSingleDFShardedMigrationIT extends DataStreamToS
   public void setUp() throws IOException, InterruptedException {
     // Prevent cleaning up of dataflow job after a test method is executed.
     skipBaseCleanup = true;
-    synchronized (DataStreamToSpannerShardedMigrationWithMigrationShardIdColumnIT.class) {
+    synchronized (DataStreamToSpannerShardedMigrationWithMigrationMySqlShardIdColumnIT.class) {
       testInstances.add(this);
       if (spannerResourceManager == null) {
         spannerResourceManager = setUpSpannerResourceManager();

@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package com.google.cloud.teleport.v2.templates.dbutils.dao;
 
 import static com.google.common.truth.Truth.assertThat;

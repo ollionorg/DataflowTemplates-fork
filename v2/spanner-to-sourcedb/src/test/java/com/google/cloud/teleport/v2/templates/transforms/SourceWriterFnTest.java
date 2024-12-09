@@ -18,12 +18,7 @@ package com.google.cloud.teleport.v2.templates.transforms;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,7 +32,7 @@ import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerColumnDefin
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerColumnType;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerTable;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SyntheticPKey;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SessionFileReader;
 import com.google.cloud.teleport.v2.templates.changestream.ChangeStreamErrorRecord;
 import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataChangeRecord;
@@ -47,6 +42,9 @@ import com.google.cloud.teleport.v2.templates.dbutils.dao.source.JdbcDao;
 import com.google.cloud.teleport.v2.templates.dbutils.dao.spanner.SpannerDao;
 import com.google.cloud.teleport.v2.templates.dbutils.dml.MySQLDMLGenerator;
 import com.google.cloud.teleport.v2.templates.dbutils.processor.SourceProcessor;
+import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
+import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
+import com.google.cloud.teleport.v2.templates.models.RawStatementGeneratedResponse;
 import com.google.cloud.teleport.v2.templates.utils.ShadowTableRecord;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
@@ -63,6 +61,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -78,7 +77,7 @@ public class SourceWriterFnTest {
   @Mock private DoFn.ProcessContext processContext;
   private static Gson gson = new Gson();
 
-  private Shard testShard;
+  private MySqlShard testMySqlShard;
   private Schema testSchema;
   private Ddl testDdl;
   private String testSourceDbTimezoneOffset;
@@ -87,52 +86,81 @@ public class SourceWriterFnTest {
 
   @Before
   public void doBeforeEachTest() throws Exception {
+    String sqlStatement = "INSERT INTO table_name VALUES (1, 'test')";
+    DMLGeneratorResponse mockDmlResponse = mock(DMLGeneratorResponse.class);
+    when(mockDmlResponse.getDmlStatement()).thenReturn(sqlStatement);
     when(mockDaoMap.get(any())).thenReturn(mockSqlDao);
     when(mockSpannerDao.getShadowTableRecord(eq("shadow_parent1"), any())).thenReturn(null);
     when(mockSpannerDao.getShadowTableRecord(eq("shadow_tableName"), any())).thenReturn(null);
     when(mockSpannerDao.getShadowTableRecord(eq("shadow_parent2"), any()))
-        .thenThrow(new IllegalStateException("Test exception"));
+            .thenThrow(new IllegalStateException("Test exception"));
     when(mockSpannerDao.getShadowTableRecord(eq("shadow_child11"), any()))
-        .thenReturn(new ShadowTableRecord(Timestamp.parseTimestamp("2025-02-02T00:00:00Z"), 1));
+            .thenReturn(new ShadowTableRecord(Timestamp.parseTimestamp("2025-02-02T00:00:00Z"), 1));
     when(mockSpannerDao.getShadowTableRecord(eq("shadow_child21"), any())).thenReturn(null);
     doNothing().when(mockSpannerDao).updateShadowTable(any());
+
     doThrow(new java.sql.SQLIntegrityConstraintViolationException("a foreign key constraint fails"))
-        .when(mockSqlDao)
-        .write(contains("2300")); // This is the child_id for which we want to test the foreign key
-    // constraint failure.
-    doThrow(
-            new java.sql.SQLNonTransientConnectionException(
-                "transient connection error", "HY000", 1161))
-        .when(mockSqlDao)
-        .write(contains("1161")); // This is the child_id for which we want to retryable
-    // connection error
-    doThrow(
-            new java.sql.SQLNonTransientConnectionException(
-                "permanent connection error", "HY000", 4242))
-        .when(mockSqlDao)
-        .write(contains("4242")); // no retryable error
+            .when(mockSqlDao)
+            .execute(argThat(new ArgumentMatcher<DMLGeneratorResponse>() {
+              @Override
+              public boolean matches(DMLGeneratorResponse argument) {
+                return argument.getDmlStatement().contains(sqlStatement);
+              }
+            }));
+
+    doThrow(new java.sql.SQLNonTransientConnectionException("transient connection error", "HY000", 1161))
+            .when(mockSqlDao)
+            .execute(argThat(new ArgumentMatcher<DMLGeneratorResponse>() {
+              @Override
+              public boolean matches(DMLGeneratorResponse argument) {
+                return argument.getDmlStatement().contains("1161");
+              }
+            }));
+
+    doThrow(new java.sql.SQLNonTransientConnectionException("permanent connection error", "HY000", 4242))
+            .when(mockSqlDao)
+            .execute(argThat(new ArgumentMatcher<DMLGeneratorResponse>() {
+              @Override
+              public boolean matches(DMLGeneratorResponse argument) {
+                return argument.getDmlStatement().contains("4242");
+              }
+            }));
+
     doThrow(new RuntimeException("generic exception"))
-        .when(mockSqlDao)
-        .write(contains("12345")); // to test code path of generic exception
-    doNothing().when(mockSqlDao).write(contains("parent1"));
-    testShard = new Shard();
-    testShard.setLogicalShardId("shardA");
-    testShard.setUser("test");
-    testShard.setHost("test");
-    testShard.setPassword("test");
-    testShard.setPort("1234");
-    testShard.setDbName("test");
+            .when(mockSqlDao)
+            .execute(argThat(new ArgumentMatcher<DMLGeneratorResponse>() {
+              @Override
+              public boolean matches(DMLGeneratorResponse argument) {
+                return argument.getDmlStatement().contains("12345");
+              }
+            }));
+
+    doNothing().when(mockSqlDao)
+            .execute(argThat(new ArgumentMatcher<DMLGeneratorResponse>() {
+              @Override
+              public boolean matches(DMLGeneratorResponse argument) {
+                return argument.getDmlStatement().contains("parent1");
+              }
+            }));
+
+    testMySqlShard = new MySqlShard();
+    testMySqlShard.setLogicalShardId("shardA");
+    testMySqlShard.setUser("test");
+    testMySqlShard.setHost("test");
+    testMySqlShard.setPassword("test");
+    testMySqlShard.setPort("1234");
+    testMySqlShard.setDbName("test");
 
     testSchema = SessionFileReader.read("src/test/resources/sourceWriterUTSession.json");
     testSourceDbTimezoneOffset = "+00:00";
     testDdl = getTestDdl();
-    sourceProcessor =
-        SourceProcessor.builder()
-            .dmlGenerator(new MySQLDMLGenerator())
-            .sourceDaoMap(mockDaoMap)
-            .build();
-  }
 
+    sourceProcessor =
+            SourceProcessor.builder()
+                    .dmlGenerator(new MySQLDMLGenerator())
+                    .sourceDaoMap(mockDaoMap)
+                    .build();
+  }
   @Test
   public void testSourceIsAhead() throws Exception {
     TrimmedShardedDataChangeRecord record = getChild11TrimmedDataChangeRecord("shardA");
@@ -140,7 +168,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -155,7 +183,7 @@ public class SourceWriterFnTest {
     sourceWriterFn.setSpannerDao(mockSpannerDao);
     sourceWriterFn.processElement(processContext);
     verify(mockSpannerDao, atLeast(1)).getShadowTableRecord(any(), any());
-    verify(mockSqlDao, never()).write(any());
+    verify(mockSqlDao, never()).execute(any());
     verify(mockSpannerDao, never()).updateShadowTable(any());
   }
 
@@ -167,7 +195,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -182,7 +210,7 @@ public class SourceWriterFnTest {
     sourceWriterFn.setSpannerDao(mockSpannerDao);
     sourceWriterFn.processElement(processContext);
     verify(mockSpannerDao, atLeast(1)).getShadowTableRecord(any(), any());
-    verify(mockSqlDao, never()).write(any());
+    verify(mockSqlDao, never()).execute(any());
     verify(mockSpannerDao, never()).updateShadowTable(any());
   }
 
@@ -193,7 +221,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -209,7 +237,7 @@ public class SourceWriterFnTest {
     sourceWriterFn.setSpannerDao(mockSpannerDao);
     sourceWriterFn.processElement(processContext);
     verify(mockSpannerDao, atLeast(1)).getShadowTableRecord(any(), any());
-    verify(mockSqlDao, atLeast(1)).write(any());
+    verify(mockSqlDao, atLeast(1)).execute(any());
     verify(mockSpannerDao, atLeast(1)).updateShadowTable(any());
   }
 
@@ -219,7 +247,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -249,7 +277,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -277,7 +305,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -309,7 +337,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -337,7 +365,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -367,7 +395,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -397,7 +425,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -427,7 +455,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             testSchema,
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -456,7 +484,7 @@ public class SourceWriterFnTest {
     when(processContext.element()).thenReturn(KV.of(1L, record));
     SourceWriterFn sourceWriterFn =
         new SourceWriterFn(
-            ImmutableList.of(testShard),
+            ImmutableList.of(testMySqlShard),
             getSchemaObject(),
             mockSpannerConfig,
             testSourceDbTimezoneOffset,
@@ -470,7 +498,12 @@ public class SourceWriterFnTest {
     sourceWriterFn.setObjectMapper(mapper);
     sourceWriterFn.setSpannerDao(mockSpannerDao);
     sourceWriterFn.processElement(processContext);
-    verify(mockSqlDao, never()).write(contains("567890"));
+    verify(mockSqlDao, never()).execute(argThat(new ArgumentMatcher<DMLGeneratorResponse>() {
+      @Override
+      public boolean matches(DMLGeneratorResponse argument) {
+        return argument.getDmlStatement().contains("567890");
+      }
+    }));
   }
 
   static Ddl getTestDdl() {

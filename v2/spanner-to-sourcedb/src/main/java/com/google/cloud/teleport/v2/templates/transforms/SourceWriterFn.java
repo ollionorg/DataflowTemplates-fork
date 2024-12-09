@@ -15,6 +15,8 @@
  */
 package com.google.cloud.teleport.v2.templates.transforms;
 
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,7 +28,7 @@ import com.google.cloud.teleport.v2.spanner.ddl.Table;
 import com.google.cloud.teleport.v2.spanner.migrations.convertors.ChangeEventSpannerConvertor;
 import com.google.cloud.teleport.v2.spanner.migrations.exceptions.ChangeEventConvertorException;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.cloud.teleport.v2.templates.changestream.ChangeStreamErrorRecord;
 import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataChangeRecord;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
@@ -40,11 +42,6 @@ import com.google.cloud.teleport.v2.templates.exceptions.UnsupportedSourceExcept
 import com.google.cloud.teleport.v2.templates.utils.ShadowTableRecord;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
 import org.apache.beam.sdk.metrics.Counter;
 import org.apache.beam.sdk.metrics.Distribution;
@@ -54,6 +51,12 @@ import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.TupleTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** This class writes to source based on commit timestamp captured in shadow table. */
 public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord>, String>
@@ -77,7 +80,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
 
   private final Schema schema;
   private final String sourceDbTimezoneOffset;
-  private final List<Shard> shards;
+  private final List<IShard> iShards;
   private final SpannerConfig spannerConfig;
   private transient SpannerDao spannerDao;
   private final Ddl ddl;
@@ -88,7 +91,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
   private SourceProcessor sourceProcessor;
 
   public SourceWriterFn(
-      List<Shard> shards,
+      List<IShard> iShards,
       Schema schema,
       SpannerConfig spannerConfig,
       String sourceDbTimezoneOffset,
@@ -96,7 +99,8 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
       String shadowTablePrefix,
       String skipDirName,
       int maxThreadPerDataflowWorker,
-      String source) {
+      String source
+  ) {
 
     this.schema = schema;
     this.sourceDbTimezoneOffset = sourceDbTimezoneOffset;

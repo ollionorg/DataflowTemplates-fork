@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.cloud.teleport.v2.templates.dbutils.processor;
+package com.google.cloud.teleport.v2.templates.processor;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -21,13 +21,16 @@ import static org.mockito.Mockito.doNothing;
 import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
-import com.google.cloud.teleport.v2.templates.dbutils.connection.JdbcConnectionHelper;
-import com.google.cloud.teleport.v2.templates.dbutils.dao.source.JdbcDao;
-import com.google.cloud.teleport.v2.templates.dbutils.dml.MySQLDMLGenerator;
-import com.google.cloud.teleport.v2.templates.exceptions.UnsupportedSourceException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import com.google.cloud.teleport.v2.templates.dbutils.connection.JdbcConnectionHelper;
+import com.google.cloud.teleport.v2.templates.dbutils.dao.source.JdbcDao;
+import com.google.cloud.teleport.v2.templates.dbutils.dml.MySQLDMLGenerator;
+import com.google.cloud.teleport.v2.templates.dbutils.processor.SourceProcessor;
+import com.google.cloud.teleport.v2.templates.dbutils.processor.SourceProcessorFactory;
+import com.google.cloud.teleport.v2.templates.exceptions.UnsupportedSourceException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

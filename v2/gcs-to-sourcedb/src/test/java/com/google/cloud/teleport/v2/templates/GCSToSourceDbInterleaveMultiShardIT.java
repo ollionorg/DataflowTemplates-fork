@@ -24,7 +24,7 @@ import com.google.cloud.spanner.Key;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.teleport.metadata.SkipDirectRunnerTest;
 import com.google.cloud.teleport.metadata.TemplateIntegrationTest;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -62,10 +62,10 @@ import org.slf4j.LoggerFactory;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(GCSToSourceDb.class)
 @RunWith(JUnit4.class)
-public class GCSToSourceDbInterleaveMultiShardIT extends TemplateTestBase {
+public class GCSToSourceDbInterleaveMultiMySqlShardIT extends TemplateTestBase {
 
   private static final Logger LOG =
-      LoggerFactory.getLogger(GCSToSourceDbInterleaveMultiShardIT.class);
+      LoggerFactory.getLogger(GCSToSourceDbInterleaveMultiMySqlShardIT.class);
 
   private static final String SPANNER_DDL_RESOURCE =
       "GCSToSourceDbInterleaveMultiShardIT/spanner-schema.sql";
@@ -74,7 +74,7 @@ public class GCSToSourceDbInterleaveMultiShardIT extends TemplateTestBase {
   private static final String MYSQL_DDL_RESOURCE =
       "GCSToSourceDbInterleaveMultiShardIT/mysql-schema.sql";
 
-  private static HashSet<GCSToSourceDbInterleaveMultiShardIT> testInstances = new HashSet<>();
+  private static HashSet<GCSToSourceDbInterleaveMultiMySqlShardIT> testInstances = new HashSet<>();
   private static PipelineLauncher.LaunchInfo writerJobInfo;
   private static PipelineLauncher.LaunchInfo readerJobInfo;
   public static SpannerResourceManager spannerResourceManager;
@@ -92,7 +92,7 @@ public class GCSToSourceDbInterleaveMultiShardIT extends TemplateTestBase {
   @Before
   public void setUp() throws IOException {
     skipBaseCleanup = true;
-    synchronized (GCSToSourceDbInterleaveMultiShardIT.class) {
+    synchronized (GCSToSourceDbInterleaveMultiMySqlShardIT.class) {
       testInstances.add(this);
       if (writerJobInfo == null) {
         spannerResourceManager = createSpannerDatabase(SPANNER_DDL_RESOURCE);
@@ -124,7 +124,7 @@ public class GCSToSourceDbInterleaveMultiShardIT extends TemplateTestBase {
    */
   @AfterClass
   public static void cleanUp() throws IOException {
-    for (GCSToSourceDbInterleaveMultiShardIT instance : testInstances) {
+    for (GCSToSourceDbInterleaveMultiMySqlShardIT instance : testInstances) {
       instance.tearDownBase();
     }
     ResourceManagerUtils.cleanResources(
@@ -445,30 +445,30 @@ public class GCSToSourceDbInterleaveMultiShardIT extends TemplateTestBase {
   }
 
   private void createAndUploadShardConfigToGcs() throws IOException {
-    Shard shard = new Shard();
-    shard.setLogicalShardId("shardA");
-    shard.setUser(jdbcResourceManagerShardA.getUsername());
-    shard.setHost(jdbcResourceManagerShardA.getHost());
-    shard.setPassword(jdbcResourceManagerShardA.getPassword());
-    shard.setPort(String.valueOf(jdbcResourceManagerShardA.getPort()));
-    shard.setDbName(jdbcResourceManagerShardA.getDatabaseName());
-    JsonObject jsObj = (JsonObject) new Gson().toJsonTree(shard).getAsJsonObject();
+    MySqlShard mySqlShard = new MySqlShard();
+    mySqlShard.setLogicalShardId("shardA");
+    mySqlShard.setUser(jdbcResourceManagerShardA.getUsername());
+    mySqlShard.setHost(jdbcResourceManagerShardA.getHost());
+    mySqlShard.setPassword(jdbcResourceManagerShardA.getPassword());
+    mySqlShard.setPort(String.valueOf(jdbcResourceManagerShardA.getPort()));
+    mySqlShard.setDbName(jdbcResourceManagerShardA.getDatabaseName());
+    JsonObject jsObj = (JsonObject) new Gson().toJsonTree(mySqlShard).getAsJsonObject();
     jsObj.remove("secretManagerUri"); // remove field secretManagerUri
 
-    Shard shardB = new Shard();
-    shardB.setLogicalShardId("shardB");
-    shardB.setUser(jdbcResourceManagerShardB.getUsername());
-    shardB.setHost(jdbcResourceManagerShardB.getHost());
-    shardB.setPassword(jdbcResourceManagerShardB.getPassword());
-    shardB.setPort(String.valueOf(jdbcResourceManagerShardB.getPort()));
-    shardB.setDbName(jdbcResourceManagerShardB.getDatabaseName());
-    JsonObject jsObjB = (JsonObject) new Gson().toJsonTree(shardB).getAsJsonObject();
+    MySqlShard mySqlShardB = new MySqlShard();
+    mySqlShardB.setLogicalShardId("mySqlShardB");
+    mySqlShardB.setUser(jdbcResourceManagerShardB.getUsername());
+    mySqlShardB.setHost(jdbcResourceManagerShardB.getHost());
+    mySqlShardB.setPassword(jdbcResourceManagerShardB.getPassword());
+    mySqlShardB.setPort(String.valueOf(jdbcResourceManagerShardB.getPort()));
+    mySqlShardB.setDbName(jdbcResourceManagerShardB.getDatabaseName());
+    JsonObject jsObjB = (JsonObject) new Gson().toJsonTree(mySqlShardB).getAsJsonObject();
     jsObjB.remove("secretManagerUri"); // remove field secretManagerUri
     JsonArray ja = new JsonArray();
     ja.add(jsObj);
     ja.add(jsObjB);
     String shardFileContents = ja.toString();
-    LOG.info("Shard file contents: {}", shardFileContents);
-    gcsResourceManager.createArtifact("input/shard.json", shardFileContents);
+    LOG.info("MySqlShard file contents: {}", shardFileContents);
+    gcsResourceManager.createArtifact("input/mySqlShard.json", shardFileContents);
   }
 }

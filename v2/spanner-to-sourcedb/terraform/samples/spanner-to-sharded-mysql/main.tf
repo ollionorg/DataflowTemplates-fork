@@ -61,7 +61,7 @@ resource "google_storage_bucket_object" "session_file_object" {
   bucket       = google_storage_bucket.reverse_replication_bucket.id
 }
 
-# Auto-generate the source shards file from the Terraform configuration and
+# Auto-generate the source mySqlShards file from the Terraform configuration and
 # upload it to GCS.
 resource "google_storage_bucket_object" "source_shards_file_object" {
   depends_on   = [google_project_service.enabled_apis]

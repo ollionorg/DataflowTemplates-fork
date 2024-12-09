@@ -23,7 +23,7 @@ import com.google.cloud.spanner.Options;
 import com.google.cloud.spanner.TransactionRunner.TransactionCallable;
 import com.google.cloud.teleport.metadata.SkipDirectRunnerTest;
 import com.google.cloud.teleport.metadata.TemplateIntegrationTest;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.MySqlShard;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -57,12 +57,12 @@ import org.slf4j.LoggerFactory;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SpannerChangeStreamsToShardedFileSink.class)
 @RunWith(JUnit4.class)
-public class SpannerChangeStreamToGcsMultiShardIT extends SpannerChangeStreamToGcsITBase {
+public class SpannerChangeStreamToGcsMultiMySqlShardIT extends SpannerChangeStreamToGcsITBase {
   private static final Logger LOG =
-      LoggerFactory.getLogger(SpannerChangeStreamToGcsMultiShardIT.class);
+      LoggerFactory.getLogger(SpannerChangeStreamToGcsMultiMySqlShardIT.class);
   private static SpannerResourceManager spannerResourceManager;
   private static SpannerResourceManager spannerMetadataResourceManager;
-  private static HashSet<SpannerChangeStreamToGcsMultiShardIT> testInstances = new HashSet<>();
+  private static HashSet<SpannerChangeStreamToGcsMultiMySqlShardIT> testInstances = new HashSet<>();
   private static final String spannerDdl =
       "SpannerChangeStreamToGcsMultiShardIT/spanner-schema.sql";
   private static final String sessionFileResourceName =
@@ -85,7 +85,7 @@ public class SpannerChangeStreamToGcsMultiShardIT extends SpannerChangeStreamToG
   @Before
   public void setUp() throws IOException {
     skipBaseCleanup = true;
-    synchronized (SpannerChangeStreamToGcsMultiShardIT.class) {
+    synchronized (SpannerChangeStreamToGcsMultiMySqlShardIT.class) {
       testInstances.add(this);
       if (jobInfo == null) {
         gcsResourceManager = createGcsResourceManager(getClass().getSimpleName());
@@ -113,7 +113,7 @@ public class SpannerChangeStreamToGcsMultiShardIT extends SpannerChangeStreamToG
 
   @AfterClass
   public static void cleanUp() throws IOException {
-    for (SpannerChangeStreamToGcsMultiShardIT instance : testInstances) {
+    for (SpannerChangeStreamToGcsMultiMySqlShardIT instance : testInstances) {
       instance.tearDownBase();
     }
     ResourceManagerUtils.cleanResources(
@@ -127,18 +127,18 @@ public class SpannerChangeStreamToGcsMultiShardIT extends SpannerChangeStreamToG
     JsonArray ja = new JsonArray();
 
     for (String shardName : shardNames) {
-      Shard shard = new Shard();
-      shard.setLogicalShardId(shardName);
-      shard.setUser("dummy");
-      shard.setHost("dummy");
-      shard.setPassword("dummy");
-      shard.setPort("3306");
-      JsonObject jsObj = (JsonObject) new Gson().toJsonTree(shard).getAsJsonObject();
+      MySqlShard mySqlShard = new MySqlShard();
+      mySqlShard.setLogicalShardId(shardName);
+      mySqlShard.setUser("dummy");
+      mySqlShard.setHost("dummy");
+      mySqlShard.setPassword("dummy");
+      mySqlShard.setPort("3306");
+      JsonObject jsObj = (JsonObject) new Gson().toJsonTree(mySqlShard).getAsJsonObject();
       ja.add(jsObj);
     }
 
     String shardFileContents = ja.toString();
-    LOG.info("Shard file contents: {}", shardFileContents);
+    LOG.info("MySqlShard file contents: {}", shardFileContents);
     // -DartifactBucket has the bucket name
     gcsResourceManager.createArtifact("input/shard.json", shardFileContents);
   }

@@ -18,43 +18,40 @@ package com.google.cloud.teleport.v2.templates.transforms;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
-import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.IShard;
 import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataChangeRecord;
 import com.google.cloud.teleport.v2.templates.constants.Constants;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.transforms.ParDo;
-import org.apache.beam.sdk.values.KV;
-import org.apache.beam.sdk.values.PCollection;
-import org.apache.beam.sdk.values.PCollectionTuple;
-import org.apache.beam.sdk.values.PInput;
-import org.apache.beam.sdk.values.POutput;
-import org.apache.beam.sdk.values.PValue;
-import org.apache.beam.sdk.values.TupleTag;
-import org.apache.beam.sdk.values.TupleTagList;
+import org.apache.beam.sdk.values.*;
 
-/** Takes an input of change stream events and writes them to the source database. */
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Takes an input of change stream events and writes them to the source database.
+ */
 public class SourceWriterTransform
     extends PTransform<
-        PCollection<KV<Long, TrimmedShardedDataChangeRecord>>, SourceWriterTransform.Result> {
+    PCollection<KV<Long, TrimmedShardedDataChangeRecord>>, SourceWriterTransform.Result> {
 
   private final Schema schema;
   private final String sourceDbTimezoneOffset;
-  private final List<Shard> shards;
+  private final List<IShard> iShards;
   private final SpannerConfig spannerConfig;
   private final Ddl ddl;
   private final String shadowTablePrefix;
   private final String skipDirName;
   private final int maxThreadPerDataflowWorker;
   private final String source;
+  private final Long maxConnections;
 
   public SourceWriterTransform(
-      List<Shard> shards,
+      List<IShard> iShards,
       Schema schema,
       SpannerConfig spannerConfig,
       String sourceDbTimezoneOffset,
@@ -62,41 +59,44 @@ public class SourceWriterTransform
       String shadowTablePrefix,
       String skipDirName,
       int maxThreadPerDataflowWorker,
-      String source) {
+      String source,
+      Long maxConnections) {
 
     this.schema = schema;
     this.sourceDbTimezoneOffset = sourceDbTimezoneOffset;
-    this.shards = shards;
+    this.iShards = iShards;
     this.spannerConfig = spannerConfig;
     this.ddl = ddl;
     this.shadowTablePrefix = shadowTablePrefix;
     this.skipDirName = skipDirName;
     this.maxThreadPerDataflowWorker = maxThreadPerDataflowWorker;
     this.source = source;
+    this.maxConnections = maxConnections;
   }
 
   @Override
   public SourceWriterTransform.Result expand(
       PCollection<KV<Long, TrimmedShardedDataChangeRecord>> input) {
-    PCollectionTuple sourceWriteResults =
-        input.apply(
+    PCollectionTuple sourceWriteResults;
+    sourceWriteResults = input.apply(
             "Write to sourcedb",
             ParDo.of(
-                    new SourceWriterFn(
-                        this.shards,
-                        this.schema,
-                        this.spannerConfig,
-                        this.sourceDbTimezoneOffset,
-                        this.ddl,
-                        this.shadowTablePrefix,
-                        this.skipDirName,
-                        this.maxThreadPerDataflowWorker,
-                        this.source))
-                .withOutputTags(
-                    Constants.SUCCESS_TAG,
-                    TupleTagList.of(Constants.PERMANENT_ERROR_TAG)
-                        .and(Constants.RETRYABLE_ERROR_TAG)
-                        .and(Constants.SKIPPED_TAG)));
+                new SourceWriterFn(
+                    this.iShards,
+                    this.schema,
+                    this.spannerConfig,
+                    this.sourceDbTimezoneOffset,
+                    this.ddl,
+                    this.shadowTablePrefix,
+                    this.skipDirName,
+                    this.maxThreadPerDataflowWorker,
+                    this.source
+                ))
+        .withOutputTags(
+            Constants.SUCCESS_TAG,
+            TupleTagList.of(Constants.PERMANENT_ERROR_TAG)
+                .and(Constants.RETRYABLE_ERROR_TAG)
+                .and(Constants.SKIPPED_TAG)));
 
     return Result.create(
         sourceWriteResults.get(Constants.SUCCESS_TAG),
@@ -105,7 +105,9 @@ public class SourceWriterTransform
         sourceWriteResults.get(Constants.SKIPPED_TAG));
   }
 
-  /** Container class for the results of this transform. */
+  /**
+   * Container class for the results of this transform.
+   */
   @AutoValue
   public abstract static class Result implements POutput {
 

@@ -15,9 +15,13 @@
  */
 package com.google.cloud.teleport.v2.templates.transforms;
 
+import com.datastax.oss.driver.api.core.DriverException;
+import com.datastax.oss.driver.api.core.DriverExecutionException;
+import com.datastax.oss.driver.api.core.DriverTimeoutException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.nosan.embedded.cassandra.CassandraException;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.SpannerException;
 import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
@@ -52,6 +56,7 @@ import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.TupleTag;
+import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -224,10 +229,35 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
           outputWithTag(c, Constants.PERMANENT_ERROR_TAG, ex.getMessage(), spannerRec);
         }
       } catch (Exception ex) {
+        handleExceptions(ex, c, spannerRec);
         LOG.error("Failed to write to source", ex);
         outputWithTag(c, Constants.PERMANENT_ERROR_TAG, ex.getMessage(), spannerRec);
       }
     }
+  }
+
+  private void handleExceptions(Exception ex, ProcessContext c, TrimmedShardedDataChangeRecord spannerRec) {
+    if (ex instanceof DriverException) {
+      LOG.error("Cassandra-related exception occurred: ", ex);
+      if (isRetryableCassandraError((com.datastax.driver.core.exceptions.DriverException) ex)) {
+        outputWithTag(c, Constants.RETRYABLE_ERROR_TAG, ex.getMessage(), spannerRec);
+        retryableRecordCountMetric.inc();
+      } else {
+        outputWithTag(c, Constants.PERMANENT_ERROR_TAG, ex.getMessage(), spannerRec);
+      }
+    } else {
+      LOG.error("Unexpected exception while writing to source", ex);
+      outputWithTag(c, Constants.PERMANENT_ERROR_TAG, ex.getMessage(), spannerRec);
+    }
+  }
+
+  private boolean isRetryableCassandraError(com.datastax.driver.core.exceptions.DriverException ex) {
+    return ex instanceof com.datastax.driver.core.exceptions.NoHostAvailableException ||
+            ex instanceof com.datastax.driver.core.exceptions.UnavailableException ||
+            ex instanceof com.datastax.driver.core.exceptions.ReadTimeoutException ||
+            ex instanceof com.datastax.driver.core.exceptions.WriteTimeoutException ||
+            ex instanceof com.datastax.driver.core.exceptions.OverloadedException ||
+            ex instanceof com.datastax.driver.core.exceptions.OperationTimedOutException;
   }
 
   private Mutation getShadowTableMutation(

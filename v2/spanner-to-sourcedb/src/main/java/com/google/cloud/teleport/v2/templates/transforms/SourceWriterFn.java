@@ -231,7 +231,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
       } catch (Exception ex) {
         handleExceptions(ex, c, spannerRec);
         LOG.error("Failed to write to source", ex);
-        outputWithTag(c, Constants.PERMANENT_ERROR_TAG, ex.getMessage(), spannerRec);
+//        outputWithTag(c, Constants.PERMANENT_ERROR_TAG, ex.getMessage(), spannerRec);
       }
     }
   }

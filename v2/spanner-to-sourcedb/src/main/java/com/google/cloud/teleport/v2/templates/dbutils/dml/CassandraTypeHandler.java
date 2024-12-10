@@ -25,10 +25,8 @@ import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.time.*;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -558,18 +556,35 @@ class CassandraTypeHandler {
         if(response == null){
             return response;
         }
-        
-        switch (columnType.toLowerCase()){
 
+        switch (columnType.toLowerCase()) {
+            case "smallint":
+                response = convertToSmallInt((Integer) colValue);
+                break;
+            case "tinyint":
+                response = convertToTinyInt((Integer) colValue);
+                break;
+            case "date":
+                response = convertToCassandraDate((String) colValue);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid column " + colName + " do not have mapping created for " + columnType);
         }
         return response;
     }
 
-    private static Integer convertToCQLDate(com.google.cloud.Date spannerDate) {
-        // Convert Google Cloud Date to an integer that represents the number of days since the epoch
-        java.sql.Date sqlDate = java.sql.Date.valueOf(spannerDate.toString());
-        long millis = sqlDate.getTime();
-        return (int) (millis / (1000 * 60 * 60 * 24));
+    public static short convertToSmallInt(Integer integerValue) {
+        if (integerValue < Short.MIN_VALUE || integerValue > Short.MAX_VALUE) {
+            throw new IllegalArgumentException("Value is out of range for smallint.");
+        }
+        return integerValue.shortValue();
+    }
+
+    public static byte convertToTinyInt(Integer integerValue) {
+        if (integerValue < Byte.MIN_VALUE || integerValue > Byte.MAX_VALUE) {
+            throw new IllegalArgumentException("Value is out of range for tinyint.");
+        }
+        return integerValue.byteValue();
     }
 
     private static String escapeCassandraString(String value) {
@@ -577,12 +592,19 @@ class CassandraTypeHandler {
     }
 
     private static String convertToCassandraTimestamp(String value, String timezoneOffset) {
-        // Parse the timestamp and adjust to UTC if needed
-        ZonedDateTime dateTime = ZonedDateTime.parse(value);
-        return "'" + dateTime.withZoneSameInstant(ZoneOffset.UTC).toString() + "'";
+        try {
+            ZonedDateTime dateTime = ZonedDateTime.parse(value);
+            ZoneOffset offset = ZoneOffset.of(timezoneOffset);
+            dateTime = dateTime.withZoneSameInstant(offset);
+            return "'" + dateTime.withZoneSameInstant(ZoneOffset.UTC).toString() + "'";
+        } catch (DateTimeParseException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private static String convertToCassandraDate(Date date) {
+    private static String convertToCassandraDate(String dateString) {
+        Instant instant = Instant.parse(dateString);
+        Date date = Date.from(instant);
         LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         return localDate.toString();  // Returns the date in the format "yyyy-MM-dd"
     }

@@ -14,17 +14,37 @@
  * the License.
  */
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
+import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceColumnDefinition;
+import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerColumnDefinition;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 class CassandraTypeHandler {
+    /**
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
+     *
+     * @param colName - which is used to fetch Key from valueJSON.
+     * @param valuesJson - contains all the key value for current incoming stream.
+     *
+     * @return a {@link InetAddress} object containing InetAddress as value represented in cassandra type.
+     */
+    public static InetAddress handleCassandraInetAddressType(String colName, JSONObject valuesJson) throws UnknownHostException {
+        return InetAddress.getByName(valuesJson.getString(colName));
+    }
+
     /**
      * Generates a Type based on the provided {@link CassandraTypeHandler}.
      *
@@ -462,5 +482,135 @@ class CassandraTypeHandler {
      */
     public static Set<ByteBuffer> handleByteSetType(String colName, JSONObject valuesJson) {
         return new HashSet<>(handleByteArrayType(colName, valuesJson));
+    }
+
+    public static Object getColumnValueByType(
+            SpannerColumnDefinition spannerColDef,
+            SourceColumnDefinition sourceColDef,
+            JSONObject valuesJson,
+            String sourceDbTimezoneOffset
+    ) {
+
+        String columnType = sourceColDef.getType().getName();
+        Object colValue = null;
+        String colType = spannerColDef.getType().getName();
+        String colName = spannerColDef.getName();
+
+        switch (colType.toLowerCase()) {
+            case "bigint":
+            case "int64":
+                colValue = CassandraTypeHandler.handleCassandraBigintType(colName, valuesJson);
+                break;
+
+            case "string":
+                String inputValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
+                if(isValidUUID(inputValue)){
+                    colValue = CassandraTypeHandler.handleCassandraUuidType(colName, valuesJson);
+                } else if (isValidIPAddress(inputValue)) {
+                    try {
+                        colValue = CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson);
+                    } catch (UnknownHostException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else if(isValidJSON(inputValue)){
+                    colValue= inputValue;
+                } else {
+                    colValue = "'" + escapeCassandraString(CassandraTypeHandler.handleCassandraTextType(colName, valuesJson)) + "'";
+                }
+                break;
+
+            case "timestamp":
+                colValue = convertToCassandraTimestamp(String.valueOf(
+                        CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson)
+                ), sourceDbTimezoneOffset);
+                break;
+
+            case "date":
+            case "datetime":
+                colValue = convertToCassandraTimestamp(String.valueOf(
+                        CassandraTypeHandler.handleCassandraDateType(colName, valuesJson)
+                ), sourceDbTimezoneOffset);
+                break;
+
+            case "boolean":
+                colValue = CassandraTypeHandler.handleCassandraBoolType(colName, valuesJson);
+                break;
+
+            case "float64":
+                colValue = CassandraTypeHandler.handleCassandraDoubleType(colName, valuesJson);
+                break;
+
+            case "numeric":
+            case "float":
+                colValue = CassandraTypeHandler.handleCassandraFloatType(colName, valuesJson);
+                break;
+
+            case "bytes(max)":
+                colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
+                break;
+
+            case "integer":
+                colValue = CassandraTypeHandler.handleCassandraIntType(colName, valuesJson);
+                break;
+        }
+
+        Object response = colValue;
+        if(response == null){
+            return response;
+        }
+        
+        switch (columnType.toLowerCase()){
+
+        }
+        return response;
+    }
+
+    private static Integer convertToCQLDate(com.google.cloud.Date spannerDate) {
+        // Convert Google Cloud Date to an integer that represents the number of days since the epoch
+        java.sql.Date sqlDate = java.sql.Date.valueOf(spannerDate.toString());
+        long millis = sqlDate.getTime();
+        return (int) (millis / (1000 * 60 * 60 * 24));
+    }
+
+    private static String escapeCassandraString(String value) {
+        return value.replace("'", "''");
+    }
+
+    private static String convertToCassandraTimestamp(String value, String timezoneOffset) {
+        // Parse the timestamp and adjust to UTC if needed
+        ZonedDateTime dateTime = ZonedDateTime.parse(value);
+        return "'" + dateTime.withZoneSameInstant(ZoneOffset.UTC).toString() + "'";
+    }
+
+    private static String convertToCassandraDate(Date date) {
+        LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        return localDate.toString();  // Returns the date in the format "yyyy-MM-dd"
+    }
+
+    private static boolean isValidUUID(String value) {
+        try {
+            UUID.fromString(value);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private static boolean isValidIPAddress(String value){
+        try {
+            InetAddress.getByName(value);
+            return true;
+        } catch (UnknownHostException e) {
+            return false;
+        }
+    }
+
+    private static boolean isValidJSON(String value){
+        try {
+            new JSONObject(value);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

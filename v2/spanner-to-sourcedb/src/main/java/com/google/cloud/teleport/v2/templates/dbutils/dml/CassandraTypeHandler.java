@@ -14,13 +14,10 @@
  * the License.
  */
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -393,9 +390,9 @@ class CassandraTypeHandler {
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
      *
-     * @return a {@link List<Date>} object containing List<Date> as value represented in cassandra type.
+     * @return a {@link List<LocalDate>} object containing List<LocalDate> as value represented in cassandra type.
      */
-    public static List<Date> handleDateArrayType(String colName, JSONObject valuesJson) {
+    public static List<LocalDate> handleDateArrayType(String colName, JSONObject valuesJson) {
         return handleArrayType(colName, valuesJson, obj -> parseDate(colName, obj, "yyyy-MM-dd"));
     }
 
@@ -405,9 +402,9 @@ class CassandraTypeHandler {
      * @param colName - which is used to fetch Key from valueJSON.
      * @param valuesJson - contains all the key value for current incoming stream.
      *
-     * @return a {@link Set<Date>} object containing Set<Date> as value represented in cassandra type.
+     * @return a {@link Set<LocalDate>} object containing Set<LocalDate> as value represented in cassandra type.
      */
-    public static Set<Date> handleDateSetType(String colName, JSONObject valuesJson) {
+    public static Set<LocalDate> handleDateSetType(String colName, JSONObject valuesJson) {
         return new HashSet<>(handleDateArrayType(colName, valuesJson));
     }
 

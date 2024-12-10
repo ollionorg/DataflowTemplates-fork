@@ -417,9 +417,7 @@ class CassandraTypeHandler {
      * @return a {@link List<Timestamp>} object containing List<Timestamp> as value represented in cassandra type.
      */
     public static List<Timestamp> handleTimestampArrayType(String colName, JSONObject valuesJson) {
-        return handleArrayType(colName, valuesJson, value -> {
-            return new Timestamp(parseDate(colName, value, "yyyy-MM-dd'T'HH:mm:ss.SSSX").getTime());
-        });
+        return handleArrayType(colName, valuesJson, value -> Timestamp.valueOf(parseDate(colName, value, "yyyy-MM-dd'T'HH:mm:ss.SSSX").atStartOfDay()));
     }
 
     /**

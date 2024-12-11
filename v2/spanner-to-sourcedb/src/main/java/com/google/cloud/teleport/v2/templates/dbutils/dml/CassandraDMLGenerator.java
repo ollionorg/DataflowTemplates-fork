@@ -19,6 +19,7 @@ import com.google.cloud.teleport.v2.spanner.migrations.schema.*;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorRequest;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
+import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +79,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             return new DMLGeneratorResponse("");
         }
 
-        Map<String, Object> pkColumnNameValues =
+        Map<String, PreparedStatementValueObject<?>> pkColumnNameValues =
                 getPkColumnValues(
                         spannerTable,
                         sourceTable,
@@ -113,8 +114,8 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             SpannerTable spannerTable,
             SourceTable sourceTable,
             DMLGeneratorRequest dmlGeneratorRequest,
-            Map<String, Object> pkColumnNameValues) {
-        Map<String, Object> columnNameValues =
+            Map<String, PreparedStatementValueObject<?>> pkColumnNameValues) {
+        Map<String, PreparedStatementValueObject<?>> columnNameValues =
                 getColumnValues(
                         spannerTable,
                         sourceTable,
@@ -132,15 +133,15 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     private static DMLGeneratorResponse getUpsertStatementCQL(
             String tableName,
             long timestamp,
-            Map<String, Object> columnNameValues,
-            Map<String, Object> pkColumnNameValues
+            Map<String, PreparedStatementValueObject<?>> columnNameValues,
+            Map<String, PreparedStatementValueObject<?>> pkColumnNameValues
     ) {
 
         StringBuilder allColumns = new StringBuilder();
         StringBuilder placeholders = new StringBuilder();
         List<Object> values = new ArrayList<>();
 
-        for (Map.Entry<String, Object> entry : pkColumnNameValues.entrySet()) {
+        for (Map.Entry<String, PreparedStatementValueObject<?>> entry : pkColumnNameValues.entrySet()) {
             String colName = entry.getKey();
             Object colValue = entry.getValue();
 
@@ -149,7 +150,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             values.add(colValue);
         }
 
-        for (Map.Entry<String, Object> entry : columnNameValues.entrySet()) {
+        for (Map.Entry<String, PreparedStatementValueObject<?>> entry : columnNameValues.entrySet()) {
             String colName = entry.getKey();
             Object colValue = entry.getValue();
 
@@ -166,21 +167,24 @@ public class CassandraDMLGenerator implements IDMLGenerator {
         }
 
         String preparedStatement = "INSERT INTO " + tableName + " (" + allColumns + ") VALUES (" + placeholders + ") USING TIMESTAMP ?;";
-        values.add(timestamp);
+
+        PreparedStatementValueObject<Long> timestampObj = new PreparedStatementValueObject<>("USING_TIMESTAMP", timestamp);
+        values.add(timestampObj);
+
         return new PreparedStatementGeneratedResponse(preparedStatement, values);
     }
 
 
     private static DMLGeneratorResponse getDeleteStatementCQL(
             String tableName,
-            Map<String, Object> pkColumnNameValues,
+            Map<String, PreparedStatementValueObject<?>> pkColumnNameValues,
             long timestamp
     ) {
 
         StringBuilder deleteConditions = new StringBuilder();
         List<Object> values = new ArrayList<>();
 
-        for (Map.Entry<String, Object> entry : pkColumnNameValues.entrySet()) {
+        for (Map.Entry<String, PreparedStatementValueObject<?>> entry : pkColumnNameValues.entrySet()) {
             String colName = entry.getKey();
             deleteConditions.append(colName).append(" = ? AND ");
             values.add(entry.getValue());
@@ -192,20 +196,21 @@ public class CassandraDMLGenerator implements IDMLGenerator {
 
         String preparedStatement = "DELETE FROM " + tableName + " WHERE " + deleteConditions + " USING TIMESTAMP ?;";
 
-        values.add(timestamp);
+        PreparedStatementValueObject<Long> timestampObj = new PreparedStatementValueObject<>("USING_TIMESTAMP", timestamp);
+        values.add(timestampObj);
 
         return new PreparedStatementGeneratedResponse(preparedStatement, values);
     }
 
 
-    private static Map<String, Object> getColumnValues(
+    private static Map<String, PreparedStatementValueObject<?>> getColumnValues(
             SpannerTable spannerTable,
             SourceTable sourceTable,
             JSONObject newValuesJson,
             JSONObject keyValuesJson,
             String sourceDbTimezoneOffset
     ) {
-        Map<String, Object> response = new HashMap<>();
+        Map<String, PreparedStatementValueObject<?>> response = new HashMap<>();
 
     /*
     Get all non-primary key col ids from source table
@@ -235,11 +240,12 @@ public class CassandraDMLGenerator implements IDMLGenerator {
                 continue;
             }
             String spannerColumnName = spannerColDef.getName();
-            Object columnValue;
+            PreparedStatementValueObject<?> columnValue;
             if (keyValuesJson.has(spannerColumnName)) {
                 // get the value based on Spanner and Source type
                 if (keyValuesJson.isNull(spannerColumnName)) {
-                    response.put(sourceColDef.getName(), "NULL");
+                    PreparedStatementValueObject<String> NULL_OBJ = new PreparedStatementValueObject<>(spannerColumnName, "NULL");
+                    response.put(sourceColDef.getName(), NULL_OBJ);
                     continue;
                 }
                 columnValue =
@@ -248,7 +254,8 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             } else if (newValuesJson.has(spannerColumnName)) {
                 // get the value based on Spanner and Source type
                 if (newValuesJson.isNull(spannerColumnName)) {
-                    response.put(sourceColDef.getName(), "NULL");
+                    PreparedStatementValueObject<String> NULL_OBJ = new PreparedStatementValueObject<>(spannerColumnName, "NULL");
+                    response.put(sourceColDef.getName(), NULL_OBJ);
                     continue;
                 }
                 columnValue =
@@ -264,14 +271,14 @@ public class CassandraDMLGenerator implements IDMLGenerator {
         return response;
     }
 
-    private static Map<String, Object> getPkColumnValues(
+    private static Map<String, PreparedStatementValueObject<?>> getPkColumnValues(
             SpannerTable spannerTable,
             SourceTable sourceTable,
             JSONObject newValuesJson,
             JSONObject keyValuesJson,
             String sourceDbTimezoneOffset
     ) {
-        Map<String, Object> response = new HashMap<>();
+        Map<String, PreparedStatementValueObject<?>> response = new HashMap<>();
         /*
         Get all primary key col ids from source table
         For each - get the corresponding column name from spanner Schema
@@ -296,11 +303,12 @@ public class CassandraDMLGenerator implements IDMLGenerator {
                 return null;
             }
             String spannerColumnName = spannerColDef.getName();
-            Object columnValue;
+            PreparedStatementValueObject<?> columnValue;
             if (keyValuesJson.has(spannerColumnName)) {
                 // get the value based on Spanner and Source type
                 if (keyValuesJson.isNull(spannerColumnName)) {
-                    response.put(sourceColDef.getName(), "NULL");
+                    PreparedStatementValueObject<String> NULL_OBJ = new PreparedStatementValueObject<>(spannerColumnName, "NULL");
+                    response.put(sourceColDef.getName(), NULL_OBJ);
                     continue;
                 }
                 columnValue =
@@ -313,7 +321,8 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             } else if (newValuesJson.has(spannerColumnName)) {
                 // get the value based on Spanner and Source type
                 if (newValuesJson.isNull(spannerColumnName)) {
-                    response.put(sourceColDef.getName(), "NULL");
+                    PreparedStatementValueObject<String> NULL_OBJ = new PreparedStatementValueObject<>(spannerColumnName, "NULL");
+                    response.put(sourceColDef.getName(), NULL_OBJ);
                     continue;
                 }
                 columnValue =
@@ -334,7 +343,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
         return response;
     }
 
-    private static Object getMappedColumnValue(
+    private static PreparedStatementValueObject<?> getMappedColumnValue(
             SpannerColumnDefinition spannerColDef,
             SourceColumnDefinition sourceColDef,
             JSONObject valuesJson,

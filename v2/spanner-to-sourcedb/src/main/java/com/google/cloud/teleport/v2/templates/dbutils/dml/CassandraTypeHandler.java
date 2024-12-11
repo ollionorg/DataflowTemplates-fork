@@ -16,6 +16,7 @@
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceColumnDefinition;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerColumnDefinition;
+import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -482,7 +483,7 @@ class CassandraTypeHandler {
         return new HashSet<>(handleByteArrayType(colName, valuesJson));
     }
 
-    public static Object getColumnValueByType(
+    public static PreparedStatementValueObject<?> getColumnValueByType(
             SpannerColumnDefinition spannerColDef,
             SourceColumnDefinition sourceColDef,
             JSONObject valuesJson,
@@ -552,25 +553,23 @@ class CassandraTypeHandler {
                 break;
         }
 
-        Object response = colValue;
-        if(response == null){
-            return response;
+        if(colValue == null){
+            return null;
         }
 
         switch (columnType.toLowerCase()) {
             case "smallint":
-                response = convertToSmallInt((Integer) colValue);
-                break;
+                return new PreparedStatementValueObject<>(columnType.toLowerCase(), convertToSmallInt((Integer) colValue));
             case "tinyint":
-                response = convertToTinyInt((Integer) colValue);
-                break;
+                return new PreparedStatementValueObject<>(columnType.toLowerCase(), convertToTinyInt((Integer) colValue));
             case "date":
-                response = convertToCassandraDate((String) colValue);
-                break;
+                return new PreparedStatementValueObject<>(columnType.toLowerCase(), convertToCassandraDate((String) colValue));
+            case "time":
+            case "timestamp":
+                return new PreparedStatementValueObject<>(columnType.toLowerCase(), convertToCassandraTimestamp((String) colValue));
             default:
                 throw new IllegalArgumentException("Invalid column " + colName + " do not have mapping created for " + columnType);
         }
-        return response;
     }
 
     public static short convertToSmallInt(Integer integerValue) {
@@ -602,11 +601,14 @@ class CassandraTypeHandler {
         }
     }
 
-    private static String convertToCassandraDate(String dateString) {
+    private static LocalDate convertToCassandraDate(String dateString) {
         Instant instant = Instant.parse(dateString);
         Date date = Date.from(instant);
-        LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        return localDate.toString();  // Returns the date in the format "yyyy-MM-dd"
+        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    }
+
+    private static Instant convertToCassandraTimestamp(String dateString) {
+        return Instant.parse(dateString);
     }
 
     private static boolean isValidUUID(String value) {

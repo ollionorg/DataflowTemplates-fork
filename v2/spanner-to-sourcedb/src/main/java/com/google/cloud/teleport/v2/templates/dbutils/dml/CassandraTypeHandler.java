@@ -14,627 +14,702 @@
  * the License.
  */
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
+
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceColumnDefinition;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerColumnDefinition;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.json.JSONObject;
 
 class CassandraTypeHandler {
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link InetAddress} object containing InetAddress as value represented in cassandra type.
-     */
-    public static InetAddress handleCassandraInetAddressType(String colName, JSONObject valuesJson) throws UnknownHostException {
-        return InetAddress.getByName(valuesJson.getString(colName));
+  @FunctionalInterface
+  public interface TypeParser<T> {
+    T parse(Object value);
+  }
+
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link InetAddress} object containing InetAddress as value represented in cassandra
+   *     type.
+   */
+  public static InetAddress handleCassandraInetAddressType(String colName, JSONObject valuesJson)
+      throws UnknownHostException {
+    return InetAddress.getByName(valuesJson.getString(colName));
+  }
+
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Boolean} object containing the value represented in cassandra type.
+   */
+  public static Boolean handleCassandraBoolType(String colName, JSONObject valuesJson) {
+    return valuesJson.getBoolean(colName);
+  }
+
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Float} object containing the value represented in cassandra type.
+   */
+  public static Float handleCassandraFloatType(String colName, JSONObject valuesJson) {
+    return valuesJson.getBigDecimal(colName).floatValue();
+  }
+
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Double} object containing the value represented in cassandra type.
+   */
+  public static Double handleCassandraDoubleType(String colName, JSONObject valuesJson) {
+    return valuesJson.getBigDecimal(colName).doubleValue();
+  }
+
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link ByteBuffer} object containing the value represented in cassandra type.
+   */
+  public static ByteBuffer handleCassandraBlobType(String colName, JSONObject valuesJson) {
+    Object colValue = valuesJson.opt(colName);
+    if (colValue == null) {
+      return null;
+    }
+    return parseBlobType(colValue);
+  }
+
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colValue - contains all the key value for current incoming stream.
+   * @return a {@link ByteBuffer} object containing the value represented in cassandra type.
+   */
+  public static ByteBuffer parseBlobType(Object colValue) {
+    byte[] byteArray;
+    if (colValue instanceof byte[]) {
+      byteArray = (byte[]) colValue;
+    } else if (colValue instanceof String) {
+      byteArray = java.util.Base64.getDecoder().decode((String) colValue);
+    } else {
+      throw new IllegalArgumentException("Unsupported type for column");
+    }
+    return ByteBuffer.wrap(byteArray);
+  }
+
+  /**
+   * Generates a {@link LocalDate} based on the provided {@link CassandraTypeHandler}.
+   *
+   * <p>This method processes the given JSON object to extract a date value using the specified
+   * column name and formatter. It specifically handles the "Cassandra Date" format (yyyy-MM-dd).
+   * The resulting {@link LocalDate} represents the date value associated with the column.
+   *
+   * @param colName - the key used to fetch the value from the provided {@link JSONObject}.
+   * @param valuesJson - the JSON object containing all key-value pairs for the current incoming
+   *     data stream.
+   * @return a {@link LocalDate} object containing the date value represented in Cassandra type
+   *     format. If the column is missing or contains an invalid value, this will return {@code
+   *     null}.
+   */
+  public static LocalDate handleCassandraDateType(String colName, JSONObject valuesJson) {
+    return handleCassandraGenericDateType(colName, valuesJson, "yyyy-MM-dd");
+  }
+
+  /**
+   * Generates a {@link LocalDate} based on the provided {@link CassandraTypeHandler}.
+   *
+   * <p>This method processes the given JSON object to extract a timestamp value using the specified
+   * column name and formatter. It specifically handles the "Cassandra Timestamp" format
+   * (yyyy-MM-dd'T'HH:mm:ss.SSSZ). The resulting {@link LocalDate} represents the date part of the
+   * timestamp value associated with the column.
+   *
+   * @param colName - the key used to fetch the value from the provided {@link JSONObject}.
+   * @param valuesJson - the JSON object containing all key-value pairs for the current incoming
+   *     data stream.
+   * @return a {@link LocalDate} object containing the date value extracted from the timestamp in
+   *     Cassandra type format. If the column is missing or contains an invalid value, this will
+   *     return {@code null}.
+   */
+  public static LocalDate handleCassandraTimestampType(String colName, JSONObject valuesJson) {
+    return handleCassandraGenericDateType(colName, valuesJson, "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+  }
+
+  /**
+   * A helper method that handles the conversion of a given column value to a {@link LocalDate}
+   * based on the specified date format (formatter).
+   *
+   * <p>This method extracts the value for the given column name from the provided JSON object and
+   * parses it into a {@link LocalDate} based on the provided date format. If the value is in an
+   * unsupported type or format, an exception is thrown.
+   *
+   * @param colName - the key used to fetch the value from the provided {@link JSONObject}.
+   * @param valuesJson - the JSON object containing all key-value pairs for the current incoming
+   *     data stream.
+   * @param formatter - the date format pattern used to parse the value (e.g., "yyyy-MM-dd").
+   * @return a {@link LocalDate} object containing the parsed date value. If the column is missing
+   *     or invalid, this method returns {@code null}.
+   */
+  private static LocalDate handleCassandraGenericDateType(
+      String colName, JSONObject valuesJson, String formatter) {
+    Object colValue = valuesJson.opt(colName);
+    if (colValue == null) {
+      return null;
     }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Boolean} object containing the value represented in cassandra type.
-     */
-    public static Boolean handleCassandraBoolType(String colName, JSONObject valuesJson) {
-        return valuesJson.getBoolean(colName);
+    if (formatter == null) {
+      formatter = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Float} object containing the value represented in cassandra type.
-     */
-    public static Float handleCassandraFloatType(String colName, JSONObject valuesJson) {
-        return valuesJson.getBigDecimal(colName).floatValue();
+    return parseDate(colName, colValue, formatter);
+  }
+
+  /**
+   * Parses a column value (String, {@link java.util.Date}, or {@code Long}) into a {@link
+   * LocalDate} using the specified date format.
+   *
+   * <p>This method handles different data types (String, Date, Long) by converting them into a
+   * {@link LocalDate}. The provided formatter is used to parse date strings, while other types are
+   * converted based on their corresponding representations.
+   *
+   * @param colName - the key used to fetch the value from the provided {@link JSONObject}.
+   * @param colValue - the value to be parsed into a {@link LocalDate}.
+   * @param formatter - the date format pattern used to parse date strings.
+   * @return a {@link LocalDate} object parsed from the given value.
+   * @throws IllegalArgumentException if the value cannot be parsed or is of an unsupported type.
+   */
+  private static LocalDate parseDate(String colName, Object colValue, String formatter) {
+    LocalDate localDate;
+    if (colValue instanceof String) {
+      try {
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(formatter);
+        localDate = LocalDate.parse((String) colValue, dateFormatter);
+      } catch (DateTimeParseException e) {
+        throw new IllegalArgumentException("Invalid date format for column " + colName, e);
+      }
+    } else if (colValue instanceof java.util.Date) {
+      localDate =
+          ((java.util.Date) colValue)
+              .toInstant()
+              .atZone(java.time.ZoneId.systemDefault())
+              .toLocalDate();
+    } else if (colValue instanceof Long) {
+      localDate =
+          java.time.Instant.ofEpochMilli((Long) colValue)
+              .atZone(java.time.ZoneId.systemDefault())
+              .toLocalDate();
+    } else {
+      throw new IllegalArgumentException("Unsupported type for column " + colName);
+    }
+    return localDate;
+  }
+
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link String} object containing String as value represented in cassandra type.
+   */
+  public static String handleCassandraTextType(String colName, JSONObject valuesJson) {
+    return valuesJson.optString(
+        colName, null); // Get the value or null if the key is not found or the value is null
+  }
+
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link UUID} object containing UUID as value represented in cassandra type.
+   */
+  public static UUID handleCassandraUuidType(String colName, JSONObject valuesJson) {
+    String uuidString =
+        valuesJson.optString(
+            colName, null); // Get the value or null if the key is not found or the value is null
+
+    if (uuidString == null) {
+      return null;
     }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Double} object containing the value represented in cassandra type.
-     */
-    public static Double handleCassandraDoubleType(String colName, JSONObject valuesJson) {
-        return valuesJson.getBigDecimal(colName).doubleValue();
-    }
+    return UUID.fromString(uuidString);
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link ByteBuffer} object containing the value represented in cassandra type.
-     */
-    public static ByteBuffer handleCassandraBlobType(String colName, JSONObject valuesJson) {
-        Object colValue = valuesJson.opt(colName);
-        if (colValue == null) {
-            return null;
-        }
-        return parseBlobType(colName, colValue);
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Long} object containing Long as value represented in cassandra type.
+   */
+  public static Long handleCassandraBigintType(String colName, JSONObject valuesJson) {
+    return valuesJson.getBigInteger(colName).longValue();
+  }
 
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Integer} object containing Integer as value represented in cassandra type.
+   */
+  public static Integer handleCassandraIntType(String colName, JSONObject valuesJson) {
+    return valuesJson.getBigInteger(colName).intValue();
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param colValue - contains all the key value for current incoming stream.
-     *
-     * @return a {@link ByteBuffer} object containing the value represented in cassandra type.
-     */
-    private static ByteBuffer parseBlobType(String colName, Object colValue) {
-        byte[] byteArray;
-
-        if (colValue instanceof byte[]) {
-            byteArray = (byte[]) colValue;
-        } else if (colValue instanceof String) {
-            byteArray = java.util.Base64.getDecoder().decode((String) colValue);
-        } else {
-            throw new IllegalArgumentException("Unsupported type for column " + colName);
-        }
-
-        return ByteBuffer.wrap(byteArray);
-    }
-
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Date} object containing the value represented in cassandra type.
-     */
-    public static Date handleCassandraDateType(String colName, JSONObject valuesJson) {
-        return handleCassandraGenericDateType(colName, valuesJson, "yyyy-MM-dd");
-    }
-
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Date} object containing timestamp as value represented in cassandra type.
-     */
-    public static Date handleCassandraTimestampType(String colName, JSONObject valuesJson) {
-        return handleCassandraGenericDateType(colName, valuesJson, "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-    }
-
-    private static Date handleCassandraGenericDateType(String colName, JSONObject valuesJson, String formatter) {
-        Object colValue = valuesJson.opt(colName);
-        if (colValue == null) {
-            return null;
-        }
-
-        if (formatter == null) {
-            formatter = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
-        }
-
-        return parseDate(colName, colValue, formatter);
-    }
-
-    private static Date parseDate(String colName, Object colValue, String formatter) {
-        Date date;
-
-        if (colValue instanceof String) {
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link List<Long>} object containing List<Long> as value represented in cassandra
+   *     type.
+   */
+  public static List<Long> handleInt64ArrayType(String colName, JSONObject valuesJson) {
+    return handleArrayType(
+        colName,
+        valuesJson,
+        obj -> {
+          if (obj instanceof Number) {
+            return ((Number) obj).longValue();
+          } else if (obj instanceof String) {
             try {
-                date = new SimpleDateFormat(formatter).parse((String) colValue);
-            } catch (ParseException e) {
-                throw new IllegalArgumentException("Invalid timestamp format for column " + colName, e);
+              return Long.getLong((String) obj);
+            } catch (NumberFormatException e) {
+              throw new IllegalArgumentException("Invalid number format for column " + colName, e);
             }
-        } else if (colValue instanceof java.util.Date) {
-            date = (java.util.Date) colValue;
-        } else if (colValue instanceof Long) {
-            date = new Date((Long) colValue);
-        } else {
+          } else {
             throw new IllegalArgumentException("Unsupported type for column " + colName);
-        }
+          }
+        });
+  }
 
-        return date;
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Set<Long>} object containing Set<Long> as value represented in cassandra type.
+   */
+  public static Set<Long> handleInt64SetType(String colName, JSONObject valuesJson) {
+    return new HashSet<>(handleInt64ArrayType(colName, valuesJson));
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link String} object containing String as value represented in cassandra type.
-     */
-    public static String handleCassandraTextType(String colName, JSONObject valuesJson) {
-        return valuesJson.optString(colName, null); // Get the value or null if the key is not found or the value is null
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link List<Integer>} object containing Set<Long> as value represented in cassandra
+   *     type.
+   */
+  public static List<Integer> handleInt64ArrayAsInt32Array(String colName, JSONObject valuesJson) {
+    return handleInt64ArrayType(colName, valuesJson).stream()
+        .map(Long::intValue)
+        .collect(Collectors.toList());
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link UUID} object containing UUID as value represented in cassandra type.
-     */
-    public static UUID handleCassandraUuidType(String colName, JSONObject valuesJson) {
-        String uuidString = valuesJson.optString(colName, null); // Get the value or null if the key is not found or the value is null
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Set<Integer>} object containing Set<Integer> as value represented in cassandra
+   *     type.
+   */
+  public static Set<Integer> handleInt64ArrayAsInt32Set(String colName, JSONObject valuesJson) {
+    return handleInt64ArrayType(colName, valuesJson).stream()
+        .map(Long::intValue)
+        .collect(Collectors.toSet());
+  }
 
-        if (uuidString == null) {
-            return null;
-        }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Set<String>} object containing Set<String> as value represented in cassandra
+   *     type.
+   */
+  public static Set<String> handleStringSetType(String colName, JSONObject valuesJson) {
+    return new HashSet<>(handleStringArrayType(colName, valuesJson));
+  }
 
-        return UUID.fromString(uuidString);
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link List<String>} object containing List<String> as value represented in cassandra
+   *     type.
+   */
+  public static List<String> handleStringArrayType(String colName, JSONObject valuesJson) {
+    return handleArrayType(colName, valuesJson, String::valueOf);
+  }
 
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link List<Boolean>} object containing List<Boolean> as value represented in
+   *     cassandra type.
+   */
+  public static List<Boolean> handleBoolArrayType(String colName, JSONObject valuesJson) {
+    return valuesJson.getJSONArray(colName).toList().stream()
+        .map(obj -> obj instanceof String && Boolean.parseBoolean((String) obj))
+        .collect(Collectors.toList());
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Long} object containing Long as value represented in cassandra type.
-     */
-    public static Long handleCassandraBigintType(String colName, JSONObject valuesJson) {
-        return valuesJson.getBigInteger(colName).longValue();
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Set<Boolean>} object containing Set<Boolean> as value represented in cassandra
+   *     type.
+   */
+  public static Set<Boolean> handleBoolSetTypeString(String colName, JSONObject valuesJson) {
+    return new HashSet<>(handleBoolArrayType(colName, valuesJson));
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Integer} object containing Integer as value represented in cassandra type.
-     */
-    public static Integer handleCassandraIntType(String colName, JSONObject valuesJson) {
-        return valuesJson.getBigInteger(colName).intValue();
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link List<Double>} object containing List<Double> as value represented in cassandra
+   *     type.
+   */
+  public static List<Double> handleFloat64ArrayType(String colName, JSONObject valuesJson) {
+    return handleArrayType(
+        colName,
+        valuesJson,
+        obj -> {
+          if (obj instanceof Number) {
+            return ((Number) obj).doubleValue();
+          } else if (obj instanceof String) {
+            try {
+              return Double.valueOf((String) obj);
+            } catch (NumberFormatException e) {
+              throw new IllegalArgumentException("Invalid number format for column " + colName, e);
+            }
+          } else {
+            throw new IllegalArgumentException("Unsupported type for column " + colName);
+          }
+        });
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link List<Long>} object containing List<Long> as value represented in cassandra type.
-     */
-    public static List<Long> handleInt64ArrayType(String colName, JSONObject valuesJson) {
-        JSONArray jsonArray = valuesJson.getJSONArray(colName);
-        List<Long> colValueList = new ArrayList<>();
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Set<Double>} object containing Set<Double> as value represented in cassandra
+   *     type.
+   */
+  public static Set<Double> handleFloat64SetType(String colName, JSONObject valuesJson) {
+    return new HashSet<>(handleFloat64ArrayType(colName, valuesJson));
+  }
 
-        // Convert each element to Long and add it to the list
-        for (int i = 0; i < jsonArray.length(); i++) {
-            colValueList.add(jsonArray.getLong(i));
-        }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link List<Float>} object containing List<Float> as value represented in cassandra
+   *     type.
+   */
+  public static List<Float> handleFloatArrayType(String colName, JSONObject valuesJson) {
+    return handleFloat64ArrayType(colName, valuesJson).stream()
+        .map(Double::floatValue)
+        .collect(Collectors.toList());
+  }
 
-        return colValueList;
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Set<Float>} object containing Set<Float> as value represented in cassandra
+   *     type.
+   */
+  public static Set<Float> handleFloatSetType(String colName, JSONObject valuesJson) {
+    return handleFloat64SetType(colName, valuesJson).stream()
+        .map(Double::floatValue)
+        .collect(Collectors.toSet());
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Set<Long>} object containing Set<Long> as value represented in cassandra type.
-     */
-    public static Set<Long> handleInt64SetType(String colName, JSONObject valuesJson) {
-        return new HashSet<>(handleInt64ArrayType(colName, valuesJson));
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link List<LocalDate>} object containing List<LocalDate> as value represented in
+   *     cassandra type.
+   */
+  public static List<LocalDate> handleDateArrayType(String colName, JSONObject valuesJson) {
+    return handleArrayType(colName, valuesJson, obj -> parseDate(colName, obj, "yyyy-MM-dd"));
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link List<Integer>} object containing Set<Long> as value represented in cassandra type.
-     */
-    public static List<Integer> handleInt64ArrayAsInt32Array(String colName, JSONObject valuesJson) {
-        return handleInt64ArrayType(colName, valuesJson).stream().map(Long::intValue).collect(Collectors.toList());
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Set<LocalDate>} object containing Set<LocalDate> as value represented in
+   *     cassandra type.
+   */
+  public static Set<LocalDate> handleDateSetType(String colName, JSONObject valuesJson) {
+    return new HashSet<>(handleDateArrayType(colName, valuesJson));
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Set<Integer>} object containing Set<Integer> as value represented in cassandra type.
-     */
-    public static Set<Integer> handleInt64ArrayAsInt32Set(String colName, JSONObject valuesJson) {
-        return handleInt64ArrayType(colName, valuesJson).stream().map(Long::intValue).collect(Collectors.toSet());
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link List<Timestamp>} object containing List<Timestamp> as value represented in
+   *     cassandra type.
+   */
+  public static List<Timestamp> handleTimestampArrayType(String colName, JSONObject valuesJson) {
+    return handleArrayType(
+        colName,
+        valuesJson,
+        value ->
+            Timestamp.valueOf(
+                parseDate(colName, value, "yyyy-MM-dd'T'HH:mm:ss.SSSX").atStartOfDay()));
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Set<String>} object containing Set<String> as value represented in cassandra type.
-     */
-    public static Set<String> handleStringSetType(String colName, JSONObject valuesJson) {
-        return new HashSet<>(handleStringArrayType(colName, valuesJson));
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Set<Timestamp>} object containing Set<Timestamp> as value represented in
+   *     cassandra type.
+   */
+  public static Set<Timestamp> handleTimestampSetType(String colName, JSONObject valuesJson) {
+    return new HashSet<>(handleTimestampArrayType(colName, valuesJson));
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link List<String>} object containing List<String> as value represented in cassandra type.
-     */
-    public static List<String> handleStringArrayType(String colName, JSONObject valuesJson) {
-        return valuesJson.getJSONArray(colName).toList().stream()
-                .map(String::valueOf)
-                .collect(Collectors.toList());
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link List<ByteBuffer>} object containing List<ByteBuffer> as value represented in
+   *     cassandra type.
+   */
+  public static List<ByteBuffer> handleByteArrayType(String colName, JSONObject valuesJson) {
+    return handleArrayType(colName, valuesJson, CassandraTypeHandler::parseBlobType);
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link List<Boolean>} object containing List<Boolean> as value represented in cassandra type.
-     */
-    public static List<Boolean> handleBoolArrayType(String colName, JSONObject valuesJson) {
-        return valuesJson.getJSONArray(colName).toList().stream()
-                .map(obj -> obj instanceof String && Boolean.parseBoolean((String) obj))
-                .collect(Collectors.toList());
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link List<T>} object containing List of Type T as value represented in cassandra
+   *     type which will be assigned runtime.
+   */
+  public static <T> List<T> handleArrayType(
+      String colName, JSONObject valuesJson, TypeParser<T> parser) {
+    return valuesJson.getJSONArray(colName).toList().stream()
+        .map(parser::parse)
+        .collect(Collectors.toList());
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Set<Boolean>} object containing Set<Boolean> as value represented in cassandra type.
-     */
-    public static Set<Boolean> handleBoolSetTypeString(String colName, JSONObject valuesJson) {
-        return new HashSet<>(handleBoolArrayType(colName, valuesJson));
-    }
+  /**
+   * Generates a Type based on the provided {@link CassandraTypeHandler}.
+   *
+   * @param colName - which is used to fetch Key from valueJSON.
+   * @param valuesJson - contains all the key value for current incoming stream.
+   * @return a {@link Set<ByteBuffer>} object containing Set<ByteBuffer> as value represented in
+   *     cassandra type.
+   */
+  public static Set<ByteBuffer> handleByteSetType(String colName, JSONObject valuesJson) {
+    return new HashSet<>(handleByteArrayType(colName, valuesJson));
+  }
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link List<Double>} object containing List<Double> as value represented in cassandra type.
-     */
-    public static List<Double> handleFloat64ArrayType(String colName, JSONObject valuesJson) {
-        return valuesJson.getJSONArray(colName).toList().stream()
-                .map(obj -> {
-                    if (obj instanceof Number) {
-                        return ((Number) obj).doubleValue();
-                    } else if (obj instanceof String) {
-                        try {
-                            return Double.valueOf((String) obj);
-                        } catch (NumberFormatException e) {
-                            throw new IllegalArgumentException("Invalid number format for column " + colName, e);
-                        }
-                    } else {
-                        throw new IllegalArgumentException("Unsupported type for column " + colName);
-                    }
-                })
-                .collect(Collectors.toList());
-    }
+  public static PreparedStatementValueObject<?> getColumnValueByType(
+      SpannerColumnDefinition spannerColDef,
+      SourceColumnDefinition sourceColDef,
+      JSONObject valuesJson,
+      String sourceDbTimezoneOffset) {
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Set<Double>} object containing Set<Double> as value represented in cassandra type.
-     */
-    public static Set<Double> handleFloat64SetType(String colName, JSONObject valuesJson) {
-        return new HashSet<>(handleFloat64ArrayType(colName, valuesJson));
-    }
+    String columnType = sourceColDef.getType().getName();
+    Object colValue = null;
+    String colType = spannerColDef.getType().getName();
+    String colName = spannerColDef.getName();
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link List<Float>} object containing List<Float> as value represented in cassandra type.
-     */
-    public static List<Float> handleFloatArrayType(String colName, JSONObject valuesJson) {
-        return handleFloat64ArrayType(colName, valuesJson).stream().map(Double::floatValue).collect(Collectors.toList());
-    }
+    switch (colType.toLowerCase()) {
+      case "bigint":
+      case "int64":
+        colValue = CassandraTypeHandler.handleCassandraBigintType(colName, valuesJson);
+        break;
 
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Set<Float>} object containing Set<Float> as value represented in cassandra type.
-     */
-    public static Set<Float> handleFloatSetType(String colName, JSONObject valuesJson) {
-        return handleFloat64SetType(colName, valuesJson).stream().map(Double::floatValue).collect(Collectors.toSet());
-    }
-
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link List<Date>} object containing List<Date> as value represented in cassandra type.
-     */
-    public static List<Date> handleDateArrayType(String colName, JSONObject valuesJson) {
-        return valuesJson.getJSONArray(colName).toList().stream()
-                .map(obj -> parseDate(colName, obj, "yyyy-MM-dd"))
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Set<Date>} object containing Set<Date> as value represented in cassandra type.
-     */
-    public static Set<Date> handleDateSetType(String colName, JSONObject valuesJson) {
-        return new HashSet<>(handleDateArrayType(colName, valuesJson));
-    }
-
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link List<Timestamp>} object containing List<Timestamp> as value represented in cassandra type.
-     */
-    public static List<Timestamp> handleTimestampArrayType(String colName, JSONObject valuesJson) {
-        return valuesJson.getJSONArray(colName).toList().stream()
-                .map(value -> {
-                    return new Timestamp(parseDate(colName, value, "yyyy-MM-dd'T'HH:mm:ss.SSSX").getTime());
-                })
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Set<Timestamp>} object containing Set<Timestamp> as value represented in cassandra type.
-     */
-    public static Set<Timestamp> handleTimestampSetType(String colName, JSONObject valuesJson) {
-        return new HashSet<>(handleTimestampArrayType(colName, valuesJson));
-    }
-
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link List<ByteBuffer>} object containing List<ByteBuffer> as value represented in cassandra type.
-     */
-    public static List<ByteBuffer> handleByteArrayType(String colName, JSONObject valuesJson) {
-        return valuesJson.getJSONArray(colName).toList().stream()
-                .map(value -> {
-                    return parseBlobType(colName, value);
-                })
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Generates a Type based on the provided {@link CassandraTypeHandler}.
-     *
-     * @param colName - which is used to fetch Key from valueJSON.
-     * @param valuesJson - contains all the key value for current incoming stream.
-     *
-     * @return a {@link Set<ByteBuffer>} object containing Set<ByteBuffer> as value represented in cassandra type.
-     */
-    public static Set<ByteBuffer> handleByteSetType(String colName, JSONObject valuesJson) {
-        return new HashSet<>(handleByteArrayType(colName, valuesJson));
-    }
-
-    public static PreparedStatementValueObject<?> getColumnValueByType(
-            SpannerColumnDefinition spannerColDef,
-            SourceColumnDefinition sourceColDef,
-            JSONObject valuesJson,
-            String sourceDbTimezoneOffset
-    ) {
-
-        String columnType = sourceColDef.getType().getName();
-        Object colValue = null;
-        String colType = spannerColDef.getType().getName();
-        String colName = spannerColDef.getName();
-
-        switch (colType.toLowerCase()) {
-            case "bigint":
-            case "int64":
-                colValue = CassandraTypeHandler.handleCassandraBigintType(colName, valuesJson);
-                break;
-
-            case "string":
-                String inputValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
-                if(isValidUUID(inputValue)){
-                    colValue = CassandraTypeHandler.handleCassandraUuidType(colName, valuesJson);
-                } else if (isValidIPAddress(inputValue)) {
-                    try {
-                        colValue = CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson);
-                    } catch (UnknownHostException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else if(isValidJSON(inputValue)){
-                    colValue= inputValue;
-                } else {
-                    colValue = "'" + escapeCassandraString(CassandraTypeHandler.handleCassandraTextType(colName, valuesJson)) + "'";
-                }
-                break;
-
-            case "timestamp":
-                colValue = convertToCassandraTimestamp(String.valueOf(
-                        CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson)
-                ), sourceDbTimezoneOffset);
-                break;
-
-            case "date":
-            case "datetime":
-                colValue = convertToCassandraTimestamp(String.valueOf(
-                        CassandraTypeHandler.handleCassandraDateType(colName, valuesJson)
-                ), sourceDbTimezoneOffset);
-                break;
-
-            case "boolean":
-                colValue = CassandraTypeHandler.handleCassandraBoolType(colName, valuesJson);
-                break;
-
-            case "float64":
-                colValue = CassandraTypeHandler.handleCassandraDoubleType(colName, valuesJson);
-                break;
-
-            case "numeric":
-            case "float":
-                colValue = CassandraTypeHandler.handleCassandraFloatType(colName, valuesJson);
-                break;
-
-            case "bytes(max)":
-                colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
-                break;
-
-            case "integer":
-                colValue = CassandraTypeHandler.handleCassandraIntType(colName, valuesJson);
-                break;
-        }
-
-        if(colValue == null){
-            return null;
-        }
-
-        switch (columnType.toLowerCase()) {
-            case "smallint":
-                return new PreparedStatementValueObject<>(columnType.toLowerCase(), convertToSmallInt((Integer) colValue));
-            case "tinyint":
-                return new PreparedStatementValueObject<>(columnType.toLowerCase(), convertToTinyInt((Integer) colValue));
-            case "date":
-                return new PreparedStatementValueObject<>(columnType.toLowerCase(), convertToCassandraDate((String) colValue));
-            case "time":
-            case "timestamp":
-                return new PreparedStatementValueObject<>(columnType.toLowerCase(), convertToCassandraTimestamp((String) colValue));
-            default:
-                throw new IllegalArgumentException("Invalid column " + colName + " do not have mapping created for " + columnType);
-        }
-    }
-
-    public static short convertToSmallInt(Integer integerValue) {
-        if (integerValue < Short.MIN_VALUE || integerValue > Short.MAX_VALUE) {
-            throw new IllegalArgumentException("Value is out of range for smallint.");
-        }
-        return integerValue.shortValue();
-    }
-
-    public static byte convertToTinyInt(Integer integerValue) {
-        if (integerValue < Byte.MIN_VALUE || integerValue > Byte.MAX_VALUE) {
-            throw new IllegalArgumentException("Value is out of range for tinyint.");
-        }
-        return integerValue.byteValue();
-    }
-
-    private static String escapeCassandraString(String value) {
-        return value.replace("'", "''");
-    }
-
-    private static String convertToCassandraTimestamp(String value, String timezoneOffset) {
-        try {
-            ZonedDateTime dateTime = ZonedDateTime.parse(value);
-            ZoneOffset offset = ZoneOffset.of(timezoneOffset);
-            dateTime = dateTime.withZoneSameInstant(offset);
-            return "'" + dateTime.withZoneSameInstant(ZoneOffset.UTC).toString() + "'";
-        } catch (DateTimeParseException e) {
+      case "string":
+        String inputValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
+        if (isValidUUID(inputValue)) {
+          colValue = CassandraTypeHandler.handleCassandraUuidType(colName, valuesJson);
+        } else if (isValidIPAddress(inputValue)) {
+          try {
+            colValue = CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson);
+          } catch (UnknownHostException e) {
             throw new RuntimeException(e);
+          }
+        } else if (isValidJSON(inputValue)) {
+          colValue = inputValue;
+        } else {
+          colValue =
+              "'"
+                  + escapeCassandraString(
+                      CassandraTypeHandler.handleCassandraTextType(colName, valuesJson))
+                  + "'";
         }
+        break;
+
+      case "timestamp":
+        colValue =
+            convertToCassandraTimestamp(
+                String.valueOf(
+                    CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson)),
+                sourceDbTimezoneOffset);
+        break;
+
+      case "date":
+      case "datetime":
+        colValue =
+            convertToCassandraTimestamp(
+                String.valueOf(CassandraTypeHandler.handleCassandraDateType(colName, valuesJson)),
+                sourceDbTimezoneOffset);
+        break;
+
+      case "boolean":
+        colValue = CassandraTypeHandler.handleCassandraBoolType(colName, valuesJson);
+        break;
+
+      case "float64":
+        colValue = CassandraTypeHandler.handleCassandraDoubleType(colName, valuesJson);
+        break;
+
+      case "numeric":
+      case "float":
+        colValue = CassandraTypeHandler.handleCassandraFloatType(colName, valuesJson);
+        break;
+
+      case "bytes(max)":
+        colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
+        break;
+
+      case "integer":
+        colValue = CassandraTypeHandler.handleCassandraIntType(colName, valuesJson);
+        break;
     }
 
-    private static LocalDate convertToCassandraDate(String dateString) {
-        Instant instant = Instant.parse(dateString);
-        Date date = Date.from(instant);
-        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    if (colValue == null) {
+      return null;
     }
 
-    private static Instant convertToCassandraTimestamp(String dateString) {
-        return Instant.parse(dateString);
+    switch (columnType.toLowerCase()) {
+      case "smallint":
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), convertToSmallInt((Integer) colValue));
+      case "tinyint":
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), convertToTinyInt((Integer) colValue));
+      case "date":
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), convertToCassandraDate((String) colValue));
+      case "time":
+      case "timestamp":
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), convertToCassandraTimestamp((String) colValue));
+      default:
+        return new PreparedStatementValueObject<>(columnType.toLowerCase(), colValue);
     }
+  }
 
-    private static boolean isValidUUID(String value) {
-        try {
-            UUID.fromString(value);
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
+  public static short convertToSmallInt(Integer integerValue) {
+    if (integerValue < Short.MIN_VALUE || integerValue > Short.MAX_VALUE) {
+      throw new IllegalArgumentException("Value is out of range for smallint.");
     }
+    return integerValue.shortValue();
+  }
 
-    private static boolean isValidIPAddress(String value){
-        try {
-            InetAddress.getByName(value);
-            return true;
-        } catch (UnknownHostException e) {
-            return false;
-        }
+  public static byte convertToTinyInt(Integer integerValue) {
+    if (integerValue < Byte.MIN_VALUE || integerValue > Byte.MAX_VALUE) {
+      throw new IllegalArgumentException("Value is out of range for tinyint.");
     }
+    return integerValue.byteValue();
+  }
 
-    private static boolean isValidJSON(String value){
-        try {
-            new JSONObject(value);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+  private static String escapeCassandraString(String value) {
+    return value.replace("'", "''");
+  }
+
+  private static String convertToCassandraTimestamp(String value, String timezoneOffset) {
+    try {
+      ZonedDateTime dateTime = ZonedDateTime.parse(value);
+      ZoneOffset offset = ZoneOffset.of(timezoneOffset);
+      dateTime = dateTime.withZoneSameInstant(offset);
+      return "'" + dateTime.withZoneSameInstant(ZoneOffset.UTC).toString() + "'";
+    } catch (DateTimeParseException e) {
+      throw new RuntimeException(e);
     }
+  }
+
+  private static LocalDate convertToCassandraDate(String dateString) {
+    Instant instant = Instant.parse(dateString);
+    Date date = Date.from(instant);
+    return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+  }
+
+  private static Instant convertToCassandraTimestamp(String dateString) {
+    return Instant.parse(dateString);
+  }
+
+  private static boolean isValidUUID(String value) {
+    try {
+      UUID.fromString(value);
+      return true;
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+  }
+
+  private static boolean isValidIPAddress(String value) {
+    try {
+      InetAddress.getByName(value);
+      return true;
+    } catch (UnknownHostException e) {
+      return false;
+    }
+  }
+
+  private static boolean isValidJSON(String value) {
+    try {
+      new JSONObject(value);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
 }

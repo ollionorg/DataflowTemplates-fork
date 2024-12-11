@@ -615,6 +615,7 @@ class CassandraTypeHandler {
         colValue = CassandraTypeHandler.handleCassandraFloatType(colName, valuesJson);
         break;
 
+      case "bytes":
       case "bytes(max)":
         colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
         break;

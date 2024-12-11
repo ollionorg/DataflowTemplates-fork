@@ -782,10 +782,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /*The expected sql is:
-    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES"
-        + " (999,'kk',BINARY(FROM_BASE64('YmlsX2NvbA=='))) ON DUPLICATE KEY UPDATE  FirstName ="
-        + " 'kk', LastName = BINARY(FROM_BASE64('YmlsX2NvbA=='))"; */
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(

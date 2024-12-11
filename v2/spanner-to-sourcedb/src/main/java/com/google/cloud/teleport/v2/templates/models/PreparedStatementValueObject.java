@@ -16,20 +16,20 @@
 package com.google.cloud.teleport.v2.templates.models;
 
 public class PreparedStatementValueObject<T> {
-    private String key;
+    private String dataType;
     private T value;
 
-    public PreparedStatementValueObject(String key, T value) {
-        this.key = key;
+    public PreparedStatementValueObject(String dataType, T value) {
+        this.dataType = dataType;
         this.value = value;
     }
 
-    public String getKey() {
-        return key;
+    public String getDataType() {
+        return dataType;
     }
 
-    public void setKey(String key) {
-        this.key = key;
+    public void setDataType(String dataType) {
+        this.dataType = dataType;
     }
 
     public T getValue() {
@@ -44,7 +44,7 @@ public class PreparedStatementValueObject<T> {
     @Override
     public String toString() {
         return "PreparedStatementValueObject{" +
-                "key='" + key + '\'' +
+                "key='" + dataType + '\'' +
                 ", value=" + value +
                 '}';
     }
@@ -54,12 +54,12 @@ public class PreparedStatementValueObject<T> {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         PreparedStatementValueObject<?> that = (PreparedStatementValueObject<?>) obj;
-        return key.equals(that.key) && value.equals(that.value);
+        return dataType.equals(that.dataType) && value.equals(that.value);
     }
 
     @Override
     public int hashCode() {
-        return 31 * key.hashCode() + (value != null ? value.hashCode() : 0);
+        return 31 * dataType.hashCode() + (value != null ? value.hashCode() : 0);
     }
 }
 

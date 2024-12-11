@@ -36,7 +36,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     /**
      * @param dmlGeneratorRequest the request containing necessary information to construct the DML
      *                            statement, including modification type, table schema, new values, and key values.
-     * @return
+     * @return DMLGeneratorResponse
      */
     @Override
     public DMLGeneratorResponse getDMLStatement(DMLGeneratorRequest dmlGeneratorRequest) {
@@ -105,7 +105,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
         } else if ("DELETE".equals(dmlGeneratorRequest.getModType())) {
             return getDeleteStatementCQL(sourceTable.getName(), pkColumnNameValues,  Instant.now().toEpochMilli() * 1000);
         } else {
-            LOG.warn("Unsupported modType: " + dmlGeneratorRequest.getModType());
+            LOG.warn("Unsupported modType: {}", dmlGeneratorRequest.getModType());
             return new DMLGeneratorResponse("");
         }
     }

@@ -244,8 +244,6 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             if (keyValuesJson.has(spannerColumnName)) {
                 // get the value based on Spanner and Source type
                 if (keyValuesJson.isNull(spannerColumnName)) {
-                    PreparedStatementValueObject<String> NULL_OBJ = new PreparedStatementValueObject<>(spannerColumnName, "NULL");
-                    response.put(sourceColDef.getName(), NULL_OBJ);
                     continue;
                 }
                 columnValue =
@@ -254,8 +252,6 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             } else if (newValuesJson.has(spannerColumnName)) {
                 // get the value based on Spanner and Source type
                 if (newValuesJson.isNull(spannerColumnName)) {
-                    PreparedStatementValueObject<String> NULL_OBJ = new PreparedStatementValueObject<>(spannerColumnName, "NULL");
-                    response.put(sourceColDef.getName(), NULL_OBJ);
                     continue;
                 }
                 columnValue =
@@ -307,8 +303,6 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             if (keyValuesJson.has(spannerColumnName)) {
                 // get the value based on Spanner and Source type
                 if (keyValuesJson.isNull(spannerColumnName)) {
-                    PreparedStatementValueObject<String> NULL_OBJ = new PreparedStatementValueObject<>(spannerColumnName, "NULL");
-                    response.put(sourceColDef.getName(), NULL_OBJ);
                     continue;
                 }
                 columnValue =
@@ -321,8 +315,6 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             } else if (newValuesJson.has(spannerColumnName)) {
                 // get the value based on Spanner and Source type
                 if (newValuesJson.isNull(spannerColumnName)) {
-                    PreparedStatementValueObject<String> NULL_OBJ = new PreparedStatementValueObject<>(spannerColumnName, "NULL");
-                    response.put(sourceColDef.getName(), NULL_OBJ);
                     continue;
                 }
                 columnValue =

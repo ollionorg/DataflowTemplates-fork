@@ -139,11 +139,11 @@ public class CassandraDMLGenerator implements IDMLGenerator {
 
         StringBuilder allColumns = new StringBuilder();
         StringBuilder placeholders = new StringBuilder();
-        List<Object> values = new ArrayList<>();
+        List<PreparedStatementValueObject<?>> values = new ArrayList<>();
 
         for (Map.Entry<String, PreparedStatementValueObject<?>> entry : pkColumnNameValues.entrySet()) {
             String colName = entry.getKey();
-            Object colValue = entry.getValue();
+            PreparedStatementValueObject<?> colValue = entry.getValue();
 
             allColumns.append(colName).append(", ");
             placeholders.append("?, ");
@@ -152,7 +152,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
 
         for (Map.Entry<String, PreparedStatementValueObject<?>> entry : columnNameValues.entrySet()) {
             String colName = entry.getKey();
-            Object colValue = entry.getValue();
+            PreparedStatementValueObject<?> colValue = entry.getValue();
 
             allColumns.append(colName).append(", ");
             placeholders.append("?, ");
@@ -182,7 +182,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     ) {
 
         StringBuilder deleteConditions = new StringBuilder();
-        List<Object> values = new ArrayList<>();
+        List<PreparedStatementValueObject<?>> values = new ArrayList<>();
 
         for (Map.Entry<String, PreparedStatementValueObject<?>> entry : pkColumnNameValues.entrySet()) {
             String colName = entry.getKey();

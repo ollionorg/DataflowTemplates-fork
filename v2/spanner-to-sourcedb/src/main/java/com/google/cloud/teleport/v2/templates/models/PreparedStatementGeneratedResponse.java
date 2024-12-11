@@ -3,18 +3,18 @@ package com.google.cloud.teleport.v2.templates.models;
 import java.util.List;
 
 public class PreparedStatementGeneratedResponse extends DMLGeneratorResponse{
-    private List<Object> values;
+    private List<PreparedStatementValueObject<?>> values;
 
-    public PreparedStatementGeneratedResponse(String dmlStatement, List<Object> values) {
+    public PreparedStatementGeneratedResponse(String dmlStatement, List<PreparedStatementValueObject<?>> values) {
         super(dmlStatement);
         this.values = values;
     }
 
-    public List<Object> getValues() {
+    public List<PreparedStatementValueObject<?>> getValues() {
         return values;
     }
 
-    public void setValues(List<Object> values) {
+    public void setValues(List<PreparedStatementValueObject<?>> values) {
         this.values = values;
     }
 }

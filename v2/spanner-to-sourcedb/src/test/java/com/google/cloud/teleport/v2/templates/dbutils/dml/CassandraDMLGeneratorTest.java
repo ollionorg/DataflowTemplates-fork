@@ -1,355 +1,1114 @@
     package com.google.cloud.teleport.v2.templates.dbutils.dml;
 
     import com.google.cloud.teleport.v2.spanner.migrations.schema.*;
+    import com.google.cloud.teleport.v2.spanner.migrations.utils.SessionFileReader;
+    import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataChangeRecord;
+    import com.google.cloud.teleport.v2.templates.dbutils.processor.InputRecordProcessor;
     import com.google.cloud.teleport.v2.templates.models.DMLGeneratorRequest;
     import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
-    import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
-    import com.google.cloud.teleport.v2.templates.processing.dml.DMLGenerator;
+    import com.google.gson.FieldNamingPolicy;
+    import com.google.gson.GsonBuilder;
+    import org.apache.beam.sdk.io.FileSystems;
     import org.json.JSONObject;
-    import org.junit.jupiter.api.BeforeEach;
     import org.junit.jupiter.api.Test;
     import org.mockito.*;
+    import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+    import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectWriter;
+    import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 
+    import java.io.InputStream;
+    import java.nio.channels.Channels;
+    import java.nio.charset.StandardCharsets;
     import java.util.*;
-
-    import static org.junit.jupiter.api.Assertions.*;
-    import static org.mockito.Mockito.*;
+    import static org.junit.Assert.assertTrue;
 
     public class CassandraDMLGeneratorTest {
 
         @Mock
-        private SpannerTable mockSpannerTable;
-
-        @Mock
-        private SourceTable mockSourceTable;
-
-        @Mock
-        private SourceColumnDefinition mockSourceColumnDefinition;
-
-        @Mock
-        private SpannerColumnDefinition mockSpannerColumnDefinition;
-
-        @Mock
-        private SpannerColumnType mockSpannerColumnType;
-
-        @Mock
         private DMLGeneratorRequest mockDmlGeneratorRequest;
 
-        @Mock
-        private Schema mockSchema;
 
-        private Map<String, String> response;
+        @Test
+        public void tableAndAllColumnNameTypesMatch() {
+            Schema schema = SessionFileReader.read("src/test/resources/primarykeyMismatchSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
 
-        private CassandraDMLGenerator cassandraDMLGenerator;
+    /*The expected sql is:
+    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk','ll') ON DUPLICATE KEY"
+        + " UPDATE  FirstName = 'kk', LastName = 'll'";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
 
-        @BeforeEach
-        public void setUp() {
-            cassandraDMLGenerator = new CassandraDMLGenerator();
-            MockitoAnnotations.openMocks(this);  // Initialize mocks
-
-            when(mockDmlGeneratorRequest.getSchema()).thenReturn(mockSchema);
-            when(mockDmlGeneratorRequest.getSpannerTableName()).thenReturn("TestTable");
+            assertTrue(sql.contains("`FirstName` = 'kk'"));
+            assertTrue(sql.contains("`LastName` = 'll'"));
         }
 
         @Test
-        public void testGetDMLStatement_InsertOperation() {
-            when(mockDmlGeneratorRequest.getModType()).thenReturn("INSERT");
-            when(mockDmlGeneratorRequest.getNewValuesJson()).thenReturn(new JSONObject());
-            when(mockDmlGeneratorRequest.getKeyValuesJson()).thenReturn(new JSONObject());
-            when(mockDmlGeneratorRequest.getSourceDbTimezoneOffset()).thenReturn("UTC");
+        public void tableNameMismatchAllColumnNameTypesMatch() {
+            Schema schema = SessionFileReader.read("src/test/resources/primarykeyMismatchSession.json");
+            String tableName = "leChanteur";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
 
-            SpannerTable spannerTable = mock(SpannerTable.class);
-            SourceTable sourceTable = mock(SourceTable.class);
-            ColumnPK[] primaryKeys = new ColumnPK[1];
-            primaryKeys[0] = mock(ColumnPK.class);
+    /* The expected sql is:
+    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk','ll') ON DUPLICATE KEY"
+        + " UPDATE  FirstName = 'kk', LastName = 'll'";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
 
-            when(sourceTable.getPrimaryKeys()).thenReturn(primaryKeys);
-            when(mockDmlGeneratorRequest.getSchema().getSpSchema()).thenReturn(Collections.singletonMap("TestTable", spannerTable));
-            when(mockDmlGeneratorRequest.getSchema().getSrcSchema()).thenReturn(Collections.singletonMap("TestTable", sourceTable));
-
-            Map<String, Object> mockPrimaryKeyValues = new HashMap<>();
-            mockPrimaryKeyValues.put("id", 1);
-            when(CassandraDMLGenerator.getPkColumnValues(any(), any(), any(), any(), any())).thenReturn(mockPrimaryKeyValues);
-
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-
-            assertNotNull(response);
-            assertTrue(response.getDmlStatement().contains("INSERT INTO TestTable"));
+            assertTrue(sql.contains("`FirstName` = 'kk'"));
+            assertTrue(sql.contains("`LastName` = 'll'"));
         }
 
         @Test
-        public void testGetDMLStatement_DeleteOperation() {
-            when(mockDmlGeneratorRequest.getModType()).thenReturn("DELETE");
-            when(mockDmlGeneratorRequest.getNewValuesJson()).thenReturn(new JSONObject());
-            when(mockDmlGeneratorRequest.getKeyValuesJson()).thenReturn(new JSONObject());
-            when(mockDmlGeneratorRequest.getSourceDbTimezoneOffset()).thenReturn("UTC");
+        public void tableNameMatchColumnNameTypeMismatch() {
+            Schema schema = SessionFileReader.read("src/test/resources/coulmnNameTypeMismatchSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"222\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+    /*The expected sql is:
+    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES ('999',222,'ll') ON DUPLICATE"
+        + " KEY UPDATE  FirstName = 222, LastName = 'll'";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
 
-            SpannerTable spannerTable = mock(SpannerTable.class);
-            SourceTable sourceTable = mock(SourceTable.class);
-
-            when(mockDmlGeneratorRequest.getSchema().getSpSchema()).thenReturn(Collections.singletonMap("TestTable", spannerTable));
-            when(mockDmlGeneratorRequest.getSchema().getSrcSchema()).thenReturn(Collections.singletonMap("TestTable", sourceTable));
-
-            Map<String, Object> mockPrimaryKeyValues = new HashMap<>();
-            mockPrimaryKeyValues.put("id", 1);
-            when(CassandraDMLGenerator.getPkColumnValues(any(), any(), any(), any(), any())).thenReturn(mockPrimaryKeyValues);
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertInstanceOf(PreparedStatementGeneratedResponse.class, response);
-            PreparedStatementGeneratedResponse preparedResponse = (PreparedStatementGeneratedResponse) response;
-            assertTrue(preparedResponse.getDmlStatement().contains("DELETE FROM TestTable"));
+            assertTrue(sql.contains("`FirstName` = 222"));
+            assertTrue(sql.contains("`LastName` = 'll'"));
         }
 
         @Test
-        public void testGetDMLStatement_MissingPrimaryKey() {
-            when(mockDmlGeneratorRequest.getModType()).thenReturn("INSERT");
-            when(mockDmlGeneratorRequest.getNewValuesJson()).thenReturn(new JSONObject());
-            when(mockDmlGeneratorRequest.getKeyValuesJson()).thenReturn(new JSONObject());
-            when(mockDmlGeneratorRequest.getSourceDbTimezoneOffset()).thenReturn("UTC");
+        public void tableNameMatchSourceColumnNotPresentInSpanner() {
+            Schema schema =
+                    SessionFileReader.read("src/test/resources/sourceColumnAbsentInSpannerSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
 
-            SpannerTable spannerTable = mock(SpannerTable.class);
-            SourceTable sourceTable = mock(SourceTable.class);
-            when(mockDmlGeneratorRequest.getSchema().getSpSchema()).thenReturn(Collections.singletonMap("TestTable", spannerTable));
-            when(mockDmlGeneratorRequest.getSchema().getSrcSchema()).thenReturn(Collections.singletonMap("TestTable", sourceTable));
+    /* The expected sql is:
+    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk','ll') ON DUPLICATE KEY"
+        + " UPDATE  FirstName = 'kk', LastName = 'll'"; */
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
 
-            ColumnPK[] emptyPrimaryKeys = new ColumnPK[0];
-            when(sourceTable.getPrimaryKeys()).thenReturn(emptyPrimaryKeys);
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertEquals("", response.getDmlStatement());  // No DML should be generated if primary key is missing
+            assertTrue(sql.contains("`FirstName` = 'kk'"));
+            assertTrue(sql.contains("`LastName` = 'll'"));
         }
 
         @Test
-        public void testGetDMLStatement_InvalidOperationType() {
-            when(mockDmlGeneratorRequest.getModType()).thenReturn("INVALID");
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertEquals("", response.getDmlStatement());  // Invalid operation should result in an empty DML statement
+        public void tableNameMatchSpannerColumnNotPresentInSource() {
+
+            Schema schema =
+                    SessionFileReader.read("src/test/resources/spannerColumnAbsentInSourceSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\",\"hb_shardId\":\"shardA\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk','ll') ON DUPLICATE KEY"
+        + " UPDATE  FirstName = 'kk', LastName = 'll'";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`FirstName` = 'kk'"));
+            assertTrue(sql.contains("`LastName` = 'll'"));
         }
 
         @Test
-        public void testGetDMLStatement_MissingTableInSessionFile() {
-            when(mockDmlGeneratorRequest.getSpannerTableName()).thenReturn("NonExistentTable");
-            when(mockDmlGeneratorRequest.getSchema().getSpannerToID()).thenReturn(new HashMap<>());
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertEquals("", response.getDmlStatement());  // Should return an empty DML statement if table not found
+        public void primaryKeyNotFoundInJson() {
+            Schema schema = SessionFileReader.read("src/test/resources/allMatchSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SomeRandomName\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+            /* The expected sql is: ""*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.isEmpty());
         }
 
         @Test
-        public void testGetColumnValues() {
-            String columnName = "column1";
-            when(mockSourceColumnDefinition.getName()).thenReturn(columnName);
-            Map<String, SourceColumnDefinition> colDefs = new HashMap<>();
-            colDefs.put("colId1", mockSourceColumnDefinition);
-            when(mockSourceTable.getColDefs()).thenReturn(colDefs);
-            when(mockSpannerColumnDefinition.getName()).thenReturn(columnName);
-            when(mockSpannerColumnDefinition.getType()).thenReturn(mockSpannerColumnType);
-            when(mockSpannerColumnType.getName()).thenReturn("STRING");
-            when(mockSpannerTable.getColDefs()).thenReturn(Map.of("colId1", mockSpannerColumnDefinition));
+        public void primaryKeyNotPresentInSourceSchema() {
+            Schema schema = SessionFileReader.read("src/test/resources/sourceNoPkSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
 
-            JSONObject newValuesJson = new JSONObject();
-            newValuesJson.put(columnName, "value");
+            /* The expected sql is: ""*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
 
-            JSONObject keyValuesJson = new JSONObject();
-            keyValuesJson.put(columnName, "value");
-
-            Map<String, Object> customTransformationResponse = new HashMap<>();
-            Map<String, String> columnValues = DMLGenerator.getColumnValues(
-                    mockSpannerTable,
-                    mockSourceTable,
-                    newValuesJson,
-                    keyValuesJson,
-                    "UTC",
-                    customTransformationResponse
-            );
-            assertNotNull(columnValues, "Column values map should not be null");
-            assertEquals("value", columnValues.get(columnName), "Expected value for column1 not found");
+            assertTrue(sql.isEmpty());
         }
 
         @Test
-        public void testGetSpannerTableWhenFound() {
-            String tableName = "ExistingTable"; // The table name you are testing
-            String tableId = "spannerTableId"; // Table ID we expect to return
-            when(mockDmlGeneratorRequest.getSpannerTableName()).thenReturn(tableName);
-            NameAndCols nameAndCols = mock(NameAndCols.class);
-            when(nameAndCols.getName()).thenReturn(tableId);  // Assuming NameAndCols has a getName() method
-            Map<String, NameAndCols> spannerToID = new HashMap<>();
-            spannerToID.put(tableName, nameAndCols);
-            when(mockSchema.getSpannerToID()).thenReturn(spannerToID);
-            Map<String, SpannerTable> spSchema = new HashMap<>();
-            SpannerTable spannerTable = mock(SpannerTable.class);
-            spSchema.put(tableId, spannerTable);
-            when(mockSchema.getSpSchema()).thenReturn(spSchema);
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertNotNull(response.getDmlStatement());  // Assumes a valid DML statement is returned
+        public void timezoneOffsetMismatch() {
+            Schema schema = SessionFileReader.read("src/test/resources/timeZoneSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"Bday\":\"2023-05-18T12:01:13.088397258Z\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO Singers(SingerId,Bday) VALUES (999,"
+        + " CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+10:00')) ON DUPLICATE KEY"
+        + " UPDATE  Bday =  CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+10:00')";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+10:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(
+                    sql.contains("`Bday` =  CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+10:00'"));
         }
 
         @Test
-        public void testGetSpannerTableWhenNotFound() {
-            String tableName = "NonExistentTable";
-            when(mockDmlGeneratorRequest.getSpannerTableName()).thenReturn(tableName);
-            when(mockSchema.getSpannerToID()).thenReturn(new HashMap<>());
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertEquals("", response.getDmlStatement());  // Should return an empty DML statement if table not found
+        public void primaryKeyMismatch() {
+            Schema schema = SessionFileReader.read("src/test/resources/primarykeyMismatchSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"SingerId\":\"999\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"FirstName\":\"kk\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk','ll') ON DUPLICATE KEY"
+        + " UPDATE  FirstName = 'kk', LastName = 'll'";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`FirstName` = 'kk'"));
+            assertTrue(sql.contains("`LastName` = 'll'"));
         }
 
         @Test
-        public void testGetSpannerTableWhenSchemaIsNull() {
-            when(mockDmlGeneratorRequest.getSchema()).thenReturn(null);
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
+        public void allDataypesDML() throws Exception {
+            Schema schema = SessionFileReader.read("src/test/resources/allDatatypeSession.json");
 
-            assertNotNull(response);
-            assertEquals("", response.getDmlStatement());  // Empty DML because schema is null
+            InputStream stream =
+                    Channels.newInputStream(
+                            FileSystems.open(
+                                    FileSystems.matchNewResource(
+                                            "src/test/resources/bufferInputAllDatatypes.json", false)));
+            String record = IOUtils.toString(stream, StandardCharsets.UTF_8);
+
+            ObjectWriter ow = new ObjectMapper().writer();
+            TrimmedShardedDataChangeRecord chrec =
+                    new GsonBuilder()
+                            .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
+                            .create()
+                            .fromJson(record, TrimmedShardedDataChangeRecord.class);
+
+            String tableName = chrec.getTableName();
+            String modType = chrec.getModType().name();
+            String keysJsonStr = chrec.getMod().getKeysJson();
+            String newValueJsonStr = chrec.getMod().getNewValuesJson();
+            JSONObject newValuesJson = new JSONObject(newValueJsonStr);
+            JSONObject keyValuesJson = new JSONObject(keysJsonStr);
+
+    /* The expected sql is:
+    "INSERT INTO"
+        + " sample_table(id,mediumint_column,tinyblob_column,datetime_column,enum_column,longtext_column,mediumblob_column,text_column,tinyint_column,timestamp_column,float_column,varbinary_column,binary_column,bigint_column,time_column,tinytext_column,set_column,longblob_column,mediumtext_column,year_column,blob_column,decimal_column,bool_column,char_column,date_column,double_column,smallint_column,varchar_column)"
+        + " VALUES (12,333,FROM_BASE64('YWJj'),"
+        + " CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00'),'1','<longtext_column>',FROM_BASE64('YWJjbGFyZ2U='),'aaaaaddd',1,"
+        + " CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00'),4.2,BINARY(FROM_BASE64('YWJjbGFyZ2U=')),BINARY(FROM_BASE64('YWJjbGFyZ2U=')),4444,'10:10:10','<tinytext_column>','1,2',FROM_BASE64('YWJsb25nYmxvYmM='),'<mediumtext_column>','2023',FROM_BASE64('YWJiaWdj'),444.222,false,'<char_c','2023-05-18',42.42,22,'abc')"
+        + " ON DUPLICATE KEY UPDATE  mediumint_column = 333, tinyblob_column ="
+        + " FROM_BASE64('YWJj'), datetime_column = "
+        + " CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00'), enum_column = '1',"
+        + " longtext_column = '<longtext_column>', mediumblob_column ="
+        + " FROM_BASE64('YWJjbGFyZ2U='), text_column = 'aaaaaddd', tinyint_column = 1,"
+        + " timestamp_column =  CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00'),"
+        + " float_column = 4.2, varbinary_column = BINARY(FROM_BASE64('YWJjbGFyZ2U=')),"
+        + " binary_column = BINARY(FROM_BASE64('YWJjbGFyZ2U=')), bigint_column = 4444, time_column"
+        + " = '10:10:10', tinytext_column = '<tinytext_column>', set_column = '1,2',"
+        + " longblob_column = FROM_BASE64('YWJsb25nYmxvYmM='), mediumtext_column ="
+        + " '<mediumtext_column>', year_column = '2023', blob_column = FROM_BASE64('YWJiaWdj'),"
+        + " decimal_column = 444.222, bool_column = false, char_column = '<char_c', date_column"
+        + " = '2023-05-18', double_column = 42.42, smallint_column = 22, varchar_column ="
+        + " 'abc'"; */
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`mediumint_column` = 333"));
+            assertTrue(sql.contains("`tinyblob_column` = FROM_BASE64('YWJj')"));
+            boolean datetimeFlag =
+                    sql.contains(
+                            "`datetime_column` =  CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00'");
+            assertTrue(datetimeFlag);
+            // The same assert below fails to run hence as a workaround we are using the above boolean
+            // flag
+    /*  assertTrue(
+    sql.contains(
+        "datetime_column = CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00')"));*/
+            assertTrue(sql.contains("`enum_column` = '1'"));
+            assertTrue(sql.contains("`longtext_column` = '<longtext_column>'"));
+            assertTrue(sql.contains("`mediumblob_column` = FROM_BASE64('YWJjbGFyZ2U=')"));
+            assertTrue(sql.contains("`text_column` = 'aaaaaddd'"));
+            assertTrue(sql.contains("`tinyint_column` = 1"));
+            boolean timestampFlag =
+                    sql.contains(
+                            "`timestamp_column` =  CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00')");
+            assertTrue(timestampFlag);
+            // The same assert below fails to run hence as a workaround we are using the above boolean
+            // flag
+    /* assertTrue(
+    sql.contains(
+        "timestamp_column = CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00')"));*/
+            assertTrue(sql.contains("`float_column` = 4.2"));
+            assertTrue(sql.contains("`varbinary_column` = BINARY(FROM_BASE64('YWJjbGFyZ2U='))"));
+            assertTrue(sql.contains("`binary_column` = BINARY(FROM_BASE64('YWJjbGFyZ2U='))"));
+            assertTrue(sql.contains("`bigint_column` = 4444"));
+            assertTrue(sql.contains("`time_column` = '10:10:10'"));
+            assertTrue(sql.contains("`tinytext_column` = '<tinytext_column>'"));
+            assertTrue(sql.contains("`set_column` = '1,2'"));
+            assertTrue(sql.contains("`longblob_column` = FROM_BASE64('YWJsb25nYmxvYmM=')"));
+            assertTrue(sql.contains("`mediumtext_column` = '<mediumtext_column>'"));
+            assertTrue(sql.contains("`year_column` = '2023'"));
+            assertTrue(sql.contains("`blob_column` = FROM_BASE64('YWJiaWdj')"));
+            assertTrue(sql.contains("`decimal_column` = 444.222"));
+            assertTrue(sql.contains("`bool_column` = false"));
+            assertTrue(sql.contains("`char_column` = '<char_c'"));
+            assertTrue(sql.contains("`date_column` = '2023-05-18'"));
+            assertTrue(sql.contains("`double_column` = 42.42"));
         }
 
         @Test
-        public void testGetSpannerTableWhenSpannerTableNameIsNull() {
-            when(mockDmlGeneratorRequest.getSpannerTableName()).thenReturn(null);
-            when(mockDmlGeneratorRequest.getSchema()).thenReturn(mockSchema);
-            when(mockSchema.getSpannerToID()).thenReturn(new HashMap<>());
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertEquals("", response.getDmlStatement());  // Empty DML because table name is null
+        public void updateToNull() {
+            Schema schema = SessionFileReader.read("src/test/resources/allMatchSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":null}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk',NULL) ON DUPLICATE KEY"
+        + " UPDATE  FirstName = 'kk', LastName = NULL";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`FirstName` = 'kk'"));
+            assertTrue(sql.contains("`LastName` = NULL"));
         }
 
         @Test
-        public void testSpannerTableNotFound_ReturnsEmptyResponse() {
-            // Arrange: Mock the behavior when the table is not found in the schema
-            when(mockDmlGeneratorRequest.getSpannerTableName()).thenReturn("TestTable");
-            when(mockDmlGeneratorRequest.getSchema()).thenReturn(mockSchema);
-            when(mockSchema.getSpannerToID()).thenReturn(new HashMap<>());
-            when(mockSchema.getSpSchema()).thenReturn(new HashMap<>());
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response, "The response should not be null.");
-            assertEquals("", response.getDmlStatement(), "The DML statement should be empty when the spanner table is not found.");
+        public void deleteMultiplePKColumns() {
+            Schema schema = SessionFileReader.read("src/test/resources/MultiColmPKSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"LastName\":null}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\",\"FirstName\":\"kk\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "DELETE";
+
+    /* The expected sql is:
+    "DELETE FROM Singers WHERE  FirstName = 'kk' AND  SingerId = 999";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`FirstName` = 'kk'"));
+            assertTrue(sql.contains("`SingerId` = 999"));
+            assertTrue(sql.contains("DELETE FROM `Singers` WHERE"));
         }
 
         @Test
-        public void testSpannerTableNotFound_ReturnsEmptyDMLResponse() {
-            when(mockDmlGeneratorRequest.getSpannerTableName()).thenReturn("NonExistentTable");
-            when(mockDmlGeneratorRequest.getSchema()).thenReturn(mockSchema);
-            when(mockSchema.getSpannerToID()).thenReturn(new HashMap<>());
-            when(mockSchema.getSpSchema()).thenReturn(new HashMap<>());
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response, "The response should not be null.");
-            assertEquals("", response.getDmlStatement(), "The DML statement should be empty when the Spanner table is not found.");
+        public void testSingleQuoteMatch() {
+            Schema schema = SessionFileReader.read("src/test/resources/allMatchSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"k\u0027k\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'k''k','ll') ON DUPLICATE KEY"
+        + " UPDATE  FirstName = 'k''k', LastName = 'll'"; */
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`FirstName` = 'k''k'"));
+            assertTrue(sql.contains("`LastName` = 'll'"));
         }
 
         @Test
-        public void testPrimaryKeysNull_ShouldReturnEmptyDMLResponse() {
-            when(mockSourceTable.getPrimaryKeys()).thenReturn(null); // Set primary keys to null
-            when(mockSourceTable.getName()).thenReturn("TestTable");
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertEquals("", response.getDmlStatement());
+        public void singleQuoteBytesDML() throws Exception {
+            Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
+    /*
+    Spanner write is : CAST("\'" as BYTES) for blob and "\'" for varchar
+    Eventual insert is '' but mysql synatx escapes each ' with another '*/
+
+            String tableName = "sample_table";
+            String newValuesString = "{\"blob_column\":\"Jw\u003d\u003d\",\"varchar_column\":\"\u0027\",}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"id\":\"12\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO"
+        + " sample_table(id,varchar_column,blob_column)"
+        + " VALUES (12,'''',FROM_BASE64('Jw=='))"
+        + " ON DUPLICATE KEY UPDATE  varchar_column = '''', blob_column = FROM_BASE64('Jw==')";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+            assertTrue(sql.contains("`varchar_column` = '''"));
+            assertTrue(sql.contains("`blob_column` = FROM_BASE64('Jw==')"));
         }
 
         @Test
-        public void testPrimaryKeysEmpty_ShouldReturnEmptyDMLResponse() {
-            when(mockSourceTable.getPrimaryKeys()).thenReturn(new ColumnPK[0]); // Empty array for primary keys
-            when(mockSourceTable.getName()).thenReturn("TestTable");
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertEquals("", response.getDmlStatement());
+        public void twoSingleEscapedQuoteDML() throws Exception {
+    /*
+    Spanner write is : CAST("\''" as BYTES) for blob and "\'" for varchar
+    Eventual insert is '' but mysql synatx escapes each ' with another '*/
+
+            Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
+
+            String tableName = "sample_table";
+            String newValuesString = "{\"blob_column\":\"Jyc\u003d\",\"varchar_column\":\"\u0027\u0027\",}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"id\":\"12\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES"
+        + " (12,'''''',FROM_BASE64('Jyc=')) ON DUPLICATE KEY UPDATE  varchar_column = '''''',"
+        + " blob_column = FROM_BASE64('Jyc=')";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`varchar_column` = '''''"));
+            assertTrue(sql.contains("`blob_column` = FROM_BASE64('Jyc=')"));
         }
 
         @Test
-        public void testPrimaryKeysPresent_ShouldNotReturnEmptyDMLResponse() {
-            ColumnPK[] primaryKeys = new ColumnPK[] { mock(ColumnPK.class) }; // Non-empty primary keys
-            when(mockSourceTable.getPrimaryKeys()).thenReturn(primaryKeys);
-            when(mockSourceTable.getName()).thenReturn("TestTable");
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertNotEquals("", response.getDmlStatement());
+        public void threeEscapesAndSingleQuoteDML() throws Exception {
+    /*
+    Spanner write is : CAST("\\\'" as BYTES) for blob and "\\\'" for varchar
+    Eventual insert is \' but mysql synatx escapes each ' with another ' and \ with another \*/
+
+            Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
+
+            String tableName = "sample_table";
+            String newValuesString = "{\"blob_column\":\"XCc\u003d\",\"varchar_column\":\"\\\\\\\u0027\",}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"id\":\"12\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES"
+        + " (12,'\\\\''',FROM_BASE64('XCc=')) ON DUPLICATE KEY UPDATE  varchar_column ="
+        + " '\\\\''', blob_column = FROM_BASE64('XCc=')";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`varchar_column` = '\\\\'"));
+            assertTrue(sql.contains("`blob_column` = FROM_BASE64('XCc=')"));
         }
 
         @Test
-        public void testGetDMLStatement_UpdateOperation() {
-            when(mockDmlGeneratorRequest.getModType()).thenReturn("UPDATE");
-            when(mockDmlGeneratorRequest.getNewValuesJson()).thenReturn(new JSONObject());
-            when(mockDmlGeneratorRequest.getKeyValuesJson()).thenReturn(new JSONObject());
-            when(mockDmlGeneratorRequest.getSourceDbTimezoneOffset()).thenReturn("UTC");
+        public void tabEscapeDML() throws Exception {
+    /*
+    Spanner write is : CAST("\t" as BYTES) for blob
+    and "\t" for varchar
+    */
 
-            SpannerTable spannerTable = mock(SpannerTable.class);
-            SourceTable sourceTable = mock(SourceTable.class);
-            ColumnPK[] primaryKeys = new ColumnPK[1];
-            primaryKeys[0] = mock(ColumnPK.class);
+            Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
 
-            when(sourceTable.getPrimaryKeys()).thenReturn(primaryKeys);
-            when(mockDmlGeneratorRequest.getSchema().getSpSchema()).thenReturn(Collections.singletonMap("TestTable", spannerTable));
-            when(mockDmlGeneratorRequest.getSchema().getSrcSchema()).thenReturn(Collections.singletonMap("TestTable", sourceTable));
+            String tableName = "sample_table";
+            String newValuesString = "{\"blob_column\":\"CQ==\",\"varchar_column\":\"\\t\",}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"id\":\"12\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
 
-            Map<String, Object> mockPrimaryKeyValues = new HashMap<>();
-            mockPrimaryKeyValues.put("id", 1);
-            when(CassandraDMLGenerator.getPkColumnValues(any(), any(), any(), any(), any())).thenReturn(mockPrimaryKeyValues);
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertInstanceOf(PreparedStatementGeneratedResponse.class, response);
-            PreparedStatementGeneratedResponse preparedResponse = (PreparedStatementGeneratedResponse) response;
-            assertTrue(preparedResponse.getDmlStatement().contains("UPDATE TestTable"));
+    /* The expected sql is:
+    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES (12,'"
+        + "\t',FROM_BASE64('CQ==')) ON DUPLICATE KEY UPDATE  varchar_column = '\t', blob_column"
+        + " = FROM_BASE64('CQ==')"; */
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`varchar_column` = '\t'"));
+            assertTrue(sql.contains("`blob_column` = FROM_BASE64('CQ==')"));
         }
 
         @Test
-        void testDeleteConditions_withMoreThan5Characters() {
-            StringBuilder deleteConditions = new StringBuilder("DELETE FROM table WHERE id = 1 AND status = 'active'");
-            System.out.println("Initial length: " + deleteConditions.length());
-            System.out.println("Before truncation: " + deleteConditions);
-            if (deleteConditions.length() > 5) {
-                deleteConditions.setLength(deleteConditions.length() - 5);
-            }
-            System.out.println("After truncation: " + deleteConditions);
-            System.out.println("Final length: " + deleteConditions.length());
-            assertEquals("DELETE FROM table WHERE id = 1 AND status = 'act", deleteConditions.toString());
+        public void backSpaceEscapeDML() throws Exception {
+    /*
+    Spanner write is : CAST("\b" as BYTES) for blob
+    and "\b" for varchar
+    */
+
+            Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
+
+            String tableName = "sample_table";
+            String newValuesString = "{\"blob_column\":\"CA==\",\"varchar_column\":\"\\b\",}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"id\":\"12\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES"
+        + " (12,'\b',FROM_BASE64('CA==')) ON DUPLICATE KEY UPDATE  varchar_column = '\b',"
+        + " blob_column = FROM_BASE64('CA==')";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`varchar_column` = '\b'"));
+            assertTrue(sql.contains("`blob_column` = FROM_BASE64('CA==')"));
         }
 
         @Test
-        void testMapInitialization() {
-            Map<String, Object> response = new HashMap<>();
-            assertTrue(response.isEmpty(), "The map should be empty on initialization.");
+        public void newLineEscapeDML() throws Exception {
+    /*
+    Spanner write is : CAST("\n" as BYTES) for blob
+    and "\n" for varchar
+    */
+
+            Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
+
+            String tableName = "sample_table";
+            String newValuesString = "{\"blob_column\":\"Cg==\",\"varchar_column\":\"\\n\",}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"id\":\"12\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES (12,'\n"
+        + "',FROM_BASE64('Cg==')) ON DUPLICATE KEY UPDATE  varchar_column = '\n"
+        + "', blob_column = FROM_BASE64('Cg==')";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`varchar_column` = '\n'"));
+            assertTrue(sql.contains("`blob_column` = FROM_BASE64('Cg==')"));
         }
 
         @Test
-        public void testUpdateDMLStatement_ShouldReturnValidUpdate() {
-            when(mockDmlGeneratorRequest.getModType()).thenReturn("UPDATE");
-            when(mockDmlGeneratorRequest.getNewValuesJson()).thenReturn(new JSONObject());
-            when(mockDmlGeneratorRequest.getKeyValuesJson()).thenReturn(new JSONObject());
-            when(mockDmlGeneratorRequest.getSourceDbTimezoneOffset()).thenReturn("UTC");
+        public void carriageReturnEscapeDML() throws Exception {
+    /*
+    Spanner write is : CAST("\r" as BYTES) for blob
+    and "\r" for varchar
+    */
 
-            SpannerTable spannerTable = mock(SpannerTable.class);
-            SourceTable sourceTable = mock(SourceTable.class);
-            ColumnPK[] primaryKeys = new ColumnPK[1];
-            primaryKeys[0] = mock(ColumnPK.class);
+            Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
 
-            when(sourceTable.getPrimaryKeys()).thenReturn(primaryKeys);
-            when(mockDmlGeneratorRequest.getSchema().getSpSchema()).thenReturn(Collections.singletonMap("TestTable", spannerTable));
-            when(mockDmlGeneratorRequest.getSchema().getSrcSchema()).thenReturn(Collections.singletonMap("TestTable", sourceTable));
+            String tableName = "sample_table";
+            String newValuesString = "{\"blob_column\":\"DQ==\",\"varchar_column\":\"\\r\",}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"id\":\"12\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
 
-            Map<String, Object> mockPrimaryKeyValues = new HashMap<>();
-            mockPrimaryKeyValues.put("id", 1);
-            when(CassandraDMLGenerator.getPkColumnValues(any(), any(), any(), any(), any())).thenReturn(mockPrimaryKeyValues);
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertTrue(response.getDmlStatement().contains("UPDATE TestTable"));
+    /* The expected sql is:
+    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES (12,'\r"
+        + "',FROM_BASE64('DQ==')) ON DUPLICATE KEY UPDATE  varchar_column = '\r"
+        + "', blob_column = FROM_BASE64('DQ==')";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`varchar_column` = '\r'"));
+            assertTrue(sql.contains("`blob_column` = FROM_BASE64('DQ==')"));
         }
 
         @Test
-        public void testPrimaryKeyMissing_ShouldReturnEmptyDMLResponse() {
-            when(mockSourceTable.getPrimaryKeys()).thenReturn(null);
-            when(mockSourceTable.getName()).thenReturn("TestTable");
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertEquals("", response.getDmlStatement());
+        public void formFeedEscapeDML() throws Exception {
+    /*
+    Spanner write is : CAST("\f" as BYTES) for blob
+    and "\f" for varchar
+    */
+
+            Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
+
+            String tableName = "sample_table";
+            String newValuesString = "{\"blob_column\":\"DA==\",\"varchar_column\":\"\\f\",}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"id\":\"12\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES"
+        + " (12,'\f',FROM_BASE64('DA==')) ON DUPLICATE KEY UPDATE  varchar_column = '\f',"
+        + " blob_column = FROM_BASE64('DA==')";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`varchar_column` = '\f'"));
+            assertTrue(sql.contains("`blob_column` = FROM_BASE64('DA==')"));
         }
 
         @Test
-        public void testPrimaryKeyEmpty_ShouldReturnEmptyDMLResponse() {
-            when(mockSourceTable.getPrimaryKeys()).thenReturn(new ColumnPK[0]);
-            when(mockSourceTable.getName()).thenReturn("TestTable");
-            DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockDmlGeneratorRequest);
-            assertNotNull(response);
-            assertEquals("", response.getDmlStatement());
+        public void doubleQuoteEscapeDML() throws Exception {
+    /*
+    Spanner write is : CAST("\"" as BYTES) for blob
+    and "\"" for varchar
+    */
+
+            Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
+
+            String tableName = "sample_table";
+            String newValuesString = "{\"blob_column\":\"Ig==\",\"varchar_column\":\"\\\"\",}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"id\":\"12\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES"
+        + " (12,'\"',FROM_BASE64('Ig==')) ON DUPLICATE KEY UPDATE  varchar_column = '\"',"
+        + " blob_column = FROM_BASE64('Ig==')";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`varchar_column` = '\"'"));
+            assertTrue(sql.contains("`blob_column` = FROM_BASE64('Ig==')"));
+        }
+
+        @Test
+        public void backSlashEscapeDML() throws Exception {
+    /*
+    Spanner write is : CAST("\\" as BYTES) for blob
+    and "\\" for varchar
+    */
+
+            Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
+
+            String tableName = "sample_table";
+            String newValuesString = "{\"blob_column\":\"XA==\",\"varchar_column\":\"\\\\\",}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"id\":\"12\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /*The expected sql is:
+    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES"
+        + " (12,'\\\\',FROM_BASE64('XA==')) ON DUPLICATE KEY UPDATE  varchar_column = '\\\\',"
+        + " blob_column = FROM_BASE64('XA==')";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`varchar_column` = '\\\\'"));
+            assertTrue(sql.contains("`blob_column` = FROM_BASE64('XA==')"));
+        }
+
+        @Test
+        public void bitColumnSql() {
+            Schema schema = SessionFileReader.read("src/test/resources/bitSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"YmlsX2NvbA\u003d\u003d\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /*The expected sql is:
+    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES"
+        + " (999,'kk',BINARY(FROM_BASE64('YmlsX2NvbA=='))) ON DUPLICATE KEY UPDATE  FirstName ="
+        + " 'kk', LastName = BINARY(FROM_BASE64('YmlsX2NvbA=='))"; */
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`LastName` = BINARY(FROM_BASE64('YmlsX2NvbA=='))"));
+        }
+
+        @Test
+        public void testSpannerTableNotInSchema() {
+            Schema schema = SessionFileReader.read("src/test/resources/allMatchSession.json");
+            String tableName = "SomeRandomTableNotInSchema";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.isEmpty());
+        }
+
+        @Test
+        public void testSpannerKeyIsNull() {
+            Schema schema = SessionFileReader.read("src/test/resources/allMatchSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":null}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(
+                    sql.contains(
+                            "INSERT INTO `Singers`(`SingerId`,`FirstName`,`LastName`) VALUES (NULL,'kk','ll')"));
+        }
+
+        @Test
+        public void testKeyInNewValuesJson() {
+            Schema schema = SessionFileReader.read("src/test/resources/allMatchSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\",\"SingerId\":null}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SmthingElse\":null}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+            assertTrue(
+                    sql.contains(
+                            "INSERT INTO `Singers`(`SingerId`,`FirstName`,`LastName`) VALUES (NULL,'kk','ll')"));
+        }
+
+        @Test
+        public void testSourcePKNotInSpanner() {
+            Schema schema = SessionFileReader.read("src/test/resources/errorSchemaSession.json");
+            String tableName = "customer";
+            String newValuesString = "{\"Does\":\"not\",\"matter\":\"junk\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"Dont\":\"care\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "DELETE";
+
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.isEmpty());
+        }
+
+        @Test
+        public void primaryKeyMismatchSpannerNull() {
+            Schema schema = SessionFileReader.read("src/test/resources/primarykeyMismatchSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"SingerId\":\"999\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"FirstName\":null}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+    /* The expected sql is:
+    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,NULL,'ll') ON DUPLICATE KEY"
+        + " UPDATE  FirstName = NULL , LastName = 'll'";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`FirstName` = NULL"));
+        }
+
+        @Test
+        public void testUnsupportedModType() {
+            Schema schema = SessionFileReader.read("src/test/resources/allMatchSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "JUNK";
+
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.isEmpty());
+        }
+
+        @Test
+        public void testUpdateModType() {
+            Schema schema = SessionFileReader.read("src/test/resources/allMatchSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"999\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "UPDATE";
+
+    /*The expected sql is:
+    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk','ll') ON DUPLICATE KEY"
+        + " UPDATE  FirstName = 'kk', LastName = 'll'";*/
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.contains("`FirstName` = 'kk'"));
+            assertTrue(sql.contains("`LastName` = 'll'"));
+        }
+
+        @Test
+        public void testSpannerTableIdMismatch() {
+            Schema schema = SessionFileReader.read("src/test/resources/errorSchemaSession.json");
+            String tableName = "Singers";
+            String newValuesString = "{\"Does\":\"not\",\"matter\":\"junk\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"Dont\":\"care\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "DELETE";
+
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.isEmpty());
+        }
+
+        @Test
+        public void testSourcePkNull() {
+            Schema schema = SessionFileReader.read("src/test/resources/errorSchemaSession.json");
+            String tableName = "Persons";
+            String newValuesString = "{\"Does\":\"not\",\"matter\":\"junk\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"Dont\":\"care\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.isEmpty());
+        }
+
+        @Test
+        public void testSourceTableNotInSchema() {
+            Schema schema = getSchemaObject();
+            String tableName = "contacts";
+            String newValuesString = "{\"accountId\": \"Id1\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"Dont\":\"care\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.isEmpty());
+        }
+
+        @Test
+        public void testSpannerTableNotInSchemaObject() {
+            Schema schema = SessionFileReader.read("src/test/resources/allMatchSession.json");
+            String tableName = "Singers";
+            schema.getSpSchema().remove(schema.getSpannerToID().get(tableName).getName());
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\",\"SingerId\":null}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SmthingElse\":null}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+
+            assertTrue(sql.isEmpty());
+        }
+
+        @Test
+        public void testSpannerColDefsNull() {
+            Schema schema = SessionFileReader.read("src/test/resources/allMatchSession.json");
+            String tableName = "Singers";
+
+            String spannerTableId = schema.getSpannerToID().get(tableName).getName();
+            SpannerTable spannerTable = schema.getSpSchema().get(spannerTableId);
+            spannerTable.getColDefs().remove("c5");
+            String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
+            JSONObject newValuesJson = new JSONObject(newValuesString);
+            String keyValueString = "{\"SingerId\":\"23\"}";
+            JSONObject keyValuesJson = new JSONObject(keyValueString);
+            String modType = "INSERT";
+
+            CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+            DMLGeneratorResponse dmlGeneratorResponse =
+                    cassandraDMLGenerator.getDMLStatement(
+                            new DMLGeneratorRequest.Builder(
+                                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
+                                    .setSchema(schema)
+                                    .build());
+            String sql = dmlGeneratorResponse.getDmlStatement();
+            CassandraDMLGenerator test = new CassandraDMLGenerator(); // to add that last bit of code coverage
+            InputRecordProcessor test2 =
+                    new InputRecordProcessor(); // to add that last bit of code coverage
+            assertTrue(sql.isEmpty());
+        }
+
+        public static Schema getSchemaObject() {
+            Map<String, SyntheticPKey> syntheticPKeys = new HashMap<String, SyntheticPKey>();
+            Map<String, SourceTable> srcSchema = new HashMap<String, SourceTable>();
+            Map<String, SpannerTable> spSchema = getSampleSpSchema();
+            Map<String, NameAndCols> spannerToID = getSampleSpannerToId();
+            Schema expectedSchema = new Schema(spSchema, syntheticPKeys, srcSchema);
+            expectedSchema.setSpannerToID(spannerToID);
+            return expectedSchema;
+        }
+
+        public static Map<String, SpannerTable> getSampleSpSchema() {
+            Map<String, SpannerTable> spSchema = new HashMap<String, SpannerTable>();
+            Map<String, SpannerColumnDefinition> t1SpColDefs =
+                    new HashMap<String, SpannerColumnDefinition>();
+            t1SpColDefs.put(
+                    "c1", new SpannerColumnDefinition("accountId", new SpannerColumnType("STRING", false)));
+            t1SpColDefs.put(
+                    "c2", new SpannerColumnDefinition("accountName", new SpannerColumnType("STRING", false)));
+            t1SpColDefs.put(
+                    "c3",
+                    new SpannerColumnDefinition("migration_shard_id", new SpannerColumnType("STRING", false)));
+            t1SpColDefs.put(
+                    "c4", new SpannerColumnDefinition("accountNumber", new SpannerColumnType("INT", false)));
+            spSchema.put(
+                    "t1",
+                    new SpannerTable(
+                            "tableName",
+                            new String[] {"c1", "c2", "c3", "c4"},
+                            t1SpColDefs,
+                            new ColumnPK[] {new ColumnPK("c1", 1)},
+                            "c3"));
+            return spSchema;
+        }
+
+        public static Map<String, NameAndCols> getSampleSpannerToId() {
+            Map<String, NameAndCols> spannerToId = new HashMap<String, NameAndCols>();
+            Map<String, String> t1ColIds = new HashMap<String, String>();
+            t1ColIds.put("accountId", "c1");
+            t1ColIds.put("accountName", "c2");
+            t1ColIds.put("migration_shard_id", "c3");
+            t1ColIds.put("accountNumber", "c4");
+            spannerToId.put("tableName", new NameAndCols("t1", t1ColIds));
+            return spannerToId;
         }
     }

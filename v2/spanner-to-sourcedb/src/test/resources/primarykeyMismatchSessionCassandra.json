@@ -1,0 +1,65 @@
+{
+  "SessionName": "NewSession",
+  "EditorName": "",
+  "DatabaseType": "cassandra",
+  "DatabaseName": "ui_demo",
+  "Dialect": "cql",
+  "Notes": null,
+  "Tags": null,
+  "SrcSchema": {
+    "t1": {
+      "Name": "Singers",
+      "ColIds": ["c5", "c6", "c7"],
+      "ColDefs": {
+        "c5": {
+          "Name": "SingerId",
+          "T": {
+            "Name": "bigint",
+            "Len": 0,
+            "IsArray": false
+          },
+          "NotNull": true,
+          "Id": "c5"
+        },
+        "c6": {
+          "Name": "FirstName",
+          "T": {
+            "Name": "text",
+            "Len": 1024,
+            "IsArray": false
+          },
+          "NotNull": false,
+          "Id": "c6"
+        },
+        "c7": {
+          "Name": "LastName",
+          "T": {
+            "Name": "text",
+            "Len": 1024,
+            "IsArray": false
+          },
+          "NotNull": false,
+          "Id": "c7"
+        }
+      },
+      "PrimaryKeys": [
+        {"ColId": "c6", "Desc": false, "Order": 1}
+      ],
+      "ForeignKeys": null,
+      "Indexes": [
+        {
+          "Name": "ind1",
+          "TableId": "t1",
+          "Unique": false,
+          "Keys": [
+            {"ColId": "c5", "Desc": false, "Order": 1}
+          ],
+          "Id": "i9",
+          "StoredColumnIds": null
+        }
+      ]
+    }
+  },
+  "SpSchema": {},
+  "SyntheticPKeys": {}
+}

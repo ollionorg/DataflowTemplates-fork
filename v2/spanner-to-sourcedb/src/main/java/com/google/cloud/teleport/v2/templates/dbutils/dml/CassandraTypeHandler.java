@@ -17,6 +17,8 @@ package com.google.cloud.teleport.v2.templates.dbutils.dml;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -30,6 +32,18 @@ class CassandraTypeHandler {
     @FunctionalInterface
     public interface TypeParser<T> {
         T parse(Object value);
+    }
+
+    /**
+     * Generates a Type based on the provided {@link CassandraTypeHandler}.
+     *
+     * @param colName - which is used to fetch Key from valueJSON.
+     * @param valuesJson - contains all the key value for current incoming stream.
+     * @return a {@link InetAddress} object containing InetAddress as value represented in cassandra
+     *     type.
+     */
+    public static InetAddress handleCassandraInetAddressType(String colName, JSONObject valuesJson) throws UnknownHostException {
+        return InetAddress.getByName(valuesJson.getString(colName));
     }
 
     /**

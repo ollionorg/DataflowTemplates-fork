@@ -17,12 +17,22 @@ package com.google.cloud.teleport.v2.templates.dbutils.dml;
 
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.*;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraTimestampType;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;

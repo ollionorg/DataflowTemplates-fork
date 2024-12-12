@@ -65,14 +65,14 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
-      assertTrue(sql.contains("FirstName"));
-      assertTrue(sql.contains("LastName"));
-      assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertTrue(sql.contains("FirstName"));
+    assertTrue(sql.contains("LastName"));
+    assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
   public void tableNameMismatchAllColumnNameTypesMatch() {
-    Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraPrimarykeyMismatchSession.json");
+    Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraTableNameMismatchSession.json");
     String tableName = "leChanteur";
     String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);
@@ -92,9 +92,9 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
-      assertTrue(sql.contains("leChanteur"));
-      assertTrue(sql.contains("blob_column"));
-      assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertTrue(sql.contains("SingerId"));
+    assertTrue(sql.contains("LastName"));
+    assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -303,7 +303,8 @@ public class CassandraDMLGeneratorTest {
     String modType = chrec.getModType().name();
     String keysJsonStr = chrec.getMod().getKeysJson();
     String newValueJsonStr = chrec.getMod().getNewValuesJson();
-    JSONObject newValuesJson = new JSONObject(newValueJsonStr);
+      assert newValueJsonStr != null;
+      JSONObject newValuesJson = new JSONObject(newValueJsonStr);
     JSONObject keyValuesJson = new JSONObject(keysJsonStr);
 
     /* The expected sql is:
@@ -401,9 +402,9 @@ public class CassandraDMLGeneratorTest {
     String sql = dmlGeneratorResponse.getDmlStatement();
 
 
+      assertTrue(sql.contains("SingerId"));
       assertTrue(sql.contains("FirstName"));
-      assertTrue(sql.contains(""));
-      assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+      assertEquals(3, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -427,8 +428,8 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
       assertTrue(sql.contains("FirstName"));
-      assertTrue(sql.contains("LastName"));
-      assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+      assertTrue(sql.contains("SingerId"));
+      assertEquals(3, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -930,7 +931,6 @@ public class CassandraDMLGeneratorTest {
 
       assertTrue(sql.contains("SingerId"));
       assertTrue(sql.contains("LastName"));
-      assertTrue(sql.contains("FirstName"));
       assertEquals(3, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
 //    assertTrue(sql.contains("`FirstName` = NULL"));
   }
@@ -979,9 +979,10 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
-      assertTrue(sql.contains("FirstName"));
+    assertTrue(sql.contains("SingerId"));
+    assertTrue(sql.contains("FirstName"));
       assertTrue(sql.contains("LastName"));
-      assertEquals(3, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+      assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test

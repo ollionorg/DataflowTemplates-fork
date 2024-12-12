@@ -479,7 +479,7 @@
         "char_column": {
           "Name": "char_column",
           "Type": {
-            "Name": "char",
+            "Name": "varchar",
             "Mods": [
               10
             ],
@@ -499,7 +499,7 @@
         "date_column": {
           "Name": "date_column",
           "Type": {
-            "Name": "date",
+            "Name": "timestamp",
             "Mods": null,
             "ArrayBounds": null
           },
@@ -517,7 +517,7 @@
         "datetime_column": {
           "Name": "datetime_column",
           "Type": {
-            "Name": "datetime",
+            "Name": "timestamp",
             "Mods": null,
             "ArrayBounds": null
           },
@@ -535,7 +535,7 @@
         "decimal_column": {
           "Name": "decimal_column",
           "Type": {
-            "Name": "decimal",
+            "Name": "float",
             "Mods": [
               10,
               2
@@ -556,7 +556,7 @@
         "double_column": {
           "Name": "double_column",
           "Type": {
-            "Name": "double",
+            "Name": "float",
             "Mods": null,
             "ArrayBounds": null
           },
@@ -630,7 +630,7 @@
         "longblob_column": {
           "Name": "longblob_column",
           "Type": {
-            "Name": "longblob",
+            "Name": "blob",
             "Mods": [
               4294967295
             ],
@@ -650,7 +650,7 @@
         "longtext_column": {
           "Name": "longtext_column",
           "Type": {
-            "Name": "longtext",
+            "Name": "varchar",
             "Mods": [
               4294967295
             ],
@@ -670,7 +670,7 @@
         "mediumblob_column": {
           "Name": "mediumblob_column",
           "Type": {
-            "Name": "mediumblob",
+            "Name": "blob",
             "Mods": [
               16777215
             ],
@@ -690,7 +690,7 @@
         "mediumint_column": {
           "Name": "mediumint_column",
           "Type": {
-            "Name": "mediumint",
+            "Name": "int",
             "Mods": null,
             "ArrayBounds": null
           },
@@ -708,7 +708,7 @@
         "mediumtext_column": {
           "Name": "mediumtext_column",
           "Type": {
-            "Name": "mediumtext",
+            "Name": "varchar",
             "Mods": [
               16777215
             ],
@@ -748,7 +748,7 @@
         "smallint_column": {
           "Name": "smallint_column",
           "Type": {
-            "Name": "smallint",
+            "Name": "int",
             "Mods": null,
             "ArrayBounds": null
           },
@@ -766,7 +766,7 @@
         "text_column": {
           "Name": "text_column",
           "Type": {
-            "Name": "text",
+            "Name": "varchar",
             "Mods": [
               65535
             ],
@@ -822,7 +822,7 @@
         "tinyblob_column": {
           "Name": "tinyblob_column",
           "Type": {
-            "Name": "tinyblob",
+            "Name": "blob",
             "Mods": [
               255
             ],
@@ -862,7 +862,7 @@
         "tinytext_column": {
           "Name": "tinytext_column",
           "Type": {
-            "Name": "tinytext",
+            "Name": "varchar",
             "Mods": [
               255
             ],

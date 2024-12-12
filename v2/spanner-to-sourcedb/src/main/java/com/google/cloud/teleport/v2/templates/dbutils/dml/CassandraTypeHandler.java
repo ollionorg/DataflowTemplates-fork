@@ -14,6 +14,7 @@
  * the License.
  */
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.nio.ByteBuffer;
@@ -40,7 +41,7 @@ class CassandraTypeHandler {
      * @return a {@link Boolean} object containing the value represented in cassandra type.
      */
     public static Boolean handleCassandraBoolType(String colName, JSONObject valuesJson) {
-        return valuesJson.getBoolean(colName);
+        return valuesJson.optBoolean(colName, false);
     }
 
     /**
@@ -52,7 +53,11 @@ class CassandraTypeHandler {
      * @return a {@link Float} object containing the value represented in cassandra type.
      */
     public static Float handleCassandraFloatType(String colName, JSONObject valuesJson) {
-        return valuesJson.getBigDecimal(colName).floatValue();
+        try {
+            return valuesJson.getBigDecimal(colName).floatValue();
+        } catch (JSONException e) {
+            return null;
+        }
     }
 
     /**
@@ -64,7 +69,11 @@ class CassandraTypeHandler {
      * @return a {@link Double} object containing the value represented in cassandra type.
      */
     public static Double handleCassandraDoubleType(String colName, JSONObject valuesJson) {
-        return valuesJson.getBigDecimal(colName).doubleValue();
+       try {
+           return valuesJson.getBigDecimal(colName).doubleValue();
+       } catch (JSONException e) {
+           return null;
+       }
     }
 
     /**
@@ -243,7 +252,11 @@ class CassandraTypeHandler {
      * @return a {@link Long} object containing Long as value represented in cassandra type.
      */
     public static Long handleCassandraBigintType(String colName, JSONObject valuesJson) {
-        return valuesJson.getBigInteger(colName).longValue();
+        try {
+            return valuesJson.getBigInteger(colName).longValue();
+        } catch (JSONException e) {
+            return null;
+        }
     }
 
     /**
@@ -255,7 +268,12 @@ class CassandraTypeHandler {
      * @return a {@link Integer} object containing Integer as value represented in cassandra type.
      */
     public static Integer handleCassandraIntType(String colName, JSONObject valuesJson) {
-        return valuesJson.getBigInteger(colName).intValue();
+        try {
+            return valuesJson.getBigInteger(colName).intValue();
+        } catch (JSONException e) {
+            return null;
+        }
+
     }
 
     /**
@@ -351,9 +369,7 @@ class CassandraTypeHandler {
      * @return a {@link List<Boolean>} object containing List<Boolean> as value represented in cassandra type.
      */
     public static List<Boolean> handleBoolArrayType(String colName, JSONObject valuesJson) {
-        return valuesJson.getJSONArray(colName).toList().stream()
-                .map(obj -> obj instanceof String && Boolean.parseBoolean((String) obj))
-                .collect(Collectors.toList());
+        return handleArrayType(colName, valuesJson, obj -> obj instanceof String && Boolean.parseBoolean((String) obj));
     }
 
     /**

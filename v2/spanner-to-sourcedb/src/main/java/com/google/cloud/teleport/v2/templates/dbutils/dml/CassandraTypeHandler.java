@@ -73,10 +73,8 @@ class CassandraTypeHandler {
                 + colName
                 + ". String contains non-ASCII characters.");
       }
-    } else {
-      throw new IllegalArgumentException(
-          "Invalid ASCII format for column: " + colName + ". Expected a String.");
     }
+    return null;
   }
 
   /**
@@ -111,8 +109,7 @@ class CassandraTypeHandler {
             "Invalid varint format (byte array) for column: " + colName, e);
       }
     } else {
-      throw new IllegalArgumentException(
-          "Invalid varint format for column: " + colName + ". Expected String or byte array.");
+      return null;
     }
   }
 

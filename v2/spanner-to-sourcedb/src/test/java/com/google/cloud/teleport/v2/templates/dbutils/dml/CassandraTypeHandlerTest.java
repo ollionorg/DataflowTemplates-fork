@@ -71,8 +71,8 @@ import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.json.JSONObject;
@@ -768,10 +768,7 @@ public class CassandraTypeHandlerTest {
     JSONObject newValuesJson = new JSONObject();
     newValuesJson.put("data", newValuesString);
     String colKey = "data";
-    Map<String, Object> expected = Map.of(
-            "name", "John",
-            "age", 30
-    );
+    Map<String, Object> expected = Map.of("name", "John", "age", 30);
     Map<String, Object> result = handleStringifiedJsonToMap(colKey, newValuesJson);
     assertEquals(expected, result);
   }
@@ -791,10 +788,10 @@ public class CassandraTypeHandlerTest {
     JSONObject newValuesJson = new JSONObject();
     newValuesJson.put("data", newValuesString);
     String colKey = "data";
-    Map<String, Object> expected = Map.of(
+    Map<String, Object> expected =
+        Map.of(
             "name", JSONObject.NULL,
-            "age", JSONObject.NULL
-    );
+            "age", JSONObject.NULL);
     Map<String, Object> result = handleStringifiedJsonToMap(colKey, newValuesJson);
     assertEquals(expected, result);
   }

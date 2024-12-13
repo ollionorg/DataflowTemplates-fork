@@ -877,7 +877,7 @@ class CassandraTypeHandler {
    * @throws IllegalArgumentException If the {@code integerValue} is out of range for a {@code
    *     smallint}.
    */
-  private static short convertToSmallInt(Integer integerValue) {
+  public static short convertToSmallInt(Integer integerValue) {
     if (integerValue < Short.MIN_VALUE || integerValue > Short.MAX_VALUE) {
       throw new IllegalArgumentException("Value is out of range for smallint.");
     }
@@ -896,7 +896,7 @@ class CassandraTypeHandler {
    * @throws IllegalArgumentException If the {@code integerValue} is out of range for a {@code
    *     tinyint}.
    */
-  private static byte convertToTinyInt(Integer integerValue) {
+  public static byte convertToTinyInt(Integer integerValue) {
     if (integerValue < Byte.MIN_VALUE || integerValue > Byte.MAX_VALUE) {
       throw new IllegalArgumentException("Value is out of range for tinyint.");
     }
@@ -912,7 +912,7 @@ class CassandraTypeHandler {
    * @param value The string to be escaped.
    * @return The escaped string where single quotes are replaced with double single quotes.
    */
-  private static String escapeCassandraString(String value) {
+  public static String escapeCassandraString(String value) {
     return value.replace("'", "''");
   }
 
@@ -928,7 +928,7 @@ class CassandraTypeHandler {
    * @return A string representation of the timestamp in UTC that is compatible with Cassandra.
    * @throws RuntimeException If the timestamp string is invalid or the conversion fails.
    */
-  private static String convertToCassandraTimestamp(String value, String timezoneOffset) {
+  public static String convertToCassandraTimestamp(String value, String timezoneOffset) {
     try {
       ZonedDateTime dateTime = ZonedDateTime.parse(value);
       ZoneOffset offset = ZoneOffset.of(timezoneOffset);
@@ -949,7 +949,7 @@ class CassandraTypeHandler {
    * @param dateString The date string in ISO-8601 format (e.g., "2024-12-05T00:00:00Z").
    * @return The {@link LocalDate} representation of the date.
    */
-  private static LocalDate convertToCassandraDate(String dateString) {
+  public static LocalDate convertToCassandraDate(String dateString) {
     Instant instant = Instant.parse(dateString);
     Date date = Date.from(instant);
     return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
@@ -966,7 +966,7 @@ class CassandraTypeHandler {
    * @return The {@link Instant} representation of the timestamp.
    */
 
-  private static Instant convertToCassandraTimestamp(String dateString) {
+  public static Instant convertToCassandraTimestamp(String dateString) {
     return Instant.parse(dateString);
   }
 
@@ -980,7 +980,7 @@ class CassandraTypeHandler {
    * @param value The string to check if it represents a valid UUID.
    * @return {@code true} if the string is a valid UUID, {@code false} otherwise.
    */
-  private static boolean isValidUUID(String value) {
+  public static boolean isValidUUID(String value) {
     try {
       UUID.fromString(value);
       return true;
@@ -999,7 +999,7 @@ class CassandraTypeHandler {
    * @param value The string to check if it represents a valid IP address.
    * @return {@code true} if the string is a valid IP address, {@code false} otherwise.
    */
-  private static boolean isValidIPAddress(String value) {
+  public static boolean isValidIPAddress(String value) {
     try {
       InetAddress.getByName(value);
       return true;
@@ -1019,7 +1019,7 @@ class CassandraTypeHandler {
    * @return {@code true} if the string is a valid JSON object, {@code false} otherwise.
    */
 
-  private static boolean isValidJSON(String value) {
+  public static boolean isValidJSON(String value) {
     try {
       new JSONObject(value);
       return true;
@@ -1034,7 +1034,7 @@ class CassandraTypeHandler {
    * @param value - The string to check.
    * @return true if the string contains only ASCII characters, false otherwise.
    */
-  private static boolean isAscii(String value) {
+  public static boolean isAscii(String value) {
     for (int i = 0; i < value.length(); i++) {
       if (value.charAt(i) > 127) {
         return false;

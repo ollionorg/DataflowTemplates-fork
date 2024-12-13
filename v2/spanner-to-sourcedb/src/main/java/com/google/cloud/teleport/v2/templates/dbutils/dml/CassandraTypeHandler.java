@@ -603,8 +603,7 @@ class CassandraTypeHandler {
   }
 
   /**
-   * Generates a {@link List} object containing a list of Timestamp values from
-   * Cassandra.
+   * Generates a {@link List} object containing a list of Timestamp values from Cassandra.
    *
    * @param colName - The column name used to fetch the key from {@code valuesJson}.
    * @param valuesJson - The {@link JSONObject} containing key-value pairs for the current incoming
@@ -717,7 +716,8 @@ class CassandraTypeHandler {
    * Converts a stringified JSON array to a {@link List} representation for Cassandra.
    *
    * <p>This method fetches the value associated with the given column name ({@code colName}) from
-   * the {@code valuesJson} object, parses the stringified JSON array, and returns it as a {@link List}.
+   * the {@code valuesJson} object, parses the stringified JSON array, and returns it as a {@link
+   * List}.
    *
    * @param colName - The column name used to fetch the key from {@code valuesJson}.
    * @param valuesJson - The {@link JSONObject} containing all the key-value pairs for the current
@@ -751,7 +751,8 @@ class CassandraTypeHandler {
    * Converts a stringified JSON array to a {@link Set} representation for Cassandra.
    *
    * <p>This method fetches the value associated with the given column name ({@code colName}) from
-   * the {@code valuesJson} object, parses the stringified JSON array, and returns it as a {@link Set}.
+   * the {@code valuesJson} object, parses the stringified JSON array, and returns it as a {@link
+   * Set}.
    *
    * @param colName - The column name used to fetch the key from {@code valuesJson}.
    * @param valuesJson - The {@link JSONObject} containing all the key-value pairs for the current

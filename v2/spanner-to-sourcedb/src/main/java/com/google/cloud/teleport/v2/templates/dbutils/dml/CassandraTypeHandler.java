@@ -18,21 +18,127 @@ package com.google.cloud.teleport.v2.templates.dbutils.dml;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceColumnDefinition;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerColumnDefinition;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
-import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.*;
 import java.util.stream.Collectors;
 import org.json.JSONObject;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 class CassandraTypeHandler {
+
   @FunctionalInterface
   public interface TypeParser<T> {
     T parse(Object value);
+  }
+
+  /**
+   * Converts a {@link String} to an ASCII representation for Cassandra's {@link String} or other
+   * ASCII-based types.
+   *
+   * <p>This method ensures that the string contains only valid ASCII characters (0-127). If any
+   * non-ASCII characters are found, an exception is thrown.
+   *
+   * @param colName - The column name used to fetch the key from {@code valuesJson}.
+   * @param valuesJson - The {@link JSONObject} containing all the key-value pairs for the current
+   *     incoming stream.
+   * @return A {@link String} representing the ASCII value for the column in Cassandra.
+   * @throws IllegalArgumentException If the string contains non-ASCII characters.
+   */
+  public static String handleCassandraAsciiType(String colName, JSONObject valuesJson) {
+    Object value = valuesJson.get(colName);
+    if (value instanceof String) {
+      String stringValue = (String) value;
+      if (isAscii(stringValue)) {
+        return stringValue;
+      } else {
+        throw new IllegalArgumentException(
+            "Invalid ASCII format for column: "
+                + colName
+                + ". String contains non-ASCII characters.");
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Generates a {@link BigInteger} based on the provided {@link CassandraTypeHandler}.
+   *
+   * <p>This method fetches the value associated with the given column name ({@code colName}) from
+   * the {@code valuesJson} object, and converts it to a {@link BigInteger}. The value can either be
+   * a string representing a number or a binary representation of a large integer (varint).
+   *
+   * @param colName - The column name used to fetch the key from {@code valuesJson}.
+   * @param valuesJson - The {@link JSONObject} containing all the key-value pairs for the current
+   *     incoming stream.
+   * @return A {@link BigInteger} object representing the varint value from the Cassandra data.
+   * @throws IllegalArgumentException If the value is not a valid format for varint (neither a valid
+   *     number string nor a byte array).
+   */
+  public static BigInteger handleCassandraVarintType(String colName, JSONObject valuesJson) {
+    Object value = valuesJson.get(colName);
+
+    if (value instanceof String) {
+      try {
+        return new BigInteger((String) value);
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException(
+            "Invalid varint format (string) for column: " + colName, e);
+      }
+    } else if (value instanceof byte[]) {
+      try {
+        return new BigInteger((byte[]) value);
+      } catch (Exception e) {
+        throw new IllegalArgumentException(
+            "Invalid varint format (byte array) for column: " + colName, e);
+      }
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Generates a {@link Duration} based on the provided {@link CassandraTypeHandler}.
+   *
+   * <p>This method fetches a string value from the provided {@code valuesJson} object using the
+   * column name {@code colName}, and converts it into a {@link Duration} object. The string value
+   * should be in the ISO-8601 duration format (e.g., "PT20.345S").
+   *
+   * @param colName - The column name used to fetch the key from {@code valuesJson}.
+   * @param valuesJson - The {@link JSONObject} containing all the key-value pairs for the current
+   *     incoming stream.
+   * @return A {@link Duration} object representing the duration value from the Cassandra data.
+   * @throws IllegalArgumentException if the value is not a valid duration string.
+   */
+  public static Duration handleCassandraDurationType(String colName, JSONObject valuesJson) {
+    String durationString = valuesJson.optString(colName, null);
+    if (durationString == null) {
+      return null;
+    }
+    try {
+      return Duration.parse(durationString);
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Invalid duration format for column: " + colName, e);
+    }
   }
 
   /**
@@ -56,7 +162,7 @@ class CassandraTypeHandler {
    * @return a {@link Boolean} object containing the value represented in cassandra type.
    */
   public static Boolean handleCassandraBoolType(String colName, JSONObject valuesJson) {
-    return valuesJson.getBoolean(colName);
+    return valuesJson.optBoolean(colName, false);
   }
 
   /**
@@ -67,7 +173,11 @@ class CassandraTypeHandler {
    * @return a {@link Float} object containing the value represented in cassandra type.
    */
   public static Float handleCassandraFloatType(String colName, JSONObject valuesJson) {
-    return valuesJson.getBigDecimal(colName).floatValue();
+    try {
+      return valuesJson.getBigDecimal(colName).floatValue();
+    } catch (JSONException e) {
+      return null;
+    }
   }
 
   /**
@@ -78,7 +188,11 @@ class CassandraTypeHandler {
    * @return a {@link Double} object containing the value represented in cassandra type.
    */
   public static Double handleCassandraDoubleType(String colName, JSONObject valuesJson) {
-    return valuesJson.getBigDecimal(colName).doubleValue();
+    try {
+      return valuesJson.getBigDecimal(colName).doubleValue();
+    } catch (JSONException e) {
+      return null;
+    }
   }
 
   /**
@@ -259,7 +373,11 @@ class CassandraTypeHandler {
    * @return a {@link Long} object containing Long as value represented in cassandra type.
    */
   public static Long handleCassandraBigintType(String colName, JSONObject valuesJson) {
-    return valuesJson.getBigInteger(colName).longValue();
+    try {
+      return valuesJson.getBigInteger(colName).longValue();
+    } catch (JSONException e) {
+      return null;
+    }
   }
 
   /**
@@ -270,7 +388,11 @@ class CassandraTypeHandler {
    * @return a {@link Integer} object containing Integer as value represented in cassandra type.
    */
   public static Integer handleCassandraIntType(String colName, JSONObject valuesJson) {
-    return valuesJson.getBigInteger(colName).intValue();
+    try {
+      return valuesJson.getBigInteger(colName).intValue();
+    } catch (JSONException e) {
+      return null;
+    }
   }
 
   /**
@@ -372,9 +494,8 @@ class CassandraTypeHandler {
    *     cassandra type.
    */
   public static List<Boolean> handleBoolArrayType(String colName, JSONObject valuesJson) {
-    return valuesJson.getJSONArray(colName).toList().stream()
-        .map(obj -> obj instanceof String && Boolean.parseBoolean((String) obj))
-        .collect(Collectors.toList());
+    return handleArrayType(
+        colName, valuesJson, obj -> obj instanceof String && Boolean.parseBoolean((String) obj));
   }
 
   /**
@@ -648,24 +769,165 @@ class CassandraTypeHandler {
     }
   }
 
-  public static short convertToSmallInt(Integer integerValue) {
+  /**
+   * Converts a stringified JSON object to a {@link Map} representation for Cassandra.
+   *
+   * <p>This method fetches the value associated with the given column name ({@code colName}) from
+   * the {@code valuesJson} object, parses the stringified JSON, and returns it as a {@link
+   * Map<String, Object>}.
+   *
+   * @param colName - The column name used to fetch the key from {@code valuesJson}.
+   * @param valuesJson - The {@link JSONObject} containing all the key-value pairs for the current
+   *     incoming stream.
+   * @return A {@link Map<String, Object>} representing the parsed JSON from the stringified JSON.
+   * @throws IllegalArgumentException If the value is not a valid stringified JSON or cannot be
+   *     parsed.
+   */
+  public static Map<String, Object> handleStringifiedJsonToMap(
+      String colName, JSONObject valuesJson) {
+    Object value = valuesJson.get(colName);
+    if (value instanceof String) {
+      String jsonString = (String) value;
+      try {
+        JSONObject jsonObject = new JSONObject(jsonString);
+        Map<String, Object> map = new HashMap<>();
+        for (String key : jsonObject.keySet()) {
+          Object jsonValue = jsonObject.get(key);
+          if (jsonValue instanceof JSONArray) {
+            map.put(key, jsonObject.getJSONArray(key));
+          } else if (jsonValue instanceof JSONObject) {
+            map.put(key, jsonObject.getJSONObject(key));
+          } else {
+            map.put(key, jsonValue);
+          }
+        }
+        return map;
+      } catch (Exception e) {
+        throw new IllegalArgumentException(
+            "Invalid stringified JSON format for column: " + colName, e);
+      }
+    } else {
+      throw new IllegalArgumentException(
+          "Invalid format for column: " + colName + ". Expected a stringified JSON.");
+    }
+  }
+
+  /**
+   * Converts a stringified JSON array to a {@link List} representation for Cassandra.
+   *
+   * <p>This method fetches the value associated with the given column name ({@code colName}) from
+   * the {@code valuesJson} object, parses the stringified JSON array, and returns it as a {@link
+   * List<Object>}.
+   *
+   * @param colName - The column name used to fetch the key from {@code valuesJson}.
+   * @param valuesJson - The {@link JSONObject} containing all the key-value pairs for the current
+   *     incoming stream.
+   * @return A {@link List<Object>} representing the parsed JSON array from the stringified JSON.
+   * @throws IllegalArgumentException If the value is not a valid stringified JSON array or cannot
+   *     be parsed.
+   */
+  public static List<Object> handleStringifiedJsonToList(String colName, JSONObject valuesJson) {
+    Object value = valuesJson.get(colName);
+    if (value instanceof String) {
+      String jsonString = (String) value;
+      try {
+        JSONArray jsonArray = new JSONArray(jsonString);
+        List<Object> list = new ArrayList<>();
+        for (int i = 0; i < jsonArray.length(); i++) {
+          list.add(jsonArray.get(i));
+        }
+        return list;
+      } catch (Exception e) {
+        throw new IllegalArgumentException(
+            "Invalid stringified JSON array format for column: " + colName, e);
+      }
+    } else {
+      throw new IllegalArgumentException(
+          "Invalid format for column: " + colName + ". Expected a stringified JSON array.");
+    }
+  }
+
+  /**
+   * Converts a stringified JSON array to a {@link Set} representation for Cassandra.
+   *
+   * <p>This method fetches the value associated with the given column name ({@code colName}) from
+   * the {@code valuesJson} object, parses the stringified JSON array, and returns it as a {@link
+   * Set<Object>}.
+   *
+   * @param colName - The column name used to fetch the key from {@code valuesJson}.
+   * @param valuesJson - The {@link JSONObject} containing all the key-value pairs for the current
+   *     incoming stream.
+   * @return A {@link Set<Object>} representing the parsed JSON array from the stringified JSON.
+   * @throws IllegalArgumentException If the value is not a valid stringified JSON array or cannot
+   *     be parsed.
+   */
+  public static Set<Object> handleStringifiedJsonToSet(String colName, JSONObject valuesJson) {
+    return new HashSet<>(handleStringifiedJsonToList(colName, valuesJson));
+  }
+
+  /**
+   * Converts an {@link Integer} to a {@code short} (SmallInt).
+   *
+   * <p>This method checks if the {@code integerValue} is within the valid range for a {@code
+   * smallint} (i.e., between {@link Short#MIN_VALUE} and {@link Short#MAX_VALUE}). If the value is
+   * out of range, it throws an {@link IllegalArgumentException}.
+   *
+   * @param integerValue The integer value to be converted.
+   * @return The converted {@code short} value.
+   * @throws IllegalArgumentException If the {@code integerValue} is out of range for a {@code
+   *     smallint}.
+   */
+  private static short convertToSmallInt(Integer integerValue) {
     if (integerValue < Short.MIN_VALUE || integerValue > Short.MAX_VALUE) {
       throw new IllegalArgumentException("Value is out of range for smallint.");
     }
     return integerValue.shortValue();
   }
 
-  public static byte convertToTinyInt(Integer integerValue) {
+  /**
+   * Converts an {@link Integer} to a {@code byte} (TinyInt).
+   *
+   * <p>This method checks if the {@code integerValue} is within the valid range for a {@code
+   * tinyint} (i.e., between {@link Byte#MIN_VALUE} and {@link Byte#MAX_VALUE}). If the value is out
+   * of range, it throws an {@link IllegalArgumentException}.
+   *
+   * @param integerValue The integer value to be converted.
+   * @return The converted {@code byte} value.
+   * @throws IllegalArgumentException If the {@code integerValue} is out of range for a {@code
+   *     tinyint}.
+   */
+  private static byte convertToTinyInt(Integer integerValue) {
     if (integerValue < Byte.MIN_VALUE || integerValue > Byte.MAX_VALUE) {
       throw new IllegalArgumentException("Value is out of range for tinyint.");
     }
     return integerValue.byteValue();
   }
 
+  /**
+   * Escapes single quotes in a Cassandra string by replacing them with double single quotes.
+   *
+   * <p>This method is commonly used to sanitize strings before inserting them into Cassandra
+   * queries, where single quotes need to be escaped by doubling them (i.e., `'` becomes `''`).
+   *
+   * @param value The string to be escaped.
+   * @return The escaped string where single quotes are replaced with double single quotes.
+   */
   private static String escapeCassandraString(String value) {
     return value.replace("'", "''");
   }
 
+  /**
+   * Converts a string representation of a timestamp to a Cassandra-compatible timestamp.
+   *
+   * <p>The method parses the {@code value} as a {@link ZonedDateTime}, applies the given timezone
+   * offset to adjust the time, and converts the result into a UTC timestamp string that is
+   * compatible with Cassandra.
+   *
+   * @param value The timestamp string in ISO-8601 format (e.g., "2024-12-05T10:15:30+01:00").
+   * @param timezoneOffset The timezone offset (e.g., "+02:00") to apply to the timestamp.
+   * @return A string representation of the timestamp in UTC that is compatible with Cassandra.
+   * @throws RuntimeException If the timestamp string is invalid or the conversion fails.
+   */
   private static String convertToCassandraTimestamp(String value, String timezoneOffset) {
     try {
       ZonedDateTime dateTime = ZonedDateTime.parse(value);
@@ -677,16 +939,47 @@ class CassandraTypeHandler {
     }
   }
 
+  /**
+   * Converts a string representation of a date to a {@link LocalDate} compatible with Cassandra.
+   *
+   * <p>The method parses the {@code dateString} into an {@link Instant}, converts it to a {@link
+   * Date}, and then retrieves the corresponding {@link LocalDate} from the system's default time
+   * zone.
+   *
+   * @param dateString The date string in ISO-8601 format (e.g., "2024-12-05T00:00:00Z").
+   * @return The {@link LocalDate} representation of the date.
+   */
   private static LocalDate convertToCassandraDate(String dateString) {
     Instant instant = Instant.parse(dateString);
     Date date = Date.from(instant);
     return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
   }
 
+  /**
+   * Converts a string representation of a timestamp to an {@link Instant} compatible with
+   * Cassandra.
+   *
+   * <p>The method parses the {@code dateString} into an {@link Instant}, which represents an
+   * instantaneous point in time and is compatible with Cassandra timestamp types.
+   *
+   * @param dateString The timestamp string in ISO-8601 format (e.g., "2024-12-05T10:15:30Z").
+   * @return The {@link Instant} representation of the timestamp.
+   */
+
   private static Instant convertToCassandraTimestamp(String dateString) {
     return Instant.parse(dateString);
   }
 
+  /**
+   * Validates if the given string represents a valid UUID.
+   *
+   * <p>This method attempts to parse the provided string as a UUID using {@link
+   * UUID#fromString(String)}. If parsing is successful, it returns {@code true}, indicating that
+   * the string is a valid UUID. Otherwise, it returns {@code false}.
+   *
+   * @param value The string to check if it represents a valid UUID.
+   * @return {@code true} if the string is a valid UUID, {@code false} otherwise.
+   */
   private static boolean isValidUUID(String value) {
     try {
       UUID.fromString(value);
@@ -696,6 +989,16 @@ class CassandraTypeHandler {
     }
   }
 
+  /**
+   * Validates if the given string represents a valid IP address.
+   *
+   * <p>This method attempts to resolve the provided string as an {@link InetAddress} using {@link
+   * InetAddress#getByName(String)}. If successful, it returns {@code true}, indicating that the
+   * string is a valid IP address. Otherwise, it returns {@code false}.
+   *
+   * @param value The string to check if it represents a valid IP address.
+   * @return {@code true} if the string is a valid IP address, {@code false} otherwise.
+   */
   private static boolean isValidIPAddress(String value) {
     try {
       InetAddress.getByName(value);
@@ -705,6 +1008,17 @@ class CassandraTypeHandler {
     }
   }
 
+  /**
+   * Validates if the given string is a valid JSON object.
+   *
+   * <p>This method attempts to parse the string using {@link JSONObject} to check if the value
+   * represents a valid JSON object. If the string is valid JSON, it returns {@code true}, otherwise
+   * {@code false}.
+   *
+   * @param value The string to check if it represents a valid JSON object.
+   * @return {@code true} if the string is a valid JSON object, {@code false} otherwise.
+   */
+
   private static boolean isValidJSON(String value) {
     try {
       new JSONObject(value);
@@ -712,5 +1026,20 @@ class CassandraTypeHandler {
     } catch (Exception e) {
       return false;
     }
+  }
+
+  /**
+   * Helper method to check if a string contains only ASCII characters (0-127).
+   *
+   * @param value - The string to check.
+   * @return true if the string contains only ASCII characters, false otherwise.
+   */
+  private static boolean isAscii(String value) {
+    for (int i = 0; i < value.length(); i++) {
+      if (value.charAt(i) > 127) {
+        return false;
+      }
+    }
+    return true;
   }
 }

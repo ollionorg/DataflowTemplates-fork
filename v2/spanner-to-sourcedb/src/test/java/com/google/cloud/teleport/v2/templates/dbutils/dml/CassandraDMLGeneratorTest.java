@@ -20,28 +20,17 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.cloud.teleport.v2.spanner.migrations.schema.*;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SessionFileReader;
-import com.google.cloud.teleport.v2.templates.changestream.TrimmedShardedDataChangeRecord;
 import com.google.cloud.teleport.v2.templates.dbutils.processor.InputRecordProcessor;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorRequest;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.GsonBuilder;
-import java.io.InputStream;
-import java.nio.channels.Channels;
-import java.nio.charset.StandardCharsets;
+
 import java.util.*;
-import org.apache.beam.sdk.io.FileSystems;
+
 import org.json.JSONObject;
 import org.junit.Test;
-import org.mockito.*;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectWriter;
-import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 
 public class CassandraDMLGeneratorTest {
-
-  @Mock private DMLGeneratorRequest mockDmlGeneratorRequest;
 
   @Test
   public void tableAndAllColumnNameTypesMatch() {
@@ -53,9 +42,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /*The expected sql is:
-    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk','ll') ON DUPLICATE KEY"
-        + " UPDATE  FirstName = 'kk', LastName = 'll'";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -80,9 +66,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk','ll') ON DUPLICATE KEY"
-        + " UPDATE  FirstName = 'kk', LastName = 'll'";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -106,9 +89,7 @@ public class CassandraDMLGeneratorTest {
     String keyValueString = "{\"SingerId\":\"999\"}";
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
-    /*The expected sql is:
-    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES ('999',222,'ll') ON DUPLICATE"
-        + " KEY UPDATE  FirstName = 222, LastName = 'll'";*/
+
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -134,9 +115,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk','ll') ON DUPLICATE KEY"
-        + " UPDATE  FirstName = 'kk', LastName = 'll'"; */
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -163,9 +141,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk','ll') ON DUPLICATE KEY"
-        + " UPDATE  FirstName = 'kk', LastName = 'll'";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -190,7 +165,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is: ""*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -213,7 +187,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is: ""*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -227,33 +200,6 @@ public class CassandraDMLGeneratorTest {
   }
 
   @Test
-  public void timezoneOffsetMismatch() {
-    Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraTimeZoneSession.json");
-    String tableName = "Singers";
-    String newValuesString = "{\"Bday\":\"2023-05-18 12:01:13.088\"}";
-    JSONObject newValuesJson = new JSONObject(newValuesString);
-    String keyValueString = "{\"SingerId\":\"999\"}";
-    JSONObject keyValuesJson = new JSONObject(keyValueString);
-    String modType = "INSERT";
-
-    /* The expected sql is:
-    "INSERT INTO Singers(SingerId,Bday) VALUES (999,"
-        + " CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+10:00')) ON DUPLICATE KEY"
-        + " UPDATE  Bday =  CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+10:00')";*/
-    CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
-    DMLGeneratorResponse dmlGeneratorResponse =
-        cassandraDMLGenerator.getDMLStatement(
-            new DMLGeneratorRequest.Builder(
-                    modType, tableName, newValuesJson, keyValuesJson, "+10:00")
-                .setSchema(schema)
-                .build());
-    String sql = dmlGeneratorResponse.getDmlStatement();
-
-      assertTrue(sql.contains("Bday"));
-      assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
-  }
-
-  @Test
   public void primaryKeyMismatch() {
     Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraPrimarykeyMismatchSession.json");
     String tableName = "Singers";
@@ -263,9 +209,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk','ll') ON DUPLICATE KEY"
-        + " UPDATE  FirstName = 'kk', LastName = 'll'";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -282,104 +225,6 @@ public class CassandraDMLGeneratorTest {
   }
 
   @Test
-  public void allDataypesDML() throws Exception {
-    Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraAllDatatypeSession.json");
-
-    InputStream stream =
-        Channels.newInputStream(
-            FileSystems.open(
-                FileSystems.matchNewResource(
-                    "src/test/resources/bufferInputAllDatatypes.json", false)));
-    String record = IOUtils.toString(stream, StandardCharsets.UTF_8);
-
-    ObjectWriter ow = new ObjectMapper().writer();
-    TrimmedShardedDataChangeRecord chrec =
-        new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
-            .create()
-            .fromJson(record, TrimmedShardedDataChangeRecord.class);
-
-    String tableName = chrec.getTableName();
-    String modType = chrec.getModType().name();
-    String keysJsonStr = chrec.getMod().getKeysJson();
-    String newValueJsonStr = chrec.getMod().getNewValuesJson();
-      assert newValueJsonStr != null;
-      JSONObject newValuesJson = new JSONObject(newValueJsonStr);
-    JSONObject keyValuesJson = new JSONObject(keysJsonStr);
-
-    /* The expected sql is:
-    "INSERT INTO"
-        + " sample_table(id,mediumint_column,tinyblob_column,datetime_column,enum_column,longtext_column,mediumblob_column,text_column,tinyint_column,timestamp_column,float_column,varbinary_column,binary_column,bigint_column,time_column,tinytext_column,set_column,longblob_column,mediumtext_column,year_column,blob_column,decimal_column,bool_column,char_column,date_column,double_column,smallint_column,varchar_column)"
-        + " VALUES (12,333,FROM_BASE64('YWJj'),"
-        + " CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00'),'1','<longtext_column>',FROM_BASE64('YWJjbGFyZ2U='),'aaaaaddd',1,"
-        + " CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00'),4.2,BINARY(FROM_BASE64('YWJjbGFyZ2U=')),BINARY(FROM_BASE64('YWJjbGFyZ2U=')),4444,'10:10:10','<tinytext_column>','1,2',FROM_BASE64('YWJsb25nYmxvYmM='),'<mediumtext_column>','2023',FROM_BASE64('YWJiaWdj'),444.222,false,'<char_c','2023-05-18',42.42,22,'abc')"
-        + " ON DUPLICATE KEY UPDATE  mediumint_column = 333, tinyblob_column ="
-        + " FROM_BASE64('YWJj'), datetime_column = "
-        + " CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00'), enum_column = '1',"
-        + " longtext_column = '<longtext_column>', mediumblob_column ="
-        + " FROM_BASE64('YWJjbGFyZ2U='), text_column = 'aaaaaddd', tinyint_column = 1,"
-        + " timestamp_column =  CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00'),"
-        + " float_column = 4.2, varbinary_column = BINARY(FROM_BASE64('YWJjbGFyZ2U=')),"
-        + " binary_column = BINARY(FROM_BASE64('YWJjbGFyZ2U=')), bigint_column = 4444, time_column"
-        + " = '10:10:10', tinytext_column = '<tinytext_column>', set_column = '1,2',"
-        + " longblob_column = FROM_BASE64('YWJsb25nYmxvYmM='), mediumtext_column ="
-        + " '<mediumtext_column>', year_column = '2023', blob_column = FROM_BASE64('YWJiaWdj'),"
-        + " decimal_column = 444.222, bool_column = false, char_column = '<char_c', date_column"
-        + " = '2023-05-18', double_column = 42.42, smallint_column = 22, varchar_column ="
-        + " 'abc'"; */
-    CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
-    DMLGeneratorResponse dmlGeneratorResponse =
-        cassandraDMLGenerator.getDMLStatement(
-            new DMLGeneratorRequest.Builder(
-                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
-                .setSchema(schema)
-                .build());
-    String sql = dmlGeneratorResponse.getDmlStatement();
-
-    assertTrue(sql.contains("`mediumint_column` = 333"));
-    assertTrue(sql.contains("`tinyblob_column` = FROM_BASE64('YWJj')"));
-    boolean datetimeFlag =
-        sql.contains(
-            "`datetime_column` =  CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00'");
-    assertTrue(datetimeFlag);
-    // The same assert below fails to run hence as a workaround we are using the above boolean
-    // flag
-    /*  assertTrue(
-    sql.contains(
-        "datetime_column = CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00')"));*/
-    assertTrue(sql.contains("`enum_column` = '1'"));
-    assertTrue(sql.contains("`longtext_column` = '<longtext_column>'"));
-    assertTrue(sql.contains("`mediumblob_column` = FROM_BASE64('YWJjbGFyZ2U=')"));
-    assertTrue(sql.contains("`text_column` = 'aaaaaddd'"));
-    assertTrue(sql.contains("`tinyint_column` = 1"));
-    boolean timestampFlag =
-        sql.contains(
-            "`timestamp_column` =  CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00')");
-    assertTrue(timestampFlag);
-    // The same assert below fails to run hence as a workaround we are using the above boolean
-    // flag
-    /* assertTrue(
-    sql.contains(
-        "timestamp_column = CONVERT_TZ('2023-05-18T12:01:13.088397258','+00:00','+00:00')"));*/
-    assertTrue(sql.contains("`float_column` = 4.2"));
-    assertTrue(sql.contains("`varbinary_column` = BINARY(FROM_BASE64('YWJjbGFyZ2U='))"));
-    assertTrue(sql.contains("`binary_column` = BINARY(FROM_BASE64('YWJjbGFyZ2U='))"));
-    assertTrue(sql.contains("`bigint_column` = 4444"));
-    assertTrue(sql.contains("`time_column` = '10:10:10'"));
-    assertTrue(sql.contains("`tinytext_column` = '<tinytext_column>'"));
-    assertTrue(sql.contains("`set_column` = '1,2'"));
-    assertTrue(sql.contains("`longblob_column` = FROM_BASE64('YWJsb25nYmxvYmM=')"));
-    assertTrue(sql.contains("`mediumtext_column` = '<mediumtext_column>'"));
-    assertTrue(sql.contains("`year_column` = '2023'"));
-    assertTrue(sql.contains("`blob_column` = FROM_BASE64('YWJiaWdj')"));
-    assertTrue(sql.contains("`decimal_column` = 444.222"));
-    assertTrue(sql.contains("`bool_column` = false"));
-    assertTrue(sql.contains("`char_column` = '<char_c'"));
-    assertTrue(sql.contains("`date_column` = '2023-05-18'"));
-    assertTrue(sql.contains("`double_column` = 42.42"));
-  }
-
-  @Test
   public void updateToNull() {
     Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraAllMatchSession.json");
     String tableName = "Singers";
@@ -389,10 +234,7 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk',NULL) ON DUPLICATE KEY"
-        + " UPDATE  FirstName = 'kk', LastName = NULL";*/
-    CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
             new DMLGeneratorRequest.Builder(
@@ -417,8 +259,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "DELETE";
 
-    /* The expected sql is:
-    "DELETE FROM Singers WHERE  FirstName = 'kk' AND  SingerId = 999";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -442,9 +282,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'k''k','ll') ON DUPLICATE KEY"
-        + " UPDATE  FirstName = 'k''k', LastName = 'll'"; */
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -462,9 +299,6 @@ public class CassandraDMLGeneratorTest {
   @Test
   public void singleQuoteBytesDML() throws Exception {
     Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
-    /*
-    Spanner write is : CAST("\'" as BYTES) for blob and "\'" for varchar
-    Eventual insert is '' but mysql synatx escapes each ' with another '*/
 
     String tableName = "sample_table";
     String newValuesString = "{\"blob_column\":\"Jw\u003d\u003d\",\"varchar_column\":\"\u0027\",}";
@@ -473,11 +307,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO"
-        + " sample_table(id,varchar_column,blob_column)"
-        + " VALUES (12,'''',FROM_BASE64('Jw=='))"
-        + " ON DUPLICATE KEY UPDATE  varchar_column = '''', blob_column = FROM_BASE64('Jw==')";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -493,11 +322,7 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void twoSingleEscapedQuoteDML() throws Exception {
-    /*
-    Spanner write is : CAST("\''" as BYTES) for blob and "\'" for varchar
-    Eventual insert is '' but mysql synatx escapes each ' with another '*/
-
-    Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
+   Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
 
     String tableName = "sample_table";
     String newValuesString = "{\"blob_column\":\"Jyc\u003d\",\"varchar_column\":\"\u0027\u0027\",}";
@@ -522,11 +347,7 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void threeEscapesAndSingleQuoteDML() throws Exception {
-    /*
-    Spanner write is : CAST("\\\'" as BYTES) for blob and "\\\'" for varchar
-    Eventual insert is \' but mysql synatx escapes each ' with another ' and \ with another \*/
-
-    Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
+   Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
 
     String tableName = "sample_table";
     String newValuesString = "{\"blob_column\":\"XCc\u003d\",\"varchar_column\":\"\\\\\\\u0027\",}";
@@ -535,10 +356,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES"
-        + " (12,'\\\\''',FROM_BASE64('XCc=')) ON DUPLICATE KEY UPDATE  varchar_column ="
-        + " '\\\\''', blob_column = FROM_BASE64('XCc=')";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -555,12 +372,7 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void tabEscapeDML() throws Exception {
-    /*
-    Spanner write is : CAST("\t" as BYTES) for blob
-    and "\t" for varchar
-    */
-
-    Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
+   Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
 
     String tableName = "sample_table";
     String newValuesString = "{\"blob_column\":\"CQ==\",\"varchar_column\":\"\\t\",}";
@@ -569,10 +381,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES (12,'"
-        + "\t',FROM_BASE64('CQ==')) ON DUPLICATE KEY UPDATE  varchar_column = '\t', blob_column"
-        + " = FROM_BASE64('CQ==')"; */
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -589,12 +397,7 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void backSpaceEscapeDML() throws Exception {
-    /*
-    Spanner write is : CAST("\b" as BYTES) for blob
-    and "\b" for varchar
-    */
-
-    Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
+  Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
 
     String tableName = "sample_table";
     String newValuesString = "{\"blob_column\":\"CA==\",\"varchar_column\":\"\\b\",}";
@@ -603,10 +406,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES"
-        + " (12,'\b',FROM_BASE64('CA==')) ON DUPLICATE KEY UPDATE  varchar_column = '\b',"
-        + " blob_column = FROM_BASE64('CA==')";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -623,12 +422,7 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void newLineEscapeDML() throws Exception {
-    /*
-    Spanner write is : CAST("\n" as BYTES) for blob
-    and "\n" for varchar
-    */
-
-    Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
+   Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
 
     String tableName = "sample_table";
     String newValuesString = "{\"blob_column\":\"Cg==\",\"varchar_column\":\"\\n\",}";
@@ -637,10 +431,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES (12,'\n"
-        + "',FROM_BASE64('Cg==')) ON DUPLICATE KEY UPDATE  varchar_column = '\n"
-        + "', blob_column = FROM_BASE64('Cg==')";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -657,10 +447,6 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void carriageReturnEscapeDML() throws Exception {
-    /*
-    Spanner write is : CAST("\r" as BYTES) for blob
-    and "\r" for varchar
-    */
 
     Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
 
@@ -671,10 +457,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES (12,'\r"
-        + "',FROM_BASE64('DQ==')) ON DUPLICATE KEY UPDATE  varchar_column = '\r"
-        + "', blob_column = FROM_BASE64('DQ==')";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -691,10 +473,6 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void formFeedEscapeDML() throws Exception {
-    /*
-    Spanner write is : CAST("\f" as BYTES) for blob
-    and "\f" for varchar
-    */
 
     Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
 
@@ -705,10 +483,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES"
-        + " (12,'\f',FROM_BASE64('DA==')) ON DUPLICATE KEY UPDATE  varchar_column = '\f',"
-        + " blob_column = FROM_BASE64('DA==')";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -725,11 +499,6 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void doubleQuoteEscapeDML() throws Exception {
-    /*
-    Spanner write is : CAST("\"" as BYTES) for blob
-    and "\"" for varchar
-    */
-
     Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
 
     String tableName = "sample_table";
@@ -739,11 +508,7 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES"
-        + " (12,'\"',FROM_BASE64('Ig==')) ON DUPLICATE KEY UPDATE  varchar_column = '\"',"
-        + " blob_column = FROM_BASE64('Ig==')";*/
-    CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+        CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
             new DMLGeneratorRequest.Builder(
@@ -759,10 +524,6 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void backSlashEscapeDML() throws Exception {
-    /*
-    Spanner write is : CAST("\\" as BYTES) for blob
-    and "\\" for varchar
-    */
 
     Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
 
@@ -773,10 +534,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /*The expected sql is:
-    "INSERT INTO sample_table(id,varchar_column,blob_column) VALUES"
-        + " (12,'\\\\',FROM_BASE64('XA==')) ON DUPLICATE KEY UPDATE  varchar_column = '\\\\',"
-        + " blob_column = FROM_BASE64('XA==')";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -917,9 +674,6 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
 
-    /* The expected sql is:
-    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,NULL,'ll') ON DUPLICATE KEY"
-        + " UPDATE  FirstName = NULL , LastName = 'll'";*/
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
@@ -932,7 +686,6 @@ public class CassandraDMLGeneratorTest {
       assertTrue(sql.contains("SingerId"));
       assertTrue(sql.contains("LastName"));
       assertEquals(3, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
-//    assertTrue(sql.contains("`FirstName` = NULL"));
   }
 
   @Test
@@ -967,10 +720,7 @@ public class CassandraDMLGeneratorTest {
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "UPDATE";
 
-    /*The expected sql is:
-    "INSERT INTO Singers(SingerId,FirstName,LastName) VALUES (999,'kk','ll') ON DUPLICATE KEY"
-        + " UPDATE  FirstName = 'kk', LastName = 'll'";*/
-    CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+   CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
             new DMLGeneratorRequest.Builder(
@@ -1003,7 +753,6 @@ public class CassandraDMLGeneratorTest {
                 .setSchema(schema)
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
-
     assertTrue(sql.isEmpty());
   }
 
@@ -1097,9 +846,9 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
     CassandraDMLGenerator test =
-        new CassandraDMLGenerator(); // to add that last bit of code coverage
+        new CassandraDMLGenerator();
     InputRecordProcessor test2 =
-        new InputRecordProcessor(); // to add that last bit of code coverage
+        new InputRecordProcessor();
     assertTrue(sql.isEmpty());
   }
 

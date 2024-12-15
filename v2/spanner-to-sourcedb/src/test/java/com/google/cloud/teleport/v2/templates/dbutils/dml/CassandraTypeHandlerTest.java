@@ -46,8 +46,6 @@ import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHa
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleInt64SetType;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringArrayType;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringSetType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringifiedJsonToMap;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringifiedJsonToSet;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidIPAddress;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidJSON;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidUUID;
@@ -743,57 +741,6 @@ public class CassandraTypeHandlerTest {
     JSONObject newValuesJson = new JSONObject(newValuesString);
     String colKey = "ipAddress";
     handleCassandraInetAddressType(colKey, newValuesJson);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testHandleInvalidStringifiedJson() {
-    String newValuesString = "{\"user\":{\"name\":\"John\", \"age\":30";
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", newValuesString);
-    String colKey = "data";
-    handleStringifiedJsonToMap(colKey, newValuesJson);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testHandleNonStringValue() {
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", 12345);
-    String colKey = "data";
-    handleStringifiedJsonToMap(colKey, newValuesJson);
-  }
-
-  @Test
-  public void testHandleValidStringifiedJsonArray() {
-    String newValuesString = "[\"apple\", \"banana\", \"cherry\"]";
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", newValuesString);
-    String colKey = "data";
-
-    Set<Object> expected = new HashSet<>();
-    expected.add("apple");
-    expected.add("banana");
-    expected.add("cherry");
-    assertEquals(expected, handleStringifiedJsonToSet(colKey, newValuesJson));
-  }
-
-  @Test
-  public void testHandleEmptyStringifiedJsonArray() {
-    String newValuesString = "[]";
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", newValuesString);
-    String colKey = "data";
-    Set<Object> expected = new HashSet<>();
-    assertEquals(expected, handleStringifiedJsonToSet(colKey, newValuesJson));
-  }
-
-  @Test
-  public void testHandleNonArrayValue() {
-    String newValuesString = "\"apple\"";
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", newValuesString);
-    String colKey = "data";
-    assertThrows(
-        IllegalArgumentException.class, () -> handleStringifiedJsonToSet(colKey, newValuesJson));
   }
 
   @Test

@@ -789,7 +789,7 @@ class CassandraTypeHandler {
     }
 
     if (colValue == null) {
-      return null;
+      return new PreparedStatementValueObject<>(columnType.toLowerCase(), null);
     }
 
     switch (columnType.toLowerCase()) {
@@ -820,7 +820,7 @@ class CassandraTypeHandler {
             columnType.toLowerCase(), "'" + escapeCassandraString(colValue + "'"));
       default:
         if(colValue instanceof JSONObject){
-          return null; // we need to see sample here to implement actual logic
+          return new PreparedStatementValueObject<>(columnType.toLowerCase(), null); // we need to see sample here to implement actual logic
         }else{
           return new PreparedStatementValueObject<>(columnType.toLowerCase(), colValue);
         }

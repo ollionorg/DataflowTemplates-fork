@@ -418,6 +418,15 @@ public class SpannerToSourceDb {
     String getFilterEventsDirectoryName();
 
     void setFilterEventsDirectoryName(String value);
+
+    @TemplateParameter.GcsReadFile(
+        order = 10,
+        optional = false,
+        description = "Path to GCS file containing the the Cassandra Config details",
+        helpText = "Path to GCS file containing connection profile info for cassandra.")
+    String getCassandraConfigFilePath();
+
+    void setCassandraConfigFilePath(String value);
   }
 
   /**
@@ -530,7 +539,8 @@ public class SpannerToSourceDb {
         if (singleMySqlShard.getLogicalShardId() == null) {
           singleMySqlShard.setLogicalShardId(Constants.DEFAULT_SHARD_ID);
           LOG.info(
-                  "Logical shard id was not found, hence setting it to : " + Constants.DEFAULT_SHARD_ID);
+              "Logical shard id was not found, hence setting it to : "
+                  + Constants.DEFAULT_SHARD_ID);
         }
       }
     } else {
@@ -543,9 +553,10 @@ public class SpannerToSourceDb {
         if (singleCassandraShard.getLogicalShardId() == null) {
           singleCassandraShard.setLogicalShardId(Constants.DEFAULT_SHARD_ID);
           LOG.info(
-                  "Logical shard id was not found, hence setting it to : " + Constants.DEFAULT_SHARD_ID);
+              "Logical shard id was not found, hence setting it to : "
+                  + Constants.DEFAULT_SHARD_ID);
         }
-      }else{
+      } else {
         throw new IllegalArgumentException("Not Supporting more than one shard for cassandra");
       }
     }

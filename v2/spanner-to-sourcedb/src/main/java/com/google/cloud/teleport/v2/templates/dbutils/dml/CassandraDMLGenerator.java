@@ -136,19 +136,21 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     for (Map.Entry<String, PreparedStatementValueObject<?>> entry : pkColumnNameValues.entrySet()) {
       String colName = entry.getKey();
       PreparedStatementValueObject<?> colValue = entry.getValue();
-
-      allColumns.append(colName).append(", ");
-      placeholders.append("?, ");
-      values.add(colValue);
+      if (colValue.getValue() != null) {
+        allColumns.append(colName).append(", ");
+        placeholders.append("?, ");
+        values.add(colValue);
+      }
     }
 
     for (Map.Entry<String, PreparedStatementValueObject<?>> entry : columnNameValues.entrySet()) {
       String colName = entry.getKey();
       PreparedStatementValueObject<?> colValue = entry.getValue();
-
-      allColumns.append(colName).append(", ");
-      placeholders.append("?, ");
-      values.add(colValue);
+      if (colValue.getValue() != null) {
+        allColumns.append(colName).append(", ");
+        placeholders.append("?, ");
+        values.add(colValue);
+      }
     }
 
     if (allColumns.length() > 0) {
@@ -184,8 +186,11 @@ public class CassandraDMLGenerator implements IDMLGenerator {
 
     for (Map.Entry<String, PreparedStatementValueObject<?>> entry : pkColumnNameValues.entrySet()) {
       String colName = entry.getKey();
-      deleteConditions.append(colName).append(" = ? AND ");
-      values.add(entry.getValue());
+      PreparedStatementValueObject<?> colValue = entry.getValue();
+      if (colValue.getValue() != null) {
+        deleteConditions.append(colName).append(" = ? AND ");
+        values.add(entry.getValue());
+      }
     }
 
     if (deleteConditions.length() > 0) {

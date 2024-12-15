@@ -22,6 +22,7 @@ import com.google.cloud.teleport.v2.templates.dbutils.connection.IConnectionHelp
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
+import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,10 @@ public class CassandraDao implements IDao<DMLGeneratorResponse> {
           String dmlStatement = preparedStatementGeneratedResponse.getDmlStatement();
           PreparedStatement preparedStatement = session.prepare(dmlStatement);
           BoundStatement boundStatement =
-              preparedStatement.bind(preparedStatementGeneratedResponse.getValues());
+              preparedStatement.bind(
+                  preparedStatementGeneratedResponse.getValues().stream()
+                      .map(PreparedStatementValueObject::getValue)
+                      .toArray());
           session.execute(boundStatement);
         } catch (Exception e) {
           LOG.error(e.getMessage());

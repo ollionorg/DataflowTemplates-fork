@@ -23,16 +23,14 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.stream.Collectors;
-import org.json.JSONObject;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,8 +39,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import org.eclipse.jetty.util.StringUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 class CassandraTypeHandler {
 
@@ -218,14 +219,32 @@ class CassandraTypeHandler {
    */
   public static ByteBuffer parseBlobType(Object colValue) {
     byte[] byteArray;
+
     if (colValue instanceof byte[]) {
       byteArray = (byte[]) colValue;
     } else if (colValue instanceof String) {
-      byteArray = java.util.Base64.getDecoder().decode((String) colValue);
+      String strValue = (String) colValue;
+      if (StringUtil.isHex(strValue, 0, strValue.length())) {
+        byteArray = convertHexStringToByteArray(strValue);
+      } else {
+        byteArray = java.util.Base64.getDecoder().decode((String) colValue);
+      }
     } else {
       throw new IllegalArgumentException("Unsupported type for column");
     }
+
     return ByteBuffer.wrap(byteArray);
+  }
+
+  private static byte[] convertHexStringToByteArray(String hex) {
+    int len = hex.length();
+    byte[] data = new byte[len / 2];
+    for (int i = 0; i < len; i += 2) {
+      data[i / 2] =
+          (byte)
+              ((Character.digit(hex.charAt(i), 16) << 4) + Character.digit(hex.charAt(i + 1), 16));
+    }
+    return data;
   }
 
   /**
@@ -698,6 +717,8 @@ class CassandraTypeHandler {
           }
         } else if (isValidJSON(inputValue)) {
           colValue = inputValue;
+        } else if (StringUtil.isHex(inputValue, 0, inputValue.length())) {
+          colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
         } else {
           colValue =
               "'"
@@ -706,7 +727,6 @@ class CassandraTypeHandler {
                   + "'";
         }
         break;
-
       case "timestamp":
         colValue =
             convertToCassandraTimestamp(
@@ -965,7 +985,6 @@ class CassandraTypeHandler {
    * @param dateString The timestamp string in ISO-8601 format (e.g., "2024-12-05T10:15:30Z").
    * @return The {@link Instant} representation of the timestamp.
    */
-
   public static Instant convertToCassandraTimestamp(String dateString) {
     return Instant.parse(dateString);
   }
@@ -1018,7 +1037,6 @@ class CassandraTypeHandler {
    * @param value The string to check if it represents a valid JSON object.
    * @return {@code true} if the string is a valid JSON object, {@code false} otherwise.
    */
-
   public static boolean isValidJSON(String value) {
     try {
       new JSONObject(value);

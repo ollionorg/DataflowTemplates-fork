@@ -15,49 +15,50 @@
  */
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
 
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraBoolType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraTimestampType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraFloatType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraDoubleType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraBlobType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraIntType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraBigintType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraDateType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleInt64SetType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraTextType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleFloat64ArrayType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleByteSetType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleFloatSetType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleByteArrayType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringArrayType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringSetType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.convertToCassandraDate;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.convertToCassandraTimestamp;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.convertToSmallInt;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.convertToTinyInt;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.escapeCassandraString;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleBoolSetTypeString;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleFloatArrayType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleByteArrayType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleByteSetType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraAsciiType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraBigintType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraBlobType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraBoolType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraDateType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraDoubleType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraDurationType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraFloatType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraInetAddressType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraIntType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraTextType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraTimestampType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraUuidType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraVarintType;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleDateSetType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleFloat64ArrayType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleFloatArrayType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleFloatSetType;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleInt64ArrayAsInt32Array;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleInt64ArrayAsInt32Set;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraUuidType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraAsciiType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraVarintType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraDurationType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleCassandraInetAddressType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleInt64SetType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringArrayType;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringSetType;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringifiedJsonToMap;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.convertToCassandraTimestamp;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringifiedJsonToSet;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.convertToSmallInt;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.escapeCassandraString;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidUUID;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.convertToTinyInt;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.convertToCassandraDate;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidJSON;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidIPAddress;
-import static org.junit.Assert.assertTrue;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidJSON;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidUUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -135,7 +136,7 @@ public class CassandraTypeHandlerTest {
     String newValuesString = "{\"isAdmin\":null}";
     JSONObject newValuesJson = new JSONObject(newValuesString);
     String colKey = "isAdmin";
-      assertEquals(false, handleCassandraBoolType(colKey, newValuesJson));
+    assertEquals(false, handleCassandraBoolType(colKey, newValuesJson));
   }
 
   @Test
@@ -367,13 +368,14 @@ public class CassandraTypeHandlerTest {
     handleCassandraFloatType(colKey, newValuesJson);
   }
 
-    @Test
-    public void convertSpannerValueJsonToInvalidDoubleType() {
-        String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\", \"salary\":\"invalid_value\"}";
-        JSONObject newValuesJson = new JSONObject(newValuesString);
-        String colKey = "salary";
-        handleCassandraDoubleType(colKey, newValuesJson);
-    }
+  @Test
+  public void convertSpannerValueJsonToInvalidDoubleType() {
+    String newValuesString =
+        "{\"FirstName\":\"kk\",\"LastName\":\"ll\", \"salary\":\"invalid_value\"}";
+    JSONObject newValuesJson = new JSONObject(newValuesString);
+    String colKey = "salary";
+    handleCassandraDoubleType(colKey, newValuesJson);
+  }
 
   @Test
   public void convertSpannerValueJsonToBlobType_MissingColumn() {
@@ -790,7 +792,8 @@ public class CassandraTypeHandlerTest {
     JSONObject newValuesJson = new JSONObject();
     newValuesJson.put("data", newValuesString);
     String colKey = "data";
-    assertThrows(IllegalArgumentException.class, () -> handleStringifiedJsonToSet(colKey, newValuesJson));
+    assertThrows(
+        IllegalArgumentException.class, () -> handleStringifiedJsonToSet(colKey, newValuesJson));
   }
 
   @Test
@@ -887,6 +890,7 @@ public class CassandraTypeHandlerTest {
     String result = convertToCassandraTimestamp(value, timezoneOffset);
     assertEquals(expected, result);
   }
+
   @Test
   public void testConvertToCassandraDateWithValidDate() {
     String dateString = "2024-12-12T10:15:30Z";
@@ -1016,5 +1020,4 @@ public class CassandraTypeHandlerTest {
     boolean result = isValidJSON(nullString);
     assertFalse(result);
   }
-
 }

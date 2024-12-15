@@ -684,145 +684,6 @@ class CassandraTypeHandler {
     return new HashSet<>(handleByteArrayType(colName, valuesJson));
   }
 
-  private static PreparedStatementValueObject<?> getCollectionTypeFromCqlType(String columnType, JSONObject jsonObject) {
-    String columnTypeLower = columnType.toLowerCase();
-    if (columnTypeLower.contains("map<")) {
-      String typeParams = columnType.substring(4, columnType.length() - 1);  // Remove map<> part
-      String[] typeParts = typeParams.split(",");  // Split by comma
-      String keyType = typeParts[0].trim();
-      String valueType = typeParts[1].trim();
-      //TODO
-      // ADD LOGIC TO CONVERT BASED ON SAMPLE JSON
-      throw new UnsupportedOperationException("Map type handling not implemented yet.");
-    } else if (columnTypeLower.contains("set<")) {
-      // Handle Set Type (set<text>)
-      String keyType = columnType.substring(4, columnType.length() - 1);
-      //TODO
-      // ADD LOGIC TO CONVERT BASED ON SAMPLE JSON
-      throw new UnsupportedOperationException("Set type handling not implemented yet.");
-    } else if (columnTypeLower.contains("list<")) {
-      // Handle List Type (list<text>)
-      String keyType = columnType.substring(5, columnType.length() - 1);
-      //TODO
-      // ADD LOGIC TO CONVERT BASED ON SAMPLE JSON
-      throw new UnsupportedOperationException("List type handling not implemented yet.");
-    } else {
-      throw new IllegalArgumentException("Unsupported type for column: " + columnType);
-    }
-  }
-
-  public static PreparedStatementValueObject<?> getColumnValueByType(
-      SpannerColumnDefinition spannerColDef,
-      SourceColumnDefinition sourceColDef,
-      JSONObject valuesJson,
-      String sourceDbTimezoneOffset) {
-
-    String columnType = sourceColDef.getType().getName();
-    Object colValue = null;
-    String colType = spannerColDef.getType().getName();
-    String colName = spannerColDef.getName();
-
-    switch (colType.toLowerCase()) {
-      case "bigint":
-      case "int64":
-        colValue = CassandraTypeHandler.handleCassandraBigintType(colName, valuesJson);
-        break;
-      case "string":
-        String inputValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
-        if (isValidUUID(inputValue)) {
-          colValue = CassandraTypeHandler.handleCassandraUuidType(colName, valuesJson);
-        } else if (isValidIPAddress(inputValue)) {
-          try {
-            colValue = CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson);
-          } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-          }
-        } else if (isValidJSON(inputValue)) {
-          colValue = new JSONObject(inputValue);
-        } else if (StringUtil.isHex(inputValue, 0, inputValue.length())) {
-          colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
-        } else {
-          colValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
-        }
-        break;
-      case "timestamp":
-        colValue =
-            convertToCassandraTimestamp(
-                String.valueOf(
-                    CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson)),
-                sourceDbTimezoneOffset);
-        break;
-
-      case "date":
-      case "datetime":
-        colValue =
-            convertToCassandraTimestamp(
-                String.valueOf(CassandraTypeHandler.handleCassandraDateType(colName, valuesJson)),
-                sourceDbTimezoneOffset);
-        break;
-
-      case "boolean":
-        colValue = CassandraTypeHandler.handleCassandraBoolType(colName, valuesJson);
-        break;
-
-      case "float64":
-        colValue = CassandraTypeHandler.handleCassandraDoubleType(colName, valuesJson);
-        break;
-
-      case "numeric":
-      case "float":
-        colValue = CassandraTypeHandler.handleCassandraFloatType(colName, valuesJson);
-        break;
-
-      case "bytes":
-      case "bytes(max)":
-        colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
-        break;
-
-      case "integer":
-        colValue = CassandraTypeHandler.handleCassandraIntType(colName, valuesJson);
-        break;
-    }
-
-    if (colValue == null) {
-      return new PreparedStatementValueObject<>(columnType.toLowerCase(), null);
-    }
-
-    switch (columnType.toLowerCase()) {
-      case "smallint":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), convertToSmallInt((Integer) colValue));
-      case "tinyint":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), convertToTinyInt((Integer) colValue));
-      case "date":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), convertToCassandraDate((String) colValue));
-      case "time":
-      case "timestamp":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), convertToCassandraTimestamp((String) colValue));
-      case "ascii":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), handleCassandraAsciiType(colName, valuesJson));
-      case "varchar":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), handleCassandraVarintType(colName, valuesJson));
-      case "duration":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), handleCassandraDurationType(colName, valuesJson));
-      case "text":
-        new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), "'" + escapeCassandraString(colValue + "'"));
-      default:
-        if(colValue instanceof JSONObject){
-          return new PreparedStatementValueObject<>(columnType.toLowerCase(), null); // we need to see sample here to implement actual logic
-        }else{
-          return new PreparedStatementValueObject<>(columnType.toLowerCase(), colValue);
-        }
-    }
-  }
-
   /**
    * Converts an {@link Integer} to a {@code short} (SmallInt).
    *
@@ -997,5 +858,144 @@ class CassandraTypeHandler {
       }
     }
     return true;
+  }
+
+  private static PreparedStatementValueObject<?> getCollectionTypeFromCqlType(String columnType, JSONObject jsonObject) {
+    String columnTypeLower = columnType.toLowerCase();
+    if (columnTypeLower.contains("map<")) {
+      String typeParams = columnType.substring(4, columnType.length() - 1);  // Remove map<> part
+      String[] typeParts = typeParams.split(",");  // Split by comma
+      String keyType = typeParts[0].trim();
+      String valueType = typeParts[1].trim();
+      //TODO
+      // ADD LOGIC TO CONVERT BASED ON SAMPLE JSON
+      throw new UnsupportedOperationException("Map type handling not implemented yet.");
+    } else if (columnTypeLower.contains("set<")) {
+      // Handle Set Type (set<text>)
+      String keyType = columnType.substring(4, columnType.length() - 1);
+      //TODO
+      // ADD LOGIC TO CONVERT BASED ON SAMPLE JSON
+      throw new UnsupportedOperationException("Set type handling not implemented yet.");
+    } else if (columnTypeLower.contains("list<")) {
+      // Handle List Type (list<text>)
+      String keyType = columnType.substring(5, columnType.length() - 1);
+      //TODO
+      // ADD LOGIC TO CONVERT BASED ON SAMPLE JSON
+      throw new UnsupportedOperationException("List type handling not implemented yet.");
+    } else {
+      throw new IllegalArgumentException("Unsupported type for column: " + columnType);
+    }
+  }
+
+  public static PreparedStatementValueObject<?> getColumnValueByType(
+      SpannerColumnDefinition spannerColDef,
+      SourceColumnDefinition sourceColDef,
+      JSONObject valuesJson,
+      String sourceDbTimezoneOffset) {
+
+    String columnType = sourceColDef.getType().getName();
+    Object colValue = null;
+    String colType = spannerColDef.getType().getName();
+    String colName = spannerColDef.getName();
+
+    switch (colType.toLowerCase()) {
+      case "bigint":
+      case "int64":
+        colValue = CassandraTypeHandler.handleCassandraBigintType(colName, valuesJson);
+        break;
+      case "string":
+        String inputValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
+        if (isValidUUID(inputValue)) {
+          colValue = CassandraTypeHandler.handleCassandraUuidType(colName, valuesJson);
+        } else if (isValidIPAddress(inputValue)) {
+          try {
+            colValue = CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson);
+          } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+          }
+        } else if (isValidJSON(inputValue)) {
+          colValue = new JSONObject(inputValue);
+        } else if (StringUtil.isHex(inputValue, 0, inputValue.length())) {
+          colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
+        } else {
+          colValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
+        }
+        break;
+      case "timestamp":
+        colValue =
+            convertToCassandraTimestamp(
+                String.valueOf(
+                    CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson)),
+                sourceDbTimezoneOffset);
+        break;
+
+      case "date":
+      case "datetime":
+        colValue =
+            convertToCassandraTimestamp(
+                String.valueOf(CassandraTypeHandler.handleCassandraDateType(colName, valuesJson)),
+                sourceDbTimezoneOffset);
+        break;
+
+      case "boolean":
+        colValue = CassandraTypeHandler.handleCassandraBoolType(colName, valuesJson);
+        break;
+
+      case "float64":
+        colValue = CassandraTypeHandler.handleCassandraDoubleType(colName, valuesJson);
+        break;
+
+      case "numeric":
+      case "float":
+        colValue = CassandraTypeHandler.handleCassandraFloatType(colName, valuesJson);
+        break;
+
+      case "bytes":
+      case "bytes(max)":
+        colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
+        break;
+
+      case "integer":
+        colValue = CassandraTypeHandler.handleCassandraIntType(colName, valuesJson);
+        break;
+    }
+
+    if (colValue == null) {
+      return new PreparedStatementValueObject<>(columnType.toLowerCase(), null);
+    }
+
+    switch (columnType.toLowerCase()) {
+      case "smallint":
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), convertToSmallInt((Integer) colValue));
+      case "tinyint":
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), convertToTinyInt((Integer) colValue));
+      case "date":
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), convertToCassandraDate((String) colValue));
+      case "time":
+      case "timestamp":
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), convertToCassandraTimestamp((String) colValue));
+      case "ascii":
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), handleCassandraAsciiType(colName, valuesJson));
+      case "varchar":
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), handleCassandraVarintType(colName, valuesJson));
+      case "duration":
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), handleCassandraDurationType(colName, valuesJson));
+      case "text":
+        new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), "'" + escapeCassandraString(colValue + "'"));
+      default:
+        if(colValue instanceof JSONObject){
+          return new PreparedStatementValueObject<>(columnType.toLowerCase(), null); // we need to see sample here to implement actual logic
+        }else{
+          return new PreparedStatementValueObject<>(columnType.toLowerCase(), colValue);
+        }
+    }
   }
 }

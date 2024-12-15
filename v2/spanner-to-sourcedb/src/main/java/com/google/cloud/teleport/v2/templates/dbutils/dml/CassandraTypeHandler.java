@@ -860,26 +860,27 @@ class CassandraTypeHandler {
     return true;
   }
 
-  private static PreparedStatementValueObject<?> getCollectionTypeFromCqlType(String columnType, JSONObject jsonObject) {
+  private static PreparedStatementValueObject<?> getCollectionTypeFromCqlType(
+      String columnType, JSONObject jsonObject) {
     String columnTypeLower = columnType.toLowerCase();
     if (columnTypeLower.contains("map<")) {
-      String typeParams = columnType.substring(4, columnType.length() - 1);  // Remove map<> part
-      String[] typeParts = typeParams.split(",");  // Split by comma
+      String typeParams = columnType.substring(4, columnType.length() - 1); // Remove map<> part
+      String[] typeParts = typeParams.split(","); // Split by comma
       String keyType = typeParts[0].trim();
       String valueType = typeParts[1].trim();
-      //TODO
+      // TODO
       // ADD LOGIC TO CONVERT BASED ON SAMPLE JSON
       throw new UnsupportedOperationException("Map type handling not implemented yet.");
     } else if (columnTypeLower.contains("set<")) {
       // Handle Set Type (set<text>)
       String keyType = columnType.substring(4, columnType.length() - 1);
-      //TODO
+      // TODO
       // ADD LOGIC TO CONVERT BASED ON SAMPLE JSON
       throw new UnsupportedOperationException("Set type handling not implemented yet.");
     } else if (columnTypeLower.contains("list<")) {
       // Handle List Type (list<text>)
       String keyType = columnType.substring(5, columnType.length() - 1);
-      //TODO
+      // TODO
       // ADD LOGIC TO CONVERT BASED ON SAMPLE JSON
       throw new UnsupportedOperationException("List type handling not implemented yet.");
     } else {
@@ -991,9 +992,11 @@ class CassandraTypeHandler {
         new PreparedStatementValueObject<>(
             columnType.toLowerCase(), "'" + escapeCassandraString(colValue + "'"));
       default:
-        if(colValue instanceof JSONObject){
-          return new PreparedStatementValueObject<>(columnType.toLowerCase(), null); // we need to see sample here to implement actual logic
-        }else{
+        if (colValue instanceof JSONObject) {
+          return new PreparedStatementValueObject<>(
+              columnType.toLowerCase(),
+              null); // we need to see sample here to implement actual logic
+        } else {
           return new PreparedStatementValueObject<>(columnType.toLowerCase(), colValue);
         }
     }

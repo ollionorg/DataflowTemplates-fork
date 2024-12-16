@@ -19,6 +19,7 @@ import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceColumnDefini
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerColumnDefinition;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
 import com.google.common.net.InetAddresses;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
@@ -671,33 +672,46 @@ class CassandraTypeHandler {
     if (colValue == null) {
       return new PreparedStatementValueObject<>(columnType.toLowerCase(), null);
     }
+    return parseAndGenerateCassandraType(columnType, colValue, colName, valuesJson);
+  }
 
+  private static PreparedStatementValueObject<?> parseAndGenerateCassandraType(
+      String columnType, Object colValue, String colName, JSONObject valuesJson) {
     switch (columnType.toLowerCase()) {
+      case "ascii":
+      case "text":
+      case "varchar":
+        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (String) colValue);
+      case "bigint":
+        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Long) colValue);
+      case "boolean":
+        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Boolean) colValue);
+      case "decimal":
+        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (BigDecimal) colValue);
+      case "double":
+        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Double) colValue);
+      case "float":
+        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Float) colValue);
+      case "inet":
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), (java.net.InetAddress) colValue);
+      case "int":
+        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Integer) colValue);
       case "smallint":
         return new PreparedStatementValueObject<>(
             columnType.toLowerCase(), convertToSmallInt((Integer) colValue));
-      case "tinyint":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), convertToTinyInt((Integer) colValue));
-      case "date":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), convertToCassandraDate((String) colValue));
       case "time":
       case "timestamp":
         return new PreparedStatementValueObject<>(
             columnType.toLowerCase(), convertToCassandraTimestamp((String) colValue));
-      case "ascii":
+      case "timeuuid":
+      case "uuid":
+        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (UUID) colValue);
+      case "tinyint":
         return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), handleCassandraAsciiType(colName, valuesJson));
-      case "varchar":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), handleCassandraVarintType(colName, valuesJson));
-      case "duration":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), handleCassandraDurationType(colName, valuesJson));
-      case "text":
-        new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), "'" + escapeCassandraString(colValue + "'"));
+            columnType.toLowerCase(), convertToTinyInt((Integer) colValue));
+      case "varint":
+        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (BigInteger) colValue);
       default:
         if (colValue instanceof JSONObject) {
           return new PreparedStatementValueObject<>(

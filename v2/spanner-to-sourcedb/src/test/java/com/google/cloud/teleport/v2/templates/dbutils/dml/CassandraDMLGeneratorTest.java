@@ -329,7 +329,8 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void twoSingleEscapedQuoteDML() throws Exception {
-    Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
+    Schema schema =
+        SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
 
     String tableName = "sample_table";
     String newValuesString = "{\"blob_column\":\"Jyc\u003d\",\"varchar_column\":\"\u0027\u0027\",}";

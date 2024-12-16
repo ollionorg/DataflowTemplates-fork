@@ -47,7 +47,7 @@ import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHa
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringArrayType;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringSetType;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidIPAddress;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidJSON;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidJSONObject;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidUUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -959,30 +959,30 @@ public class CassandraTypeHandlerTest {
   }
 
   @Test
-  public void testIsValidJSONWithValidJSON() {
+  public void testIsValidJSONWithValidJSONObject() {
     String validJson = "{\"name\":\"John\", \"age\":30}";
-    boolean result = isValidJSON(validJson);
+    boolean result = isValidJSONObject(validJson);
     assertTrue(result);
   }
 
   @Test
-  public void testIsValidJSONWithInvalidJSON() {
+  public void testIsValidJSONWithInvalidJSONObject() {
     String invalidJson = "{\"name\":\"John\", \"age\":30";
-    boolean result = isValidJSON(invalidJson);
+    boolean result = isValidJSONObject(invalidJson);
     assertFalse(result);
   }
 
   @Test
-  public void testIsValidJSONWithEmptyString() {
+  public void testIsValidJSONObjectWithEmptyString() {
     String emptyString = "";
-    boolean result = isValidJSON(emptyString);
+    boolean result = isValidJSONObject(emptyString);
     assertFalse(result);
   }
 
   @Test
-  public void testIsValidJSONWithNull() {
+  public void testIsValidJSONObjectWithNull() {
     String nullString = null;
-    boolean result = isValidJSON(nullString);
+    boolean result = isValidJSONObject(nullString);
     assertFalse(result);
   }
 }

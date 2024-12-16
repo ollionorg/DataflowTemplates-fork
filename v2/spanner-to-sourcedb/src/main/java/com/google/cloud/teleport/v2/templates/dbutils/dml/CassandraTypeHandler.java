@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.eclipse.jetty.util.StringUtil;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -622,7 +623,9 @@ class CassandraTypeHandler {
           } catch (Exception e) {
             throw new RuntimeException(e);
           }
-        } else if (isValidJSON(inputValue)) {
+        } else if (isValidJSONArray(inputValue)) {
+          colValue = new JSONArray(inputValue);
+        } else if (isValidJSONObject(inputValue)) {
           colValue = new JSONObject(inputValue);
         } else if (StringUtil.isHex(inputValue, 0, inputValue.length())) {
           colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
@@ -720,7 +723,7 @@ class CassandraTypeHandler {
       case "duration":
         return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Duration) colValue);
       default:
-        if (colValue instanceof JSONObject) {
+        if (colValue instanceof JSONObject || colValue instanceof JSONArray) {
           return new PreparedStatementValueObject<>(
               columnType.toLowerCase(),
               null); // we need to see sample here to implement actual logic
@@ -1026,9 +1029,28 @@ class CassandraTypeHandler {
    * @param value The string to check if it represents a valid JSON object.
    * @return {@code true} if the string is a valid JSON object, {@code false} otherwise.
    */
-  public static boolean isValidJSON(String value) {
+  public static boolean isValidJSONObject(String value) {
     try {
       new JSONObject(value);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  /**
+   * Validates if the given string is a valid JSONArray.
+   *
+   * <p>This method attempts to parse the string using {@link JSONArray} to check if the value
+   * represents a valid JSON object. If the string is valid JSON, it returns {@code true}, otherwise
+   * {@code false}.
+   *
+   * @param value The string to check if it represents a valid JSON object.
+   * @return {@code true} if the string is a valid JSON object, {@code false} otherwise.
+   */
+  public static boolean isValidJSONArray(String value) {
+    try {
+      new JSONArray(value);
       return true;
     } catch (Exception e) {
       return false;

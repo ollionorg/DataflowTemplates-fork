@@ -118,7 +118,7 @@
         "varchar_column": {
           "Name": "varchar_column",
           "Type": {
-            "Name": "varchar",
+            "Name": "String",
             "Mods": [
               20
             ],

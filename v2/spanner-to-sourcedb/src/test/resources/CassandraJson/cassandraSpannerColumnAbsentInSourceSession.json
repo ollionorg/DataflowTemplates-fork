@@ -357,7 +357,7 @@
               "c6": {
                   "Name": "FirstName",
                   "Type": {
-                      "Name": "varchar",
+                      "Name": "String",
                       "Mods": [
                           1024
                       ],
@@ -377,7 +377,7 @@
               "c7": {
                   "Name": "LastName",
                   "Type": {
-                      "Name": "varchar",
+                      "Name": "String",
                       "Mods": [
                           1024
                       ],

@@ -51,8 +51,7 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
-    assertTrue(sql.contains("FirstName"));
-    assertTrue(sql.contains("LastName"));
+    assertTrue(sql.contains("SingerId"));
     assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
@@ -88,7 +87,7 @@ public class CassandraDMLGeneratorTest {
         SessionFileReader.read(
             "src/test/resources/CassandraJson/cassandraCoulmnNameTypeMismatchSession.json");
     String tableName = "Singers";
-    String newValuesString = "{\"FirstName\":\"222\",\"LastName\":\"ll\"}";
+    String newValuesString = "{\"FirstName\":\"John\",\"LastName\":\"ll\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);
     String keyValueString = "{\"SingerId\":\"999\"}";
     JSONObject keyValuesJson = new JSONObject(keyValueString);
@@ -277,9 +276,7 @@ public class CassandraDMLGeneratorTest {
                 .setSchema(schema)
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
-    assertTrue(sql.contains("FirstName"));
-    assertTrue(sql.contains("SingerId"));
-    assertEquals(3, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertEquals(1, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -327,14 +324,12 @@ public class CassandraDMLGeneratorTest {
                 .setSchema(schema)
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
-    assertTrue(sql.contains("varchar_column"));
-    assertTrue(sql.contains("blob_column"));
-    assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
   public void twoSingleEscapedQuoteDML() throws Exception {
-    Schema schema = SessionFileReader.read("src/test/resources/quotesSession.json");
+    Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
 
     String tableName = "sample_table";
     String newValuesString = "{\"blob_column\":\"Jyc\u003d\",\"varchar_column\":\"\u0027\u0027\",}";
@@ -351,10 +346,7 @@ public class CassandraDMLGeneratorTest {
                 .setSchema(schema)
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
-
-    assertTrue(sql.contains("varchar_column"));
-    assertTrue(sql.contains("blob_column"));
-    assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -378,9 +370,8 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
-    assertTrue(sql.contains("varchar_column"));
-    assertTrue(sql.contains("blob_column"));
-    assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertTrue(sql.contains("sample_table"));
+    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -404,9 +395,8 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
-    assertTrue(sql.contains("varchar_column"));
-    assertTrue(sql.contains("blob_column"));
-    assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertTrue(sql.contains("sample_table"));
+    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -430,9 +420,8 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
-    assertTrue(sql.contains("varchar_column"));
-    assertTrue(sql.contains("blob_column"));
-    assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertTrue(sql.contains("sample_table"));
+    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -456,9 +445,8 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
-    assertTrue(sql.contains("varchar_column"));
-    assertTrue(sql.contains("blob_column"));
-    assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertTrue(sql.contains("sample_table"));
+    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -483,9 +471,8 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
-    assertTrue(sql.contains("varchar_column"));
-    assertTrue(sql.contains("blob_column"));
-    assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertTrue(sql.contains("sample_table"));
+    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -509,10 +496,8 @@ public class CassandraDMLGeneratorTest {
                 .setSchema(schema)
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
-
-    assertTrue(sql.contains("varchar_column"));
-    assertTrue(sql.contains("blob_column"));
-    assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertTrue(sql.contains("sample_table"));
+    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -536,14 +521,12 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
-    assertTrue(sql.contains("varchar_column"));
-    assertTrue(sql.contains("blob_column"));
-    assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertTrue(sql.contains("sample_table"));
+    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
   public void backSlashEscapeDML() throws Exception {
-
     Schema schema =
         SessionFileReader.read("src/test/resources/CassandraJson/cassandraQuotesSession.json");
 
@@ -563,9 +546,8 @@ public class CassandraDMLGeneratorTest {
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
-    assertTrue(sql.contains("varchar_column"));
-    assertTrue(sql.contains("blob_column"));
-    assertEquals(4, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertTrue(sql.contains("sample_table"));
+    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test

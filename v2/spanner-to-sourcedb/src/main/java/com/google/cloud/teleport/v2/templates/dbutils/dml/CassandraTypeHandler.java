@@ -626,6 +626,10 @@ class CassandraTypeHandler {
           colValue = new JSONObject(inputValue);
         } else if (StringUtil.isHex(inputValue, 0, inputValue.length())) {
           colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
+        } else if (isAscii(inputValue)) {
+          colValue = CassandraTypeHandler.handleCassandraAsciiType(colName, valuesJson);
+        } else if (isDurationString(inputValue)) {
+          colValue = CassandraTypeHandler.handleCassandraDurationType(colName, valuesJson);
         } else {
           colValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
         }
@@ -711,7 +715,10 @@ class CassandraTypeHandler {
         return new PreparedStatementValueObject<>(
             columnType.toLowerCase(), convertToTinyInt((Integer) colValue));
       case "varint":
-        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (BigInteger) colValue);
+        return new PreparedStatementValueObject<>(
+            columnType.toLowerCase(), new BigInteger(((ByteBuffer) colValue).array()));
+      case "duration":
+        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Duration) colValue);
       default:
         if (colValue instanceof JSONObject) {
           return new PreparedStatementValueObject<>(
@@ -1041,5 +1048,20 @@ class CassandraTypeHandler {
       }
     }
     return true;
+  }
+
+  /**
+   * Helper method to check if a string contains Duration Character.
+   *
+   * @param value - The string to check.
+   * @return true if the string contains Duration Character, false otherwise.
+   */
+  public static boolean isDurationString(String value) {
+    try {
+      Duration.parse(value);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 }

@@ -147,18 +147,16 @@ class CassandraTypeHandler {
    *     type.
    */
   public static InetAddress handleCassandraInetAddressType(String colName, JSONObject valuesJson) {
-    String inetString = valuesJson.getString(colName);
-    if (!isValidIpAddress(inetString)) {
-      throw new IllegalArgumentException(
-              "Invalid IP address format for column: " + colName + ". Expected a valid IPv4 or IPv6 address, but got: " + inetString);
+    String inetString = valuesJson.optString(colName, null);
+    if (inetString == null) {
+      return null;
     }
-    return InetAddresses.forString(inetString);
-  }
-
-  private static boolean isValidIpAddress(String str) {
-    return InetAddresses.isInetAddress(str);
-  }
-
+    try {
+        return InetAddresses.forString(inetString);
+      } catch(IllegalArgumentException e){
+        throw new IllegalArgumentException("Invalid IP address format for column: " + colName, e);
+      }
+    }
 
   /**
    * Generates a Type based on the provided {@link CassandraTypeHandler}.
@@ -325,7 +323,7 @@ class CassandraTypeHandler {
    * @return a {@link LocalDate} object parsed from the given value.
    * @throws IllegalArgumentException if the value cannot be parsed or is of an unsupported type.
    */
-  static LocalDate parseDate(String colName, Object colValue, String formatter) {
+ public static LocalDate parseDate(String colName, Object colValue, String formatter) {
     LocalDate localDate;
     if (colValue instanceof String) {
       try {

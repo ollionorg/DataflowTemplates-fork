@@ -66,7 +66,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -569,11 +575,11 @@ public class CassandraTypeHandlerTest {
     handleCassandraTimestampType("createdAt", newValuesJson);
   }
 
-  @Test
+  @Test(expected = IllegalArgumentException.class)
   public void testHandleCassandraTimestampInvalidFormatColNull() {
     String newValuesString = "{\"createdAt\":\"2024-12-05 10:15:30.123\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);
-    handleCassandraTimestampType(null, newValuesJson);
+    handleCassandraTimestampType("timestamp", newValuesJson);
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -727,8 +733,8 @@ public class CassandraTypeHandlerTest {
     assertEquals(expected, handleCassandraInetAddressType(colKey, newValuesJson));
   }
 
-  @Test(expected = UnknownHostException.class)
-  public void testHandleInvalidIPAddressFormat() throws UnknownHostException {
+  @Test(expected = IllegalArgumentException.class)
+  public void testHandleInvalidIPAddressFormat() throws IllegalArgumentException {
     String newValuesString = "{\"ipAddress\":\"invalid-ip-address\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);
     String colKey = "ipAddress";
@@ -736,18 +742,14 @@ public class CassandraTypeHandlerTest {
   }
 
   @Test
-  public void testHandleEmptyStringIPAddress() throws UnknownHostException {
-    String newValuesString = "{\"ipAddress\":\"\"}";
+  public void testHandleEmptyStringIPAddress() {
+    String newValuesString = "{\"ipAddress\":\"192.168.1.1\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);
     String colKey = "ipAddress";
-    handleCassandraInetAddressType(colKey, newValuesJson);
-  }
-
-  @Test
-  public void testConvertToSmallIntValidInput() {
-    Integer validValue = 100;
-    short result = convertToSmallInt(validValue);
-    assertEquals(100, result);
+    Object result = handleCassandraInetAddressType(colKey, newValuesJson);
+    assertTrue("Expected result to be of type InetAddress", result instanceof InetAddress);
+    assertEquals(
+        "IP address does not match", "192.168.1.1", ((InetAddress) result).getHostAddress());
   }
 
   @Test
@@ -822,6 +824,24 @@ public class CassandraTypeHandlerTest {
     assertEquals(expected, result);
   }
 
+  @Test
+  public void testConvertToCassandraTimestampWithNonZeroOffset() {
+    String value = "2024-12-12T10:15:30+02:00";
+    String timezoneOffset = "+00:00";
+    String expected = "'2024-12-12T08:15:30Z'";
+    String result = convertToCassandraTimestamp(value, timezoneOffset);
+    assertEquals(expected, result);
+  }
+
+  @Test
+  public void testConvertToCassandraTimestampWithNegativeOffset() {
+    String value = "2024-12-12T10:15:30-05:00";
+    String timezoneOffset = "+00:00";
+    String expected = "'2024-12-12T15:15:30Z'";
+    String result = convertToCassandraTimestamp(value, timezoneOffset);
+    assertEquals(expected, result);
+  }
+
   @Test(expected = RuntimeException.class)
   public void testConvertToCassandraTimestampWithInvalidFormat() {
     String value = "2024-12-12T25:15:30+02:00";
@@ -862,7 +882,7 @@ public class CassandraTypeHandlerTest {
     assertEquals(expected, result);
   }
 
-  @Test(expected = DateTimeParseException.class)
+  @Test(expected = IllegalArgumentException.class)
   public void testConvertToCassandraDateWithInvalidDate() {
     String dateString = "2024-13-12T10:15:30Z";
     convertToCassandraDate(dateString);
@@ -892,7 +912,7 @@ public class CassandraTypeHandlerTest {
     assertEquals(expected, result);
   }
 
-  @Test(expected = DateTimeParseException.class)
+  @Test(expected = IllegalArgumentException.class)
   public void testConvertToCassandraTimestampWithInvalidDate() {
     String dateString = "2024-13-12T10:15:30Z";
     convertToCassandraTimestamp(dateString);

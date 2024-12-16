@@ -295,7 +295,7 @@ class CassandraTypeHandler {
    * @return a {@link LocalDate} object containing the parsed date value. If the column is missing
    *     or invalid, this method returns {@code null}.
    */
-  static LocalDate handleCassandraGenericDateType(
+  public static LocalDate handleCassandraGenericDateType(
           String colName, JSONObject valuesJson, String formatter) {
     Object colValue = valuesJson.opt(colName);
     if (colValue == null) {

@@ -1094,8 +1094,6 @@ public class CassandraTypeHandlerTest {
     assertFalse(result);
   }
 
-  //uwchboiewhncoihncoihncipchnih
-
   @Test
   public void testConvertToCassandraDate_validDateString() {
     String dateString = "2024-12-16T14:30:00Z";

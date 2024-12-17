@@ -932,26 +932,38 @@ class CassandraTypeHandler {
     }
   }
 
-  public static PreparedStatementValueObject<?> getColumnValueByType(
-          SpannerColumnDefinition spannerColDef,
-          SourceColumnDefinition sourceColDef,
-          JSONObject valuesJson,
-          String sourceDbTimezoneOffset) {
-
-    String columnType = sourceColDef.getType().getName().toLowerCase();
-    String colType = spannerColDef.getType().getName().toLowerCase();
-    String colName = spannerColDef.getName();
-
-    Object colValue = handleColumnType(colType, colName, valuesJson, sourceDbTimezoneOffset);
-
-    if (colValue == null) {
-      return new PreparedStatementValueObject<>(columnType, null);
+  /**
+   * Safely executes a handler method, catching exceptions and rethrowing them as runtime
+   * exceptions.
+   *
+   * <p>This method provides exception safety by wrapping the execution of a supplier function.
+   *
+   * @param <T> The return type of the handler.
+   * @param supplier A functional interface providing the value.
+   * @return The result of the supplier function.
+   * @throws IllegalArgumentException If an exception occurs during the supplier execution.
+   */
+  private static <T> T safeHandle(HandlerSupplier<T> supplier) {
+    try {
+      return supplier.get();
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Error handling type: " + e.getMessage(), e);
     }
-    return parseAndGenerateCassandraType(columnType, colValue);
   }
 
-  private static Object handleColumnType(
-          String colType, String colName, JSONObject valuesJson, String timezoneOffset) {
+  /**
+   * Handles and extracts column values based on the Spanner column type.
+   *
+   * <p>This method processes Spanner column types (e.g., bigint, string, timestamp, etc.) and
+   * returns the parsed value for further handling.
+   *
+   * @param colType The Spanner column type (e.g., "string", "bigint").
+   * @param colName The name of the column.
+   * @param valuesJson The JSON object containing the column value.
+   * @return The extracted value for the column, or {@code null} if the column type is unsupported.
+   */
+  private static Object handleSpannerColumnType(
+      String colType, String colName, JSONObject valuesJson) {
     switch (colType) {
       case "bigint":
       case "int64":
@@ -987,6 +999,16 @@ class CassandraTypeHandler {
     }
   }
 
+  /**
+   * Handles and parses column values for string types, determining specific subtypes dynamically.
+   *
+   * <p>This method identifies if the string can be a UUID, IP address, JSON, blob, duration, or
+   * ASCII type. If none match, it treats the value as a simple text type.
+   *
+   * @param colName The name of the column.
+   * @param valuesJson The JSON object containing the column value.
+   * @return The parsed value as the appropriate type (e.g., UUID, JSON, etc.).
+   */
   private static Object handleStringType(String colName, JSONObject valuesJson) {
     String inputValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
 
@@ -994,7 +1016,7 @@ class CassandraTypeHandler {
       return CassandraTypeHandler.handleCassandraUuidType(colName, valuesJson);
     } else if (isValidIPAddress(inputValue)) {
       return safeHandle(
-              () -> CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson));
+          () -> CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson));
     } else if (isValidJSONArray(inputValue)) {
       return new JSONArray(inputValue);
     } else if (isValidJSONObject(inputValue)) {
@@ -1009,16 +1031,20 @@ class CassandraTypeHandler {
     return inputValue;
   }
 
-  private static <T> T safeHandle(HandlerSupplier<T> supplier) {
-    try {
-      return supplier.get();
-    } catch (Exception e) {
-      throw new IllegalArgumentException("Error handling type: " + e.getMessage(), e);
-    }
-  }
-
+  /**
+   * Parses a column value based on its Cassandra column type and wraps it into {@link
+   * PreparedStatementValueObject}.
+   *
+   * <p>This method processes basic Cassandra types (e.g., text, bigint, boolean, timestamp) and
+   * special types such as {@link Instant}, {@link UUID}, {@link BigInteger}, and {@link Duration}.
+   *
+   * @param columnType The Cassandra column type (e.g., "text", "timestamp").
+   * @param colValue The column value to parse and wrap.
+   * @return A {@link PreparedStatementValueObject} containing the parsed column value.
+   * @throws IllegalArgumentException If the column value cannot be converted to the specified type.
+   */
   private static PreparedStatementValueObject<?> parseAndGenerateCassandraType(
-          String columnType, Object colValue) {
+      String columnType, Object colValue) {
     switch (columnType) {
       case "ascii":
       case "text":
@@ -1048,7 +1074,7 @@ class CassandraTypeHandler {
 
       case "smallint":
         return new PreparedStatementValueObject<>(
-                columnType, convertToSmallInt((Integer) colValue));
+            columnType, convertToSmallInt((Integer) colValue));
 
       case "time":
       case "timestamp":
@@ -1057,22 +1083,22 @@ class CassandraTypeHandler {
 
       case "date":
         return new PreparedStatementValueObject<>(
-                columnType,
-                safeHandle(
-                        () -> {
-                          if (colValue instanceof String) {
-                            return LocalDate.parse((String) colValue);
-                          } else if (colValue instanceof Instant) {
-                            return ((Instant) colValue).atZone(ZoneId.systemDefault()).toLocalDate();
-                          } else if (colValue instanceof Date) {
-                            return ((Date) colValue)
-                                    .toInstant()
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDate();
-                          }
-                          throw new IllegalArgumentException(
-                                  "Unsupported value for date conversion: " + colValue);
-                        }));
+            columnType,
+            safeHandle(
+                () -> {
+                  if (colValue instanceof String) {
+                    return LocalDate.parse((String) colValue);
+                  } else if (colValue instanceof Instant) {
+                    return ((Instant) colValue).atZone(ZoneId.systemDefault()).toLocalDate();
+                  } else if (colValue instanceof Date) {
+                    return ((Date) colValue)
+                        .toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+                  }
+                  throw new IllegalArgumentException(
+                      "Unsupported value for date conversion: " + colValue);
+                }));
 
       case "timeuuid":
       case "uuid":
@@ -1083,7 +1109,7 @@ class CassandraTypeHandler {
 
       case "varint":
         return new PreparedStatementValueObject<>(
-                columnType, new BigInteger(((ByteBuffer) colValue).array()));
+            columnType, new BigInteger(((ByteBuffer) colValue).array()));
 
       case "duration":
         return new PreparedStatementValueObject<>(columnType, (Duration) colValue);
@@ -1091,5 +1117,35 @@ class CassandraTypeHandler {
       default:
         return new PreparedStatementValueObject<>(columnType, colValue);
     }
+  }
+
+  /**
+   * Parses a column's value from a JSON object based on Spanner and source database column types.
+   *
+   * <p>This method determines the column type, extracts the value using helper methods, and returns
+   * a {@link PreparedStatementValueObject} containing the column value formatted for Cassandra.
+   *
+   * @param spannerColDef The Spanner column definition containing column name and type.
+   * @param sourceColDef The source database column definition containing column type.
+   * @param valuesJson The JSON object containing column values.
+   * @param sourceDbTimezoneOffset The timezone offset for date-time columns (if applicable).
+   * @return A {@link PreparedStatementValueObject} containing the parsed column value.
+   */
+  public static PreparedStatementValueObject<?> getColumnValueByType(
+      SpannerColumnDefinition spannerColDef,
+      SourceColumnDefinition sourceColDef,
+      JSONObject valuesJson,
+      String sourceDbTimezoneOffset) {
+
+    String columnType = sourceColDef.getType().getName().toLowerCase();
+    String colType = spannerColDef.getType().getName().toLowerCase();
+    String colName = spannerColDef.getName();
+
+    Object colValue = handleSpannerColumnType(colType, colName, valuesJson);
+
+    if (colValue == null) {
+      return new PreparedStatementValueObject<>(columnType, null);
+    }
+    return parseAndGenerateCassandraType(columnType, colValue);
   }
 }

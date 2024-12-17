@@ -50,6 +50,11 @@ class CassandraTypeHandler {
     T parse(Object value);
   }
 
+  @FunctionalInterface
+  private interface HandlerSupplier<T> {
+    T get() throws Exception;
+  }
+
   /**
    * Converts a {@link String} to an ASCII representation for Cassandra's {@link String} or other
    * ASCII-based types.
@@ -598,140 +603,143 @@ class CassandraTypeHandler {
   }
 
   public static PreparedStatementValueObject<?> getColumnValueByType(
-      SpannerColumnDefinition spannerColDef,
-      SourceColumnDefinition sourceColDef,
-      JSONObject valuesJson,
-      String sourceDbTimezoneOffset) {
+          SpannerColumnDefinition spannerColDef,
+          SourceColumnDefinition sourceColDef,
+          JSONObject valuesJson,
+          String sourceDbTimezoneOffset) {
 
-    String columnType = sourceColDef.getType().getName();
-    Object colValue = null;
-    String colType = spannerColDef.getType().getName();
+    String columnType = sourceColDef.getType().getName().toLowerCase();
+    String colType = spannerColDef.getType().getName().toLowerCase();
     String colName = spannerColDef.getName();
 
-    switch (colType.toLowerCase()) {
+    Object colValue = handleColumnType(colType, colName, valuesJson, sourceDbTimezoneOffset);
+
+    if (colValue == null) {
+      return new PreparedStatementValueObject<>(columnType, null);
+    }
+    return parseAndGenerateCassandraType(columnType, colValue);
+  }
+
+  private static Object handleColumnType(String colType, String colName, JSONObject valuesJson, String timezoneOffset) {
+    switch (colType) {
       case "bigint":
       case "int64":
-        colValue = CassandraTypeHandler.handleCassandraBigintType(colName, valuesJson);
-        break;
-      case "string":
-        String inputValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
-        if (isValidUUID(inputValue)) {
-          colValue = CassandraTypeHandler.handleCassandraUuidType(colName, valuesJson);
-        } else if (isValidIPAddress(inputValue)) {
-          try {
-            colValue = CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson);
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        } else if (isValidJSONArray(inputValue)) {
-          colValue = new JSONArray(inputValue);
-        } else if (isValidJSONObject(inputValue)) {
-          colValue = new JSONObject(inputValue);
-        } else if (StringUtil.isHex(inputValue, 0, inputValue.length())) {
-          colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
-        } else if (isAscii(inputValue)) {
-          colValue = CassandraTypeHandler.handleCassandraAsciiType(colName, valuesJson);
-        } else if (isDurationString(inputValue)) {
-          colValue = CassandraTypeHandler.handleCassandraDurationType(colName, valuesJson);
-        } else {
-          colValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
-        }
-        break;
-      case "timestamp":
-        colValue =
-            convertToCassandraTimestamp(
-                String.valueOf(
-                    CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson)),
-                sourceDbTimezoneOffset);
-        break;
+        return CassandraTypeHandler.handleCassandraBigintType(colName, valuesJson);
 
+      case "string":
+        return handleStringType(colName, valuesJson);
+
+      case "timestamp":
       case "date":
       case "datetime":
-        colValue =
-            convertToCassandraTimestamp(
-                String.valueOf(CassandraTypeHandler.handleCassandraDateType(colName, valuesJson)),
-                sourceDbTimezoneOffset);
-        break;
+        return convertToCassandraTimestamp(
+                String.valueOf(CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson)),
+                timezoneOffset);
 
       case "boolean":
-        colValue = CassandraTypeHandler.handleCassandraBoolType(colName, valuesJson);
-        break;
+        return CassandraTypeHandler.handleCassandraBoolType(colName, valuesJson);
 
       case "float64":
-        colValue = CassandraTypeHandler.handleCassandraDoubleType(colName, valuesJson);
-        break;
+        return CassandraTypeHandler.handleCassandraDoubleType(colName, valuesJson);
 
       case "numeric":
       case "float":
-        colValue = CassandraTypeHandler.handleCassandraFloatType(colName, valuesJson);
-        break;
+        return CassandraTypeHandler.handleCassandraFloatType(colName, valuesJson);
 
       case "bytes":
       case "bytes(max)":
-        colValue = CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
-        break;
+        return CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
 
       case "integer":
-        colValue = CassandraTypeHandler.handleCassandraIntType(colName, valuesJson);
-        break;
-    }
+        return CassandraTypeHandler.handleCassandraIntType(colName, valuesJson);
 
-    if (colValue == null) {
-      return new PreparedStatementValueObject<>(columnType.toLowerCase(), null);
+      default:
+        return null;
     }
-    return parseAndGenerateCassandraType(columnType, colValue, colName, valuesJson);
   }
 
-  private static PreparedStatementValueObject<?> parseAndGenerateCassandraType(
-      String columnType, Object colValue, String colName, JSONObject valuesJson) {
-    switch (columnType.toLowerCase()) {
+  private static Object handleStringType(String colName, JSONObject valuesJson) {
+    String inputValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
+
+    if (isValidUUID(inputValue)) {
+      return CassandraTypeHandler.handleCassandraUuidType(colName, valuesJson);
+    } else if (isValidIPAddress(inputValue)) {
+      return safeHandle(() -> CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson));
+    } else if (isValidJSONArray(inputValue)) {
+      return new JSONArray(inputValue);
+    } else if (isValidJSONObject(inputValue)) {
+      return new JSONObject(inputValue);
+    } else if (StringUtil.isHex(inputValue, 0, inputValue.length())) {
+      return CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
+    } else if (isAscii(inputValue)) {
+      return CassandraTypeHandler.handleCassandraAsciiType(colName, valuesJson);
+    } else if (isDurationString(inputValue)) {
+      return CassandraTypeHandler.handleCassandraDurationType(colName, valuesJson);
+    }
+    return inputValue;
+  }
+
+  private static <T> T safeHandle(HandlerSupplier<T> supplier) {
+    try {
+      return supplier.get();
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Error handling type: " + e.getMessage(), e);
+    }
+  }
+
+  private static PreparedStatementValueObject<?> parseAndGenerateCassandraType(String columnType, Object colValue) {
+    switch (columnType) {
       case "ascii":
       case "text":
       case "varchar":
-        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (String) colValue);
+        return new PreparedStatementValueObject<>(columnType, (String) colValue);
+
       case "bigint":
-        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Long) colValue);
+        return new PreparedStatementValueObject<>(columnType, (Long) colValue);
+
       case "boolean":
-        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Boolean) colValue);
+        return new PreparedStatementValueObject<>(columnType, (Boolean) colValue);
+
       case "decimal":
-        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (BigDecimal) colValue);
+        return new PreparedStatementValueObject<>(columnType, (BigDecimal) colValue);
+
       case "double":
-        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Double) colValue);
+        return new PreparedStatementValueObject<>(columnType, (Double) colValue);
+
       case "float":
-        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Float) colValue);
+        return new PreparedStatementValueObject<>(columnType, (Float) colValue);
+
       case "inet":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), (java.net.InetAddress) colValue);
+        return new PreparedStatementValueObject<>(columnType, (java.net.InetAddress) colValue);
+
       case "int":
-        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Integer) colValue);
+        return new PreparedStatementValueObject<>(columnType, (Integer) colValue);
+
       case "smallint":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), convertToSmallInt((Integer) colValue));
+        return new PreparedStatementValueObject<>(columnType, convertToSmallInt((Integer) colValue));
+
       case "time":
       case "timestamp":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), convertToCassandraTimestamp((String) colValue));
+        return new PreparedStatementValueObject<>(columnType, convertToCassandraTimestamp((String) colValue));
+
       case "timeuuid":
       case "uuid":
-        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (UUID) colValue);
+        return new PreparedStatementValueObject<>(columnType, (UUID) colValue);
+
       case "tinyint":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), convertToTinyInt((Integer) colValue));
+        return new PreparedStatementValueObject<>(columnType, convertToTinyInt((Integer) colValue));
+
       case "varint":
-        return new PreparedStatementValueObject<>(
-            columnType.toLowerCase(), new BigInteger(((ByteBuffer) colValue).array()));
+        return new PreparedStatementValueObject<>(columnType, new BigInteger(((ByteBuffer) colValue).array()));
+
       case "duration":
-        return new PreparedStatementValueObject<>(columnType.toLowerCase(), (Duration) colValue);
+        return new PreparedStatementValueObject<>(columnType, (Duration) colValue);
+
       default:
-        if (colValue instanceof JSONObject || colValue instanceof JSONArray) {
-          return new PreparedStatementValueObject<>(
-              columnType.toLowerCase(),
-              null); // we need to see sample here to implement actual logic
-        } else {
-          return new PreparedStatementValueObject<>(columnType.toLowerCase(), colValue);
-        }
+        return new PreparedStatementValueObject<>(columnType, colValue);
     }
   }
+
 
   /**
    * Generates a {@link Set} object containing a set of double values from Cassandra.

@@ -814,49 +814,6 @@ public class CassandraTypeHandlerTest {
   }
 
   @Test
-  public void testConvertToCassandraTimestampWithValidOffset() {
-    String value = "2024-12-12T10:15:30+02:00";
-    String timezoneOffset = "+00:00";
-    String expected = "'2024-12-12T08:15:30Z'";
-    String result = convertToCassandraTimestamp(value, timezoneOffset);
-    assertEquals(expected, result);
-  }
-
-  @Test
-  public void testConvertToCassandraTimestampWithNonZeroOffset() {
-    String value = "2024-12-12T10:15:30+02:00";
-    String timezoneOffset = "+00:00";
-    String expected = "'2024-12-12T08:15:30Z'";
-    String result = convertToCassandraTimestamp(value, timezoneOffset);
-    assertEquals(expected, result);
-  }
-
-  @Test
-  public void testConvertToCassandraTimestampWithNegativeOffset() {
-    String value = "2024-12-12T10:15:30-05:00";
-    String timezoneOffset = "+00:00";
-    String expected = "'2024-12-12T15:15:30Z'";
-    String result = convertToCassandraTimestamp(value, timezoneOffset);
-    assertEquals(expected, result);
-  }
-
-  @Test(expected = RuntimeException.class)
-  public void testConvertToCassandraTimestampWithInvalidFormat() {
-    String value = "2024-12-12T25:15:30+02:00";
-    String timezoneOffset = "+00:00";
-    convertToCassandraTimestamp(value, timezoneOffset);
-  }
-
-  @Test
-  public void testConvertToCassandraTimestampWithoutTimezone() {
-    String value = "2024-12-12T10:15:30Z";
-    String timezoneOffset = "+00:00";
-    String expected = "'2024-12-12T10:15:30Z'";
-    String result = convertToCassandraTimestamp(value, timezoneOffset);
-    assertEquals(expected, result);
-  }
-
-  @Test
   public void testConvertToCassandraDateWithValidDate() {
     String dateString = "2024-12-12T10:15:30Z";
     LocalDate result = convertToCassandraDate(dateString);

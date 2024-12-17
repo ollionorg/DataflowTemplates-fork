@@ -28,7 +28,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -603,10 +602,10 @@ class CassandraTypeHandler {
   }
 
   public static PreparedStatementValueObject<?> getColumnValueByType(
-          SpannerColumnDefinition spannerColDef,
-          SourceColumnDefinition sourceColDef,
-          JSONObject valuesJson,
-          String sourceDbTimezoneOffset) {
+      SpannerColumnDefinition spannerColDef,
+      SourceColumnDefinition sourceColDef,
+      JSONObject valuesJson,
+      String sourceDbTimezoneOffset) {
 
     String columnType = sourceColDef.getType().getName().toLowerCase();
     String colType = spannerColDef.getType().getName().toLowerCase();
@@ -620,7 +619,8 @@ class CassandraTypeHandler {
     return parseAndGenerateCassandraType(columnType, colValue);
   }
 
-  private static Object handleColumnType(String colType, String colName, JSONObject valuesJson, String timezoneOffset) {
+  private static Object handleColumnType(
+      String colType, String colName, JSONObject valuesJson, String timezoneOffset) {
     switch (colType) {
       case "bigint":
       case "int64":
@@ -632,9 +632,7 @@ class CassandraTypeHandler {
       case "timestamp":
       case "date":
       case "datetime":
-        return convertToCassandraTimestamp(
-                String.valueOf(CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson)),
-                timezoneOffset);
+        return CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson);
 
       case "boolean":
         return CassandraTypeHandler.handleCassandraBoolType(colName, valuesJson);
@@ -664,7 +662,8 @@ class CassandraTypeHandler {
     if (isValidUUID(inputValue)) {
       return CassandraTypeHandler.handleCassandraUuidType(colName, valuesJson);
     } else if (isValidIPAddress(inputValue)) {
-      return safeHandle(() -> CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson));
+      return safeHandle(
+          () -> CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson));
     } else if (isValidJSONArray(inputValue)) {
       return new JSONArray(inputValue);
     } else if (isValidJSONObject(inputValue)) {
@@ -687,7 +686,8 @@ class CassandraTypeHandler {
     }
   }
 
-  private static PreparedStatementValueObject<?> parseAndGenerateCassandraType(String columnType, Object colValue) {
+  private static PreparedStatementValueObject<?> parseAndGenerateCassandraType(
+      String columnType, Object colValue) {
     switch (columnType) {
       case "ascii":
       case "text":
@@ -716,11 +716,32 @@ class CassandraTypeHandler {
         return new PreparedStatementValueObject<>(columnType, (Integer) colValue);
 
       case "smallint":
-        return new PreparedStatementValueObject<>(columnType, convertToSmallInt((Integer) colValue));
+        return new PreparedStatementValueObject<>(
+            columnType, convertToSmallInt((Integer) colValue));
 
       case "time":
       case "timestamp":
-        return new PreparedStatementValueObject<>(columnType, convertToCassandraTimestamp((String) colValue));
+      case "datetime":
+        return new PreparedStatementValueObject<>(columnType, (Instant) colValue);
+
+      case "date":
+        return new PreparedStatementValueObject<>(
+            columnType,
+            safeHandle(
+                () -> {
+                  if (colValue instanceof String) {
+                    return LocalDate.parse((String) colValue);
+                  } else if (colValue instanceof Instant) {
+                    return ((Instant) colValue).atZone(ZoneId.systemDefault()).toLocalDate();
+                  } else if (colValue instanceof Date) {
+                    return ((Date) colValue)
+                        .toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+                  }
+                  throw new IllegalArgumentException(
+                      "Unsupported value for date conversion: " + colValue);
+                }));
 
       case "timeuuid":
       case "uuid":
@@ -730,7 +751,8 @@ class CassandraTypeHandler {
         return new PreparedStatementValueObject<>(columnType, convertToTinyInt((Integer) colValue));
 
       case "varint":
-        return new PreparedStatementValueObject<>(columnType, new BigInteger(((ByteBuffer) colValue).array()));
+        return new PreparedStatementValueObject<>(
+            columnType, new BigInteger(((ByteBuffer) colValue).array()));
 
       case "duration":
         return new PreparedStatementValueObject<>(columnType, (Duration) colValue);
@@ -739,7 +761,6 @@ class CassandraTypeHandler {
         return new PreparedStatementValueObject<>(columnType, colValue);
     }
   }
-
 
   /**
    * Generates a {@link Set} object containing a set of double values from Cassandra.
@@ -923,29 +944,6 @@ class CassandraTypeHandler {
    */
   public static String escapeCassandraString(String value) {
     return value.replace("'", "''");
-  }
-
-  /**
-   * Converts a string representation of a timestamp to a Cassandra-compatible timestamp.
-   *
-   * <p>The method parses the {@code value} as a {@link ZonedDateTime}, applies the given timezone
-   * offset to adjust the time, and converts the result into a UTC timestamp string that is
-   * compatible with Cassandra.
-   *
-   * @param value The timestamp string in ISO-8601 format (e.g., "2024-12-05T10:15:30+01:00").
-   * @param timezoneOffset The timezone offset (e.g., "+02:00") to apply to the timestamp.
-   * @return A string representation of the timestamp in UTC that is compatible with Cassandra.
-   * @throws RuntimeException If the timestamp string is invalid or the conversion fails.
-   */
-  public static String convertToCassandraTimestamp(String value, String timezoneOffset) {
-    try {
-      ZonedDateTime dateTime = ZonedDateTime.parse(value);
-      ZoneOffset offset = ZoneOffset.of(timezoneOffset);
-      dateTime = dateTime.withZoneSameInstant(offset);
-      return "'" + dateTime.withZoneSameInstant(ZoneOffset.UTC).toString() + "'";
-    } catch (DateTimeParseException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   /**

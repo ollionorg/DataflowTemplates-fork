@@ -347,6 +347,7 @@ public class CassandraDMLGeneratorTest {
                 .setSchema(schema)
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
+    assertTrue(sql.contains("sample_table"));
     assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
@@ -700,7 +701,7 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void testUnsupportedModType() {
-    Schema schema = SessionFileReader.read("src/test/resources/allMatchSession.json");
+    Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraAllMatchSession.json");
     String tableName = "Singers";
     String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);

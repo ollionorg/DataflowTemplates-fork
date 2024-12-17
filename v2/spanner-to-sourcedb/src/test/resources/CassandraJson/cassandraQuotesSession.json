@@ -99,7 +99,7 @@
         "id": {
           "Name": "id",
           "Type": {
-            "Name": "int",
+            "Name": "integer",
             "Mods": null,
             "ArrayBounds": null
           },

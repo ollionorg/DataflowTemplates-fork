@@ -327,7 +327,7 @@
         "c5": {
           "Name": "SingerId",
           "Type": {
-            "Name": "int",
+            "Name": "integer",
             "Mods": null,
             "ArrayBounds": null
           },
@@ -345,7 +345,7 @@
         "c6": {
           "Name": "FirstName",
           "Type": {
-            "Name": "String",
+            "Name": "varchar",
             "Mods": [
               1024
             ],

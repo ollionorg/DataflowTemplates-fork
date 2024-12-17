@@ -15,7 +15,11 @@
  */
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
 
+import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceColumnDefinition;
+import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerColumnDefinition;
+import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
 import com.google.common.net.InetAddresses;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
@@ -24,19 +28,16 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.eclipse.jetty.util.StringUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -46,6 +47,11 @@ class CassandraTypeHandler {
   @FunctionalInterface
   public interface TypeParser<T> {
     T parse(Object value);
+  }
+
+  @FunctionalInterface
+  private interface HandlerSupplier<T> {
+    T get() throws Exception;
   }
 
   /**
@@ -222,14 +228,32 @@ class CassandraTypeHandler {
    */
   public static ByteBuffer parseBlobType(Object colValue) {
     byte[] byteArray;
+
     if (colValue instanceof byte[]) {
       byteArray = (byte[]) colValue;
     } else if (colValue instanceof String) {
-      byteArray = java.util.Base64.getDecoder().decode((String) colValue);
+      String strValue = (String) colValue;
+      if (StringUtil.isHex(strValue, 0, strValue.length())) {
+        byteArray = convertHexStringToByteArray(strValue);
+      } else {
+        byteArray = java.util.Base64.getDecoder().decode((String) colValue);
+      }
     } else {
       throw new IllegalArgumentException("Unsupported type for column");
     }
+
     return ByteBuffer.wrap(byteArray);
+  }
+
+  private static byte[] convertHexStringToByteArray(String hex) {
+    int len = hex.length();
+    byte[] data = new byte[len / 2];
+    for (int i = 0; i < len; i += 2) {
+      data[i / 2] =
+          (byte)
+              ((Character.digit(hex.charAt(i), 16) << 4) + Character.digit(hex.charAt(i + 1), 16));
+    }
+    return data;
   }
 
   /**
@@ -557,6 +581,195 @@ class CassandraTypeHandler {
         });
   }
 
+  private static PreparedStatementValueObject<?> getCollectionTypeFromCqlType(
+      String columnType, JSONObject jsonObject) {
+    String columnTypeLower = columnType.toLowerCase();
+    if (columnTypeLower.contains("map<")) {
+      String typeParams = columnType.substring(4, columnType.length() - 1); // Remove map<> part
+      String[] typeParts = typeParams.split(","); // Split by comma
+      String keyType = typeParts[0].trim();
+      String valueType = typeParts[1].trim();
+      // TODO
+      // ADD LOGIC TO CONVERT BASED ON SAMPLE JSON
+      throw new UnsupportedOperationException("Map type handling not implemented yet.");
+    } else if (columnTypeLower.contains("set<")) {
+      // Handle Set Type (set<text>)
+      String keyType = columnType.substring(4, columnType.length() - 1);
+      // TODO
+      // ADD LOGIC TO CONVERT BASED ON SAMPLE JSON
+      throw new UnsupportedOperationException("Set type handling not implemented yet.");
+    } else if (columnTypeLower.contains("list<")) {
+      // Handle List Type (list<text>)
+      String keyType = columnType.substring(5, columnType.length() - 1);
+      // TODO
+      // ADD LOGIC TO CONVERT BASED ON SAMPLE JSON
+      throw new UnsupportedOperationException("List type handling not implemented yet.");
+    } else {
+      throw new IllegalArgumentException("Unsupported type for column: " + columnType);
+    }
+  }
+
+  public static PreparedStatementValueObject<?> getColumnValueByType(
+      SpannerColumnDefinition spannerColDef,
+      SourceColumnDefinition sourceColDef,
+      JSONObject valuesJson,
+      String sourceDbTimezoneOffset) {
+
+    String columnType = sourceColDef.getType().getName().toLowerCase();
+    String colType = spannerColDef.getType().getName().toLowerCase();
+    String colName = spannerColDef.getName();
+
+    Object colValue = handleColumnType(colType, colName, valuesJson, sourceDbTimezoneOffset);
+
+    if (colValue == null) {
+      return new PreparedStatementValueObject<>(columnType, null);
+    }
+    return parseAndGenerateCassandraType(columnType, colValue);
+  }
+
+  private static Object handleColumnType(
+      String colType, String colName, JSONObject valuesJson, String timezoneOffset) {
+    switch (colType) {
+      case "bigint":
+      case "int64":
+        return CassandraTypeHandler.handleCassandraBigintType(colName, valuesJson);
+
+      case "string":
+        return handleStringType(colName, valuesJson);
+
+      case "timestamp":
+      case "date":
+      case "datetime":
+        return CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson);
+
+      case "boolean":
+        return CassandraTypeHandler.handleCassandraBoolType(colName, valuesJson);
+
+      case "float64":
+        return CassandraTypeHandler.handleCassandraDoubleType(colName, valuesJson);
+
+      case "numeric":
+      case "float":
+        return CassandraTypeHandler.handleCassandraFloatType(colName, valuesJson);
+
+      case "bytes":
+      case "bytes(max)":
+        return CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
+
+      case "integer":
+        return CassandraTypeHandler.handleCassandraIntType(colName, valuesJson);
+
+      default:
+        return null;
+    }
+  }
+
+  private static Object handleStringType(String colName, JSONObject valuesJson) {
+    String inputValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
+
+    if (isValidUUID(inputValue)) {
+      return CassandraTypeHandler.handleCassandraUuidType(colName, valuesJson);
+    } else if (isValidIPAddress(inputValue)) {
+      return safeHandle(
+          () -> CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson));
+    } else if (isValidJSONArray(inputValue)) {
+      return new JSONArray(inputValue);
+    } else if (isValidJSONObject(inputValue)) {
+      return new JSONObject(inputValue);
+    } else if (StringUtil.isHex(inputValue, 0, inputValue.length())) {
+      return CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
+    } else if (isAscii(inputValue)) {
+      return CassandraTypeHandler.handleCassandraAsciiType(colName, valuesJson);
+    } else if (isDurationString(inputValue)) {
+      return CassandraTypeHandler.handleCassandraDurationType(colName, valuesJson);
+    }
+    return inputValue;
+  }
+
+  private static <T> T safeHandle(HandlerSupplier<T> supplier) {
+    try {
+      return supplier.get();
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Error handling type: " + e.getMessage(), e);
+    }
+  }
+
+  private static PreparedStatementValueObject<?> parseAndGenerateCassandraType(
+      String columnType, Object colValue) {
+    switch (columnType) {
+      case "ascii":
+      case "text":
+      case "varchar":
+        return new PreparedStatementValueObject<>(columnType, (String) colValue);
+
+      case "bigint":
+        return new PreparedStatementValueObject<>(columnType, (Long) colValue);
+
+      case "boolean":
+        return new PreparedStatementValueObject<>(columnType, (Boolean) colValue);
+
+      case "decimal":
+        return new PreparedStatementValueObject<>(columnType, (BigDecimal) colValue);
+
+      case "double":
+        return new PreparedStatementValueObject<>(columnType, (Double) colValue);
+
+      case "float":
+        return new PreparedStatementValueObject<>(columnType, (Float) colValue);
+
+      case "inet":
+        return new PreparedStatementValueObject<>(columnType, (java.net.InetAddress) colValue);
+
+      case "int":
+        return new PreparedStatementValueObject<>(columnType, (Integer) colValue);
+
+      case "smallint":
+        return new PreparedStatementValueObject<>(
+            columnType, convertToSmallInt((Integer) colValue));
+
+      case "time":
+      case "timestamp":
+      case "datetime":
+        return new PreparedStatementValueObject<>(columnType, (Instant) colValue);
+
+      case "date":
+        return new PreparedStatementValueObject<>(
+            columnType,
+            safeHandle(
+                () -> {
+                  if (colValue instanceof String) {
+                    return LocalDate.parse((String) colValue);
+                  } else if (colValue instanceof Instant) {
+                    return ((Instant) colValue).atZone(ZoneId.systemDefault()).toLocalDate();
+                  } else if (colValue instanceof Date) {
+                    return ((Date) colValue)
+                        .toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+                  }
+                  throw new IllegalArgumentException(
+                      "Unsupported value for date conversion: " + colValue);
+                }));
+
+      case "timeuuid":
+      case "uuid":
+        return new PreparedStatementValueObject<>(columnType, (UUID) colValue);
+
+      case "tinyint":
+        return new PreparedStatementValueObject<>(columnType, convertToTinyInt((Integer) colValue));
+
+      case "varint":
+        return new PreparedStatementValueObject<>(
+            columnType, new BigInteger(((ByteBuffer) colValue).array()));
+
+      case "duration":
+        return new PreparedStatementValueObject<>(columnType, (Duration) colValue);
+
+      default:
+        return new PreparedStatementValueObject<>(columnType, colValue);
+    }
+  }
+
   /**
    * Generates a {@link Set} object containing a set of double values from Cassandra.
    *
@@ -691,101 +904,6 @@ class CassandraTypeHandler {
   }
 
   /**
-   * Converts a stringified JSON object to a {@link Map} representation for Cassandra.
-   *
-   * <p>This method fetches the value associated with the given column name ({@code colName}) from
-   * the {@code valuesJson} object, parses the stringified JSON, and returns it as a {@link Map}.
-   *
-   * @param colName - The column name used to fetch the key from {@code valuesJson}.
-   * @param valuesJson - The {@link JSONObject} containing all the key-value pairs for the current
-   *     incoming stream.
-   * @return A {@link Map} representing the parsed JSON from the stringified JSON.
-   * @throws IllegalArgumentException If the value is not a valid stringified JSON or cannot be
-   *     parsed.
-   */
-  public static Map<String, Object> handleStringifiedJsonToMap(
-      String colName, JSONObject valuesJson) {
-    Object value = valuesJson.get(colName);
-    if (value instanceof String) {
-      String jsonString = (String) value;
-      try {
-        JSONObject jsonObject = new JSONObject(jsonString);
-        Map<String, Object> map = new HashMap<>();
-        for (String key : jsonObject.keySet()) {
-          Object jsonValue = jsonObject.get(key);
-          if (jsonValue instanceof JSONArray) {
-            map.put(key, jsonObject.getJSONArray(key));
-          } else if (jsonValue instanceof JSONObject) {
-            map.put(key, jsonObject.getJSONObject(key));
-          } else {
-            map.put(key, jsonValue);
-          }
-        }
-        return map;
-      } catch (Exception e) {
-        throw new IllegalArgumentException(
-            "Invalid stringified JSON format for column: " + colName, e);
-      }
-    } else {
-      throw new IllegalArgumentException(
-          "Invalid format for column: " + colName + ". Expected a stringified JSON.");
-    }
-  }
-
-  /**
-   * Converts a stringified JSON array to a {@link List} representation for Cassandra.
-   *
-   * <p>This method fetches the value associated with the given column name ({@code colName}) from
-   * the {@code valuesJson} object, parses the stringified JSON array, and returns it as a {@link
-   * List}.
-   *
-   * @param colName - The column name used to fetch the key from {@code valuesJson}.
-   * @param valuesJson - The {@link JSONObject} containing all the key-value pairs for the current
-   *     incoming stream.
-   * @return A {@link List} representing the parsed JSON array from the stringified JSON.
-   * @throws IllegalArgumentException If the value is not a valid stringified JSON array or cannot
-   *     be parsed.
-   */
-  public static List<Object> handleStringifiedJsonToList(String colName, JSONObject valuesJson) {
-    Object value = valuesJson.get(colName);
-    if (value instanceof String) {
-      String jsonString = (String) value;
-      try {
-        JSONArray jsonArray = new JSONArray(jsonString);
-        List<Object> list = new ArrayList<>();
-        for (int i = 0; i < jsonArray.length(); i++) {
-          list.add(jsonArray.get(i));
-        }
-        return list;
-      } catch (Exception e) {
-        throw new IllegalArgumentException(
-            "Invalid stringified JSON array format for column: " + colName, e);
-      }
-    } else {
-      throw new IllegalArgumentException(
-          "Invalid format for column: " + colName + ". Expected a stringified JSON array.");
-    }
-  }
-
-  /**
-   * Converts a stringified JSON array to a {@link Set} representation for Cassandra.
-   *
-   * <p>This method fetches the value associated with the given column name ({@code colName}) from
-   * the {@code valuesJson} object, parses the stringified JSON array, and returns it as a {@link
-   * Set}.
-   *
-   * @param colName - The column name used to fetch the key from {@code valuesJson}.
-   * @param valuesJson - The {@link JSONObject} containing all the key-value pairs for the current
-   *     incoming stream.
-   * @return A {@link Set} representing the parsed JSON array from the stringified JSON.
-   * @throws IllegalArgumentException If the value is not a valid stringified JSON array or cannot
-   *     be parsed.
-   */
-  public static Set<Object> handleStringifiedJsonToSet(String colName, JSONObject valuesJson) {
-    return new HashSet<>(handleStringifiedJsonToList(colName, valuesJson));
-  }
-
-  /**
    * Converts an {@link Integer} to a {@code short} (SmallInt).
    *
    * <p>This method checks if the {@code integerValue} is within the valid range for a {@code
@@ -834,29 +952,6 @@ class CassandraTypeHandler {
    */
   public static String escapeCassandraString(String value) {
     return value.replace("'", "''");
-  }
-
-  /**
-   * Converts a string representation of a timestamp to a Cassandra-compatible timestamp.
-   *
-   * <p>The method parses the {@code value} as a {@link ZonedDateTime}, applies the given timezone
-   * offset to adjust the time, and converts the result into a UTC timestamp string that is
-   * compatible with Cassandra.
-   *
-   * @param value The timestamp string in ISO-8601 format (e.g., "2024-12-05T10:15:30+01:00").
-   * @param timezoneOffset The timezone offset (e.g., "+02:00") to apply to the timestamp.
-   * @return A string representation of the timestamp in UTC that is compatible with Cassandra.
-   * @throws RuntimeException If the timestamp string is invalid or the conversion fails.
-   */
-  public static String convertToCassandraTimestamp(String value, String timezoneOffset) {
-    try {
-      ZonedDateTime dateTime = ZonedDateTime.parse(value);
-      ZoneOffset offset = ZoneOffset.of(timezoneOffset);
-      dateTime = dateTime.withZoneSameInstant(offset);
-      return "'" + dateTime.withZoneSameInstant(ZoneOffset.UTC).toString() + "'";
-    } catch (DateTimeParseException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   /**
@@ -948,9 +1043,28 @@ class CassandraTypeHandler {
    * @param value The string to check if it represents a valid JSON object.
    * @return {@code true} if the string is a valid JSON object, {@code false} otherwise.
    */
-  public static boolean isValidJSON(String value) {
+  public static boolean isValidJSONObject(String value) {
     try {
       new JSONObject(value);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  /**
+   * Validates if the given string is a valid JSONArray.
+   *
+   * <p>This method attempts to parse the string using {@link JSONArray} to check if the value
+   * represents a valid JSON object. If the string is valid JSON, it returns {@code true}, otherwise
+   * {@code false}.
+   *
+   * @param value The string to check if it represents a valid JSON object.
+   * @return {@code true} if the string is a valid JSON object, {@code false} otherwise.
+   */
+  public static boolean isValidJSONArray(String value) {
+    try {
+      new JSONArray(value);
       return true;
     } catch (Exception e) {
       return false;
@@ -970,5 +1084,20 @@ class CassandraTypeHandler {
       }
     }
     return true;
+  }
+
+  /**
+   * Helper method to check if a string contains Duration Character.
+   *
+   * @param value - The string to check.
+   * @return true if the string contains Duration Character, false otherwise.
+   */
+  public static boolean isDurationString(String value) {
+    try {
+      Duration.parse(value);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 }

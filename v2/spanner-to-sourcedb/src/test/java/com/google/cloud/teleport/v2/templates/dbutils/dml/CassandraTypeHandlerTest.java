@@ -46,10 +46,8 @@ import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHa
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleInt64SetType;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringArrayType;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringSetType;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringifiedJsonToMap;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.handleStringifiedJsonToSet;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidIPAddress;
-import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidJSON;
+import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidJSONObject;
 import static com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler.isValidUUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -73,7 +71,6 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.json.JSONObject;
@@ -757,109 +754,6 @@ public class CassandraTypeHandlerTest {
   }
 
   @Test
-  public void testHandleStringifiedJsonToMapWithEmptyJson() {
-    String newValuesString = "{}";
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", newValuesString);
-    String colKey = "data";
-    Map<String, Object> expected = Map.of();
-    Map<String, Object> result = handleStringifiedJsonToMap(colKey, newValuesJson);
-    assertEquals(expected, result);
-  }
-
-  @Test
-  public void testHandleStringifiedJsonToMapWithSimpleJson() {
-    String newValuesString = "{\"name\":\"John\", \"age\":30}";
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", newValuesString);
-    String colKey = "data";
-    Map<String, Object> expected = Map.of("name", "John", "age", 30);
-    Map<String, Object> result = handleStringifiedJsonToMap(colKey, newValuesJson);
-    assertEquals(expected, result);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testHandleStringifiedJsonToMapWithInvalidJson() {
-    String newValuesString = "{\"user\":{\"name\":\"John\", \"age\":30";
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", newValuesString);
-    String colKey = "data";
-    handleStringifiedJsonToMap(colKey, newValuesJson);
-  }
-
-  @Test
-  public void testHandleStringifiedJsonToMapWithNullValues() {
-    String newValuesString = "{\"name\":null, \"age\":null}";
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", newValuesString);
-    String colKey = "data";
-    Map<String, Object> expected =
-        Map.of(
-            "name", JSONObject.NULL,
-            "age", JSONObject.NULL);
-    Map<String, Object> result = handleStringifiedJsonToMap(colKey, newValuesJson);
-    assertEquals(expected, result);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testHandleInvalidStringifiedJson() {
-    String newValuesString = "{\"user\":{\"name\":\"John\", \"age\":30";
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", newValuesString);
-    String colKey = "data";
-    handleStringifiedJsonToMap(colKey, newValuesJson);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testHandleNonStringValue() {
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", 12345);
-    String colKey = "data";
-    handleStringifiedJsonToMap(colKey, newValuesJson);
-  }
-
-  @Test
-  public void testHandleValidStringifiedJsonArray() {
-    String newValuesString = "[\"apple\", \"banana\", \"cherry\"]";
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", newValuesString);
-    String colKey = "data";
-
-    Set<Object> expected = new HashSet<>();
-    expected.add("apple");
-    expected.add("banana");
-    expected.add("cherry");
-    assertEquals(expected, handleStringifiedJsonToSet(colKey, newValuesJson));
-  }
-
-  @Test
-  public void testHandleEmptyStringifiedJsonArray() {
-    String newValuesString = "[]";
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", newValuesString);
-    String colKey = "data";
-    Set<Object> expected = new HashSet<>();
-    assertEquals(expected, handleStringifiedJsonToSet(colKey, newValuesJson));
-  }
-
-  @Test
-  public void testHandleNonArrayValue() {
-    String newValuesString = "\"apple\"";
-    JSONObject newValuesJson = new JSONObject();
-    newValuesJson.put("data", newValuesString);
-    String colKey = "data";
-    assertThrows(
-        IllegalArgumentException.class, () -> handleStringifiedJsonToSet(colKey, newValuesJson));
-  }
-
-  @Test
-  public void testConvertToSmallIntValidInput() {
-    Integer validValue = 100;
-    short result = convertToSmallInt(validValue);
-    assertEquals(100, result);
-  }
-
-  @Test
   public void testConvertToSmallIntBelowMinValue() {
     Integer invalidValue = Short.MIN_VALUE - 1;
     assertThrows(IllegalArgumentException.class, () -> convertToSmallInt(invalidValue));
@@ -919,49 +813,6 @@ public class CassandraTypeHandlerTest {
     String input = "It's John's book.";
     String expected = "It''s John''s book.";
     String result = escapeCassandraString(input);
-    assertEquals(expected, result);
-  }
-
-  @Test
-  public void testConvertToCassandraTimestampWithValidOffset() {
-    String value = "2024-12-12T10:15:30+02:00";
-    String timezoneOffset = "+00:00";
-    String expected = "'2024-12-12T08:15:30Z'";
-    String result = convertToCassandraTimestamp(value, timezoneOffset);
-    assertEquals(expected, result);
-  }
-
-  @Test
-  public void testConvertToCassandraTimestampWithNonZeroOffset() {
-    String value = "2024-12-12T10:15:30+02:00";
-    String timezoneOffset = "+00:00";
-    String expected = "'2024-12-12T08:15:30Z'";
-    String result = convertToCassandraTimestamp(value, timezoneOffset);
-    assertEquals(expected, result);
-  }
-
-  @Test
-  public void testConvertToCassandraTimestampWithNegativeOffset() {
-    String value = "2024-12-12T10:15:30-05:00";
-    String timezoneOffset = "+00:00";
-    String expected = "'2024-12-12T15:15:30Z'";
-    String result = convertToCassandraTimestamp(value, timezoneOffset);
-    assertEquals(expected, result);
-  }
-
-  @Test(expected = RuntimeException.class)
-  public void testConvertToCassandraTimestampWithInvalidFormat() {
-    String value = "2024-12-12T25:15:30+02:00";
-    String timezoneOffset = "+00:00";
-    convertToCassandraTimestamp(value, timezoneOffset);
-  }
-
-  @Test
-  public void testConvertToCassandraTimestampWithoutTimezone() {
-    String value = "2024-12-12T10:15:30Z";
-    String timezoneOffset = "+00:00";
-    String expected = "'2024-12-12T10:15:30Z'";
-    String result = convertToCassandraTimestamp(value, timezoneOffset);
     assertEquals(expected, result);
   }
 
@@ -1068,30 +919,30 @@ public class CassandraTypeHandlerTest {
   }
 
   @Test
-  public void testIsValidJSONWithValidJSON() {
+  public void testIsValidJSONWithValidJSONObject() {
     String validJson = "{\"name\":\"John\", \"age\":30}";
-    boolean result = isValidJSON(validJson);
+    boolean result = isValidJSONObject(validJson);
     assertTrue(result);
   }
 
   @Test
-  public void testIsValidJSONWithInvalidJSON() {
+  public void testIsValidJSONWithInvalidJSONObject() {
     String invalidJson = "{\"name\":\"John\", \"age\":30";
-    boolean result = isValidJSON(invalidJson);
+    boolean result = isValidJSONObject(invalidJson);
     assertFalse(result);
   }
 
   @Test
-  public void testIsValidJSONWithEmptyString() {
+  public void testIsValidJSONObjectWithEmptyString() {
     String emptyString = "";
-    boolean result = isValidJSON(emptyString);
+    boolean result = isValidJSONObject(emptyString);
     assertFalse(result);
   }
 
   @Test
-  public void testIsValidJSONWithNull() {
+  public void testIsValidJSONObjectWithNull() {
     String nullString = null;
-    boolean result = isValidJSON(nullString);
+    boolean result = isValidJSONObject(nullString);
     assertFalse(result);
   }
 

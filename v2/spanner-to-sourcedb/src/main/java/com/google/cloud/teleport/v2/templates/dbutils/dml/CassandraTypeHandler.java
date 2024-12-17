@@ -601,167 +601,6 @@ class CassandraTypeHandler {
     }
   }
 
-  public static PreparedStatementValueObject<?> getColumnValueByType(
-      SpannerColumnDefinition spannerColDef,
-      SourceColumnDefinition sourceColDef,
-      JSONObject valuesJson,
-      String sourceDbTimezoneOffset) {
-
-    String columnType = sourceColDef.getType().getName().toLowerCase();
-    String colType = spannerColDef.getType().getName().toLowerCase();
-    String colName = spannerColDef.getName();
-
-    Object colValue = handleColumnType(colType, colName, valuesJson, sourceDbTimezoneOffset);
-
-    if (colValue == null) {
-      return new PreparedStatementValueObject<>(columnType, null);
-    }
-    return parseAndGenerateCassandraType(columnType, colValue);
-  }
-
-  private static Object handleColumnType(
-      String colType, String colName, JSONObject valuesJson, String timezoneOffset) {
-    switch (colType) {
-      case "bigint":
-      case "int64":
-        return CassandraTypeHandler.handleCassandraBigintType(colName, valuesJson);
-
-      case "string":
-        return handleStringType(colName, valuesJson);
-
-      case "timestamp":
-      case "date":
-      case "datetime":
-        return CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson);
-
-      case "boolean":
-        return CassandraTypeHandler.handleCassandraBoolType(colName, valuesJson);
-
-      case "float64":
-        return CassandraTypeHandler.handleCassandraDoubleType(colName, valuesJson);
-
-      case "numeric":
-      case "float":
-        return CassandraTypeHandler.handleCassandraFloatType(colName, valuesJson);
-
-      case "bytes":
-      case "bytes(max)":
-        return CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
-
-      case "integer":
-        return CassandraTypeHandler.handleCassandraIntType(colName, valuesJson);
-
-      default:
-        return null;
-    }
-  }
-
-  private static Object handleStringType(String colName, JSONObject valuesJson) {
-    String inputValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
-
-    if (isValidUUID(inputValue)) {
-      return CassandraTypeHandler.handleCassandraUuidType(colName, valuesJson);
-    } else if (isValidIPAddress(inputValue)) {
-      return safeHandle(
-          () -> CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson));
-    } else if (isValidJSONArray(inputValue)) {
-      return new JSONArray(inputValue);
-    } else if (isValidJSONObject(inputValue)) {
-      return new JSONObject(inputValue);
-    } else if (StringUtil.isHex(inputValue, 0, inputValue.length())) {
-      return CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
-    } else if (isAscii(inputValue)) {
-      return CassandraTypeHandler.handleCassandraAsciiType(colName, valuesJson);
-    } else if (isDurationString(inputValue)) {
-      return CassandraTypeHandler.handleCassandraDurationType(colName, valuesJson);
-    }
-    return inputValue;
-  }
-
-  private static <T> T safeHandle(HandlerSupplier<T> supplier) {
-    try {
-      return supplier.get();
-    } catch (Exception e) {
-      throw new IllegalArgumentException("Error handling type: " + e.getMessage(), e);
-    }
-  }
-
-  private static PreparedStatementValueObject<?> parseAndGenerateCassandraType(
-      String columnType, Object colValue) {
-    switch (columnType) {
-      case "ascii":
-      case "text":
-      case "varchar":
-        return new PreparedStatementValueObject<>(columnType, (String) colValue);
-
-      case "bigint":
-        return new PreparedStatementValueObject<>(columnType, (Long) colValue);
-
-      case "boolean":
-        return new PreparedStatementValueObject<>(columnType, (Boolean) colValue);
-
-      case "decimal":
-        return new PreparedStatementValueObject<>(columnType, (BigDecimal) colValue);
-
-      case "double":
-        return new PreparedStatementValueObject<>(columnType, (Double) colValue);
-
-      case "float":
-        return new PreparedStatementValueObject<>(columnType, (Float) colValue);
-
-      case "inet":
-        return new PreparedStatementValueObject<>(columnType, (java.net.InetAddress) colValue);
-
-      case "int":
-        return new PreparedStatementValueObject<>(columnType, (Integer) colValue);
-
-      case "smallint":
-        return new PreparedStatementValueObject<>(
-            columnType, convertToSmallInt((Integer) colValue));
-
-      case "time":
-      case "timestamp":
-      case "datetime":
-        return new PreparedStatementValueObject<>(columnType, (Instant) colValue);
-
-      case "date":
-        return new PreparedStatementValueObject<>(
-            columnType,
-            safeHandle(
-                () -> {
-                  if (colValue instanceof String) {
-                    return LocalDate.parse((String) colValue);
-                  } else if (colValue instanceof Instant) {
-                    return ((Instant) colValue).atZone(ZoneId.systemDefault()).toLocalDate();
-                  } else if (colValue instanceof Date) {
-                    return ((Date) colValue)
-                        .toInstant()
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate();
-                  }
-                  throw new IllegalArgumentException(
-                      "Unsupported value for date conversion: " + colValue);
-                }));
-
-      case "timeuuid":
-      case "uuid":
-        return new PreparedStatementValueObject<>(columnType, (UUID) colValue);
-
-      case "tinyint":
-        return new PreparedStatementValueObject<>(columnType, convertToTinyInt((Integer) colValue));
-
-      case "varint":
-        return new PreparedStatementValueObject<>(
-            columnType, new BigInteger(((ByteBuffer) colValue).array()));
-
-      case "duration":
-        return new PreparedStatementValueObject<>(columnType, (Duration) colValue);
-
-      default:
-        return new PreparedStatementValueObject<>(columnType, colValue);
-    }
-  }
-
   /**
    * Generates a {@link Set} object containing a set of double values from Cassandra.
    *
@@ -1090,6 +929,167 @@ class CassandraTypeHandler {
       return true;
     } catch (Exception e) {
       return false;
+    }
+  }
+
+  public static PreparedStatementValueObject<?> getColumnValueByType(
+          SpannerColumnDefinition spannerColDef,
+          SourceColumnDefinition sourceColDef,
+          JSONObject valuesJson,
+          String sourceDbTimezoneOffset) {
+
+    String columnType = sourceColDef.getType().getName().toLowerCase();
+    String colType = spannerColDef.getType().getName().toLowerCase();
+    String colName = spannerColDef.getName();
+
+    Object colValue = handleColumnType(colType, colName, valuesJson, sourceDbTimezoneOffset);
+
+    if (colValue == null) {
+      return new PreparedStatementValueObject<>(columnType, null);
+    }
+    return parseAndGenerateCassandraType(columnType, colValue);
+  }
+
+  private static Object handleColumnType(
+          String colType, String colName, JSONObject valuesJson, String timezoneOffset) {
+    switch (colType) {
+      case "bigint":
+      case "int64":
+        return CassandraTypeHandler.handleCassandraBigintType(colName, valuesJson);
+
+      case "string":
+        return handleStringType(colName, valuesJson);
+
+      case "timestamp":
+      case "date":
+      case "datetime":
+        return CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson);
+
+      case "boolean":
+        return CassandraTypeHandler.handleCassandraBoolType(colName, valuesJson);
+
+      case "float64":
+        return CassandraTypeHandler.handleCassandraDoubleType(colName, valuesJson);
+
+      case "numeric":
+      case "float":
+        return CassandraTypeHandler.handleCassandraFloatType(colName, valuesJson);
+
+      case "bytes":
+      case "bytes(max)":
+        return CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
+
+      case "integer":
+        return CassandraTypeHandler.handleCassandraIntType(colName, valuesJson);
+
+      default:
+        return null;
+    }
+  }
+
+  private static Object handleStringType(String colName, JSONObject valuesJson) {
+    String inputValue = CassandraTypeHandler.handleCassandraTextType(colName, valuesJson);
+
+    if (isValidUUID(inputValue)) {
+      return CassandraTypeHandler.handleCassandraUuidType(colName, valuesJson);
+    } else if (isValidIPAddress(inputValue)) {
+      return safeHandle(
+              () -> CassandraTypeHandler.handleCassandraInetAddressType(colName, valuesJson));
+    } else if (isValidJSONArray(inputValue)) {
+      return new JSONArray(inputValue);
+    } else if (isValidJSONObject(inputValue)) {
+      return new JSONObject(inputValue);
+    } else if (StringUtil.isHex(inputValue, 0, inputValue.length())) {
+      return CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
+    } else if (isAscii(inputValue)) {
+      return CassandraTypeHandler.handleCassandraAsciiType(colName, valuesJson);
+    } else if (isDurationString(inputValue)) {
+      return CassandraTypeHandler.handleCassandraDurationType(colName, valuesJson);
+    }
+    return inputValue;
+  }
+
+  private static <T> T safeHandle(HandlerSupplier<T> supplier) {
+    try {
+      return supplier.get();
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Error handling type: " + e.getMessage(), e);
+    }
+  }
+
+  private static PreparedStatementValueObject<?> parseAndGenerateCassandraType(
+          String columnType, Object colValue) {
+    switch (columnType) {
+      case "ascii":
+      case "text":
+      case "varchar":
+        return new PreparedStatementValueObject<>(columnType, (String) colValue);
+
+      case "bigint":
+        return new PreparedStatementValueObject<>(columnType, (Long) colValue);
+
+      case "boolean":
+        return new PreparedStatementValueObject<>(columnType, (Boolean) colValue);
+
+      case "decimal":
+        return new PreparedStatementValueObject<>(columnType, (BigDecimal) colValue);
+
+      case "double":
+        return new PreparedStatementValueObject<>(columnType, (Double) colValue);
+
+      case "float":
+        return new PreparedStatementValueObject<>(columnType, (Float) colValue);
+
+      case "inet":
+        return new PreparedStatementValueObject<>(columnType, (java.net.InetAddress) colValue);
+
+      case "int":
+        return new PreparedStatementValueObject<>(columnType, (Integer) colValue);
+
+      case "smallint":
+        return new PreparedStatementValueObject<>(
+                columnType, convertToSmallInt((Integer) colValue));
+
+      case "time":
+      case "timestamp":
+      case "datetime":
+        return new PreparedStatementValueObject<>(columnType, (Instant) colValue);
+
+      case "date":
+        return new PreparedStatementValueObject<>(
+                columnType,
+                safeHandle(
+                        () -> {
+                          if (colValue instanceof String) {
+                            return LocalDate.parse((String) colValue);
+                          } else if (colValue instanceof Instant) {
+                            return ((Instant) colValue).atZone(ZoneId.systemDefault()).toLocalDate();
+                          } else if (colValue instanceof Date) {
+                            return ((Date) colValue)
+                                    .toInstant()
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate();
+                          }
+                          throw new IllegalArgumentException(
+                                  "Unsupported value for date conversion: " + colValue);
+                        }));
+
+      case "timeuuid":
+      case "uuid":
+        return new PreparedStatementValueObject<>(columnType, (UUID) colValue);
+
+      case "tinyint":
+        return new PreparedStatementValueObject<>(columnType, convertToTinyInt((Integer) colValue));
+
+      case "varint":
+        return new PreparedStatementValueObject<>(
+                columnType, new BigInteger(((ByteBuffer) colValue).array()));
+
+      case "duration":
+        return new PreparedStatementValueObject<>(columnType, (Duration) colValue);
+
+      default:
+        return new PreparedStatementValueObject<>(columnType, colValue);
     }
   }
 }

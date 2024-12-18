@@ -17,8 +17,6 @@ package com.google.cloud.teleport.v2.templates.dbutils.dao.source;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
@@ -33,7 +31,9 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class CassandraDaoTest {
@@ -54,7 +54,7 @@ public class CassandraDaoTest {
 
   @Test
   public void testNullConnectionForWrite() throws Exception {
-    when(mockConnectionHelper.getConnection(anyString())).thenReturn(null);
+    Mockito.when(mockConnectionHelper.getConnection(ArgumentMatchers.anyString())).thenReturn(null);
     ConnectionException exception =
         assertThrows(
             ConnectionException.class,
@@ -70,17 +70,20 @@ public class CassandraDaoTest {
             new PreparedStatementValueObject<>("", preparedDmlStatement),
             new PreparedStatementValueObject<>("Test", preparedDmlStatement));
 
-    when(mockPreparedStatementGeneratedResponse.getDmlStatement()).thenReturn(preparedDmlStatement);
-    when(mockPreparedStatementGeneratedResponse.getValues()).thenReturn(values);
-    when(mockConnectionHelper.getConnection(anyString())).thenReturn(mockSession);
-    when(mockSession.prepare(eq(preparedDmlStatement))).thenReturn(mockPreparedStatement);
-    when(mockPreparedStatement.bind(any())).thenReturn(mockBoundStatement);
+    Mockito.when(mockPreparedStatementGeneratedResponse.getDmlStatement())
+        .thenReturn(preparedDmlStatement);
+    Mockito.when(mockPreparedStatementGeneratedResponse.getValues()).thenReturn(values);
+    Mockito.when(mockConnectionHelper.getConnection(ArgumentMatchers.anyString()))
+        .thenReturn(mockSession);
+    Mockito.when(mockSession.prepare(ArgumentMatchers.eq(preparedDmlStatement)))
+        .thenReturn(mockPreparedStatement);
+    Mockito.when(mockPreparedStatement.bind(ArgumentMatchers.any())).thenReturn(mockBoundStatement);
 
     cassandraDao.write(mockPreparedStatementGeneratedResponse);
 
-    verify(mockSession).prepare(eq(preparedDmlStatement));
-    verify(mockPreparedStatement).bind(any());
-    verify(mockSession).execute(eq(mockBoundStatement));
+    Mockito.verify(mockSession).prepare(ArgumentMatchers.eq(preparedDmlStatement));
+    Mockito.verify(mockPreparedStatement).bind(ArgumentMatchers.any());
+    Mockito.verify(mockSession).execute(ArgumentMatchers.eq(mockBoundStatement));
   }
 
   @Test
@@ -91,14 +94,17 @@ public class CassandraDaoTest {
             new PreparedStatementValueObject<>("", preparedDmlStatement),
             new PreparedStatementValueObject<>("Test", preparedDmlStatement));
 
-    when(mockPreparedStatementGeneratedResponse.getDmlStatement()).thenReturn(preparedDmlStatement);
-    when(mockPreparedStatementGeneratedResponse.getValues()).thenReturn(values);
-    when(mockConnectionHelper.getConnection(anyString())).thenReturn(mockSession);
-    when(mockSession.prepare(eq(preparedDmlStatement))).thenReturn(mockPreparedStatement);
-    when(mockPreparedStatement.bind(any())).thenReturn(mockBoundStatement);
-    doThrow(new RuntimeException("Prepared statement execution failed"))
+    Mockito.when(mockPreparedStatementGeneratedResponse.getDmlStatement())
+        .thenReturn(preparedDmlStatement);
+    Mockito.when(mockPreparedStatementGeneratedResponse.getValues()).thenReturn(values);
+    Mockito.when(mockConnectionHelper.getConnection(ArgumentMatchers.anyString()))
+        .thenReturn(mockSession);
+    Mockito.when(mockSession.prepare(ArgumentMatchers.eq(preparedDmlStatement)))
+        .thenReturn(mockPreparedStatement);
+    Mockito.when(mockPreparedStatement.bind(ArgumentMatchers.any())).thenReturn(mockBoundStatement);
+    Mockito.doThrow(new RuntimeException("Prepared statement execution failed"))
         .when(mockSession)
-        .execute(eq(mockBoundStatement));
+        .execute(ArgumentMatchers.eq(mockBoundStatement));
 
     RuntimeException exception =
         assertThrows(
@@ -108,17 +114,18 @@ public class CassandraDaoTest {
             });
 
     assertEquals("Prepared statement execution failed", exception.getMessage());
-    verify(mockSession).prepare(eq(preparedDmlStatement));
-    verify(mockPreparedStatement).bind(any());
-    verify(mockSession).execute(eq(mockBoundStatement));
+    Mockito.verify(mockSession).prepare(ArgumentMatchers.eq(preparedDmlStatement));
+    Mockito.verify(mockPreparedStatement).bind(ArgumentMatchers.any());
+    Mockito.verify(mockSession).execute(ArgumentMatchers.eq(mockBoundStatement));
   }
 
   @Test
   public void testWriteWithExceptionHandling() throws Exception {
     String dmlStatement = "INSERT INTO test (id, name) VALUES (?, ?)";
-    when(mockPreparedStatementGeneratedResponse.getDmlStatement()).thenReturn(dmlStatement);
-    when(mockConnectionHelper.getConnection(anyString())).thenReturn(mockSession);
-    when(mockSession.prepare(dmlStatement))
+    Mockito.when(mockPreparedStatementGeneratedResponse.getDmlStatement()).thenReturn(dmlStatement);
+    Mockito.when(mockConnectionHelper.getConnection(ArgumentMatchers.anyString()))
+        .thenReturn(mockSession);
+    Mockito.when(mockSession.prepare(dmlStatement))
         .thenThrow(new RuntimeException("Failed to prepare statement"));
 
     RuntimeException exception =
@@ -129,13 +136,13 @@ public class CassandraDaoTest {
             });
 
     assertEquals("Failed to prepare statement", exception.getMessage());
-    verify(mockSession).prepare(dmlStatement);
-    verify(mockSession, never()).execute((Statement<?>) any());
+    Mockito.verify(mockSession).prepare(dmlStatement);
+    Mockito.verify(mockSession, Mockito.never()).execute(ArgumentMatchers.<Statement<?>>any());
   }
 
   @Test
   public void testConnectionExceptionDuringWrite() throws Exception {
-    when(mockConnectionHelper.getConnection(anyString()))
+    Mockito.when(mockConnectionHelper.getConnection(ArgumentMatchers.anyString()))
         .thenThrow(new ConnectionException("Connection failed"));
     ConnectionException exception =
         assertThrows(
@@ -147,14 +154,15 @@ public class CassandraDaoTest {
   @Test
   public void testWriteWithSimpleStatementExecution() throws Exception {
     String simpleStatement = "DELETE FROM test WHERE id = 1";
-    DMLGeneratorResponse mockDmlGeneratorResponse = mock(DMLGeneratorResponse.class);
+    DMLGeneratorResponse mockDmlGeneratorResponse = Mockito.mock(DMLGeneratorResponse.class);
 
-    when(mockDmlGeneratorResponse.getDmlStatement()).thenReturn(simpleStatement);
-    when(mockConnectionHelper.getConnection(anyString())).thenReturn(mockSession);
+    Mockito.when(mockDmlGeneratorResponse.getDmlStatement()).thenReturn(simpleStatement);
+    Mockito.when(mockConnectionHelper.getConnection(ArgumentMatchers.anyString()))
+        .thenReturn(mockSession);
 
     cassandraDao.write(mockDmlGeneratorResponse);
 
-    verify(mockSession).execute(eq(simpleStatement));
-    verify(mockSession, never()).prepare(anyString());
+    Mockito.verify(mockSession).execute(ArgumentMatchers.eq(simpleStatement));
+    Mockito.verify(mockSession, Mockito.never()).prepare(ArgumentMatchers.anyString());
   }
 }

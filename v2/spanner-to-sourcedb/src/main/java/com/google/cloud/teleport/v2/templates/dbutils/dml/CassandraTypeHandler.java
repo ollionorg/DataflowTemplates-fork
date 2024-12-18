@@ -125,7 +125,7 @@ public class CassandraTypeHandler {
    * @return A {@link String} representing the ASCII value for the column in Cassandra.
    * @throws IllegalArgumentException If the string contains non-ASCII characters.
    */
-  public static String handleCassandraAsciiType(String colName, JSONObject valuesJson) {
+  private static String handleCassandraAsciiType(String colName, JSONObject valuesJson) {
     Object value = valuesJson.get(colName);
     if (value instanceof String) {
       String stringValue = (String) value;
@@ -155,7 +155,7 @@ public class CassandraTypeHandler {
    * @throws IllegalArgumentException If the value is not a valid format for varint (neither a valid
    *     number string nor a byte array).
    */
-  public static BigInteger handleCassandraVarintType(String colName, JSONObject valuesJson) {
+  private static BigInteger handleCassandraVarintType(String colName, JSONObject valuesJson) {
     Object value = valuesJson.get(colName);
 
     if (value instanceof String) {
@@ -190,7 +190,7 @@ public class CassandraTypeHandler {
    * @return A {@link Duration} object representing the duration value from the Cassandra data.
    * @throws IllegalArgumentException if the value is not a valid duration string.
    */
-  public static Duration handleCassandraDurationType(String colName, JSONObject valuesJson) {
+  private static Duration handleCassandraDurationType(String colName, JSONObject valuesJson) {
     String durationString = valuesJson.optString(colName, null);
     if (durationString == null) {
       return null;
@@ -210,7 +210,7 @@ public class CassandraTypeHandler {
    * @return a {@link InetAddress} object containing InetAddress as value represented in cassandra
    *     type.
    */
-  public static InetAddress handleCassandraInetAddressType(String colName, JSONObject valuesJson) {
+  private static InetAddress handleCassandraInetAddressType(String colName, JSONObject valuesJson) {
     String inetString = valuesJson.optString(colName, null);
     if (inetString == null) {
       return null;
@@ -229,7 +229,7 @@ public class CassandraTypeHandler {
    * @param valuesJson - contains all the key value for current incoming stream.
    * @return a {@link Boolean} object containing the value represented in cassandra type.
    */
-  public static Boolean handleCassandraBoolType(String colName, JSONObject valuesJson) {
+  private static Boolean handleCassandraBoolType(String colName, JSONObject valuesJson) {
     return valuesJson.optBoolean(colName, false);
   }
 
@@ -240,7 +240,7 @@ public class CassandraTypeHandler {
    * @param valuesJson - contains all the key value for current incoming stream.
    * @return a {@link Float} object containing the value represented in cassandra type.
    */
-  public static Float handleCassandraFloatType(String colName, JSONObject valuesJson) {
+  private static Float handleCassandraFloatType(String colName, JSONObject valuesJson) {
     try {
       return valuesJson.getBigDecimal(colName).floatValue();
     } catch (JSONException e) {
@@ -255,7 +255,7 @@ public class CassandraTypeHandler {
    * @param valuesJson - contains all the key value for current incoming stream.
    * @return a {@link Double} object containing the value represented in cassandra type.
    */
-  public static Double handleCassandraDoubleType(String colName, JSONObject valuesJson) {
+  private static Double handleCassandraDoubleType(String colName, JSONObject valuesJson) {
     try {
       return valuesJson.getBigDecimal(colName).doubleValue();
     } catch (JSONException e) {
@@ -270,7 +270,7 @@ public class CassandraTypeHandler {
    * @param valuesJson - contains all the key value for current incoming stream.
    * @return a {@link ByteBuffer} object containing the value represented in cassandra type.
    */
-  public static ByteBuffer handleCassandraBlobType(String colName, JSONObject valuesJson) {
+  private static ByteBuffer handleCassandraBlobType(String colName, JSONObject valuesJson) {
     Object colValue = valuesJson.opt(colName);
     if (colValue == null) {
       return null;
@@ -284,7 +284,7 @@ public class CassandraTypeHandler {
    * @param colValue - contains all the key value for current incoming stream.
    * @return a {@link ByteBuffer} object containing the value represented in cassandra type.
    */
-  public static ByteBuffer parseBlobType(Object colValue) {
+  private static ByteBuffer parseBlobType(Object colValue) {
     byte[] byteArray;
 
     if (colValue instanceof byte[]) {
@@ -328,7 +328,7 @@ public class CassandraTypeHandler {
    *     format. If the column is missing or contains an invalid value, this will return {@code
    *     null}.
    */
-  public static LocalDate handleCassandraDateType(String colName, JSONObject valuesJson) {
+  private static LocalDate handleCassandraDateType(String colName, JSONObject valuesJson) {
     return handleCassandraGenericDateType(colName, valuesJson, "yyyy-MM-dd");
   }
 
@@ -353,7 +353,7 @@ public class CassandraTypeHandler {
    * @throws IllegalArgumentException if the column value is missing, empty, or cannot be parsed as
    *     a valid timestamp.
    */
-  public static Instant handleCassandraTimestampType(String colName, JSONObject valuesJson) {
+  private static Instant handleCassandraTimestampType(String colName, JSONObject valuesJson) {
     String timestampValue = valuesJson.optString(colName, null);
     if (timestampValue == null || timestampValue.isEmpty()) {
       throw new IllegalArgumentException(
@@ -377,7 +377,7 @@ public class CassandraTypeHandler {
    * @return a {@link LocalDate} object containing the parsed date value. If the column is missing
    *     or invalid, this method returns {@code null}.
    */
-  public static LocalDate handleCassandraGenericDateType(
+  private static LocalDate handleCassandraGenericDateType(
       String colName, JSONObject valuesJson, String formatter) {
     Object colValue = valuesJson.opt(colName);
     if (colValue == null) {
@@ -405,7 +405,7 @@ public class CassandraTypeHandler {
    * @return a {@link LocalDate} object parsed from the given value.
    * @throws IllegalArgumentException if the value cannot be parsed or is of an unsupported type.
    */
-  public static LocalDate parseDate(String colName, Object colValue, String formatter) {
+  private static LocalDate parseDate(String colName, Object colValue, String formatter) {
     LocalDate localDate;
     if (colValue instanceof String) {
       try {
@@ -438,7 +438,7 @@ public class CassandraTypeHandler {
    * @param valuesJson - contains all the key value for current incoming stream.
    * @return a {@link String} object containing String as value represented in cassandra type.
    */
-  public static String handleCassandraTextType(String colName, JSONObject valuesJson) {
+  private static String handleCassandraTextType(String colName, JSONObject valuesJson) {
     return valuesJson.optString(
         colName, null); // Get the value or null if the key is not found or the value is null
   }
@@ -450,7 +450,7 @@ public class CassandraTypeHandler {
    * @param valuesJson - contains all the key value for current incoming stream.
    * @return a {@link UUID} object containing UUID as value represented in cassandra type.
    */
-  public static UUID handleCassandraUuidType(String colName, JSONObject valuesJson) {
+  private static UUID handleCassandraUuidType(String colName, JSONObject valuesJson) {
     String uuidString =
         valuesJson.optString(
             colName, null); // Get the value or null if the key is not found or the value is null
@@ -469,7 +469,7 @@ public class CassandraTypeHandler {
    * @param valuesJson - contains all the key value for current incoming stream.
    * @return a {@link Long} object containing Long as value represented in cassandra type.
    */
-  public static Long handleCassandraBigintType(String colName, JSONObject valuesJson) {
+  private static Long handleCassandraBigintType(String colName, JSONObject valuesJson) {
     try {
       return valuesJson.getBigInteger(colName).longValue();
     } catch (JSONException e) {
@@ -484,7 +484,7 @@ public class CassandraTypeHandler {
    * @param valuesJson - contains all the key value for current incoming stream.
    * @return a {@link Integer} object containing Integer as value represented in cassandra type.
    */
-  public static Integer handleCassandraIntType(String colName, JSONObject valuesJson) {
+  private static Integer handleCassandraIntType(String colName, JSONObject valuesJson) {
     try {
       return valuesJson.getBigInteger(colName).intValue();
     } catch (JSONException e) {
@@ -500,7 +500,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link List} object containing a list of long values represented in Cassandra.
    */
-  public static List<Long> handleInt64ArrayType(String colName, JSONObject valuesJson) {
+  private static List<Long> handleInt64ArrayType(String colName, JSONObject valuesJson) {
     return handleArrayType(
         colName,
         valuesJson,
@@ -529,7 +529,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link Set} object containing a set of long values represented in Cassandra.
    */
-  public static Set<Long> handleInt64SetType(String colName, JSONObject valuesJson) {
+  private static Set<Long> handleInt64SetType(String colName, JSONObject valuesJson) {
     return new HashSet<>(handleInt64ArrayType(colName, valuesJson));
   }
 
@@ -542,7 +542,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link List} object containing a list of integer values represented in Cassandra.
    */
-  public static List<Integer> handleInt64ArrayAsInt32Array(String colName, JSONObject valuesJson) {
+  private static List<Integer> handleInt64ArrayAsInt32Array(String colName, JSONObject valuesJson) {
     return handleInt64ArrayType(colName, valuesJson).stream()
         .map(Long::intValue)
         .collect(Collectors.toList());
@@ -557,7 +557,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link Set} object containing a set of integer values represented in Cassandra.
    */
-  public static Set<Integer> handleInt64ArrayAsInt32Set(String colName, JSONObject valuesJson) {
+  private static Set<Integer> handleInt64ArrayAsInt32Set(String colName, JSONObject valuesJson) {
     return handleInt64ArrayType(colName, valuesJson).stream()
         .map(Long::intValue)
         .collect(Collectors.toSet());
@@ -571,7 +571,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link Set} object containing a set of string values represented in Cassandra.
    */
-  public static Set<String> handleStringSetType(String colName, JSONObject valuesJson) {
+  private static Set<String> handleStringSetType(String colName, JSONObject valuesJson) {
     return new HashSet<>(handleStringArrayType(colName, valuesJson));
   }
 
@@ -583,7 +583,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link List} object containing a list of string values represented in Cassandra.
    */
-  public static List<String> handleStringArrayType(String colName, JSONObject valuesJson) {
+  private static List<String> handleStringArrayType(String colName, JSONObject valuesJson) {
     return handleArrayType(colName, valuesJson, String::valueOf);
   }
 
@@ -595,7 +595,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link List} object containing a list of boolean values represented in Cassandra.
    */
-  public static List<Boolean> handleBoolArrayType(String colName, JSONObject valuesJson) {
+  private static List<Boolean> handleBoolArrayType(String colName, JSONObject valuesJson) {
     return handleArrayType(
         colName, valuesJson, obj -> obj instanceof String && Boolean.parseBoolean((String) obj));
   }
@@ -608,7 +608,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link Set} object containing a set of boolean values represented in Cassandra.
    */
-  public static Set<Boolean> handleBoolSetTypeString(String colName, JSONObject valuesJson) {
+  private static Set<Boolean> handleBoolSetTypeString(String colName, JSONObject valuesJson) {
     return new HashSet<>(handleBoolArrayType(colName, valuesJson));
   }
 
@@ -620,7 +620,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link List} object containing a list of double values represented in Cassandra.
    */
-  public static List<Double> handleFloat64ArrayType(String colName, JSONObject valuesJson) {
+  private static List<Double> handleFloat64ArrayType(String colName, JSONObject valuesJson) {
     return handleArrayType(
         colName,
         valuesJson,
@@ -647,7 +647,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link Set} object containing a set of double values represented in Cassandra.
    */
-  public static Set<Double> handleFloat64SetType(String colName, JSONObject valuesJson) {
+  private static Set<Double> handleFloat64SetType(String colName, JSONObject valuesJson) {
     return new HashSet<>(handleFloat64ArrayType(colName, valuesJson));
   }
 
@@ -659,7 +659,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link List} object containing a list of float values represented in Cassandra.
    */
-  public static List<Float> handleFloatArrayType(String colName, JSONObject valuesJson) {
+  private static List<Float> handleFloatArrayType(String colName, JSONObject valuesJson) {
     return handleFloat64ArrayType(colName, valuesJson).stream()
         .map(Double::floatValue)
         .collect(Collectors.toList());
@@ -673,7 +673,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link Set} object containing a set of float values represented in Cassandra.
    */
-  public static Set<Float> handleFloatSetType(String colName, JSONObject valuesJson) {
+  private static Set<Float> handleFloatSetType(String colName, JSONObject valuesJson) {
     return handleFloat64SetType(colName, valuesJson).stream()
         .map(Double::floatValue)
         .collect(Collectors.toSet());
@@ -687,7 +687,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link List} object containing a list of LocalDate values represented in Cassandra.
    */
-  public static List<LocalDate> handleDateArrayType(String colName, JSONObject valuesJson) {
+  private static List<LocalDate> handleDateArrayType(String colName, JSONObject valuesJson) {
     return handleArrayType(
         colName, valuesJson, obj -> LocalDate.parse(obj.toString(), DateTimeFormatter.ISO_DATE));
   }
@@ -700,7 +700,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link Set} object containing a set of LocalDate values represented in Cassandra.
    */
-  public static Set<LocalDate> handleDateSetType(String colName, JSONObject valuesJson) {
+  private static Set<LocalDate> handleDateSetType(String colName, JSONObject valuesJson) {
     return new HashSet<>(handleDateArrayType(colName, valuesJson));
   }
 
@@ -712,7 +712,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link List} object containing a list of Timestamp values represented in Cassandra.
    */
-  public static List<Timestamp> handleTimestampArrayType(String colName, JSONObject valuesJson) {
+  private static List<Timestamp> handleTimestampArrayType(String colName, JSONObject valuesJson) {
     return handleArrayType(
         colName,
         valuesJson,
@@ -729,7 +729,7 @@ public class CassandraTypeHandler {
    *     stream.
    * @return a {@link Set} object containing a set of Timestamp values represented in Cassandra.
    */
-  public static Set<Timestamp> handleTimestampSetType(String colName, JSONObject valuesJson) {
+  private static Set<Timestamp> handleTimestampSetType(String colName, JSONObject valuesJson) {
     return new HashSet<>(handleTimestampArrayType(colName, valuesJson));
   }
 
@@ -741,7 +741,7 @@ public class CassandraTypeHandler {
    * @return a {@link List} object containing List of ByteBuffer as value represented in cassandra
    *     type.
    */
-  public static List<ByteBuffer> handleByteArrayType(String colName, JSONObject valuesJson) {
+  private static List<ByteBuffer> handleByteArrayType(String colName, JSONObject valuesJson) {
     return handleArrayType(colName, valuesJson, CassandraTypeHandler::parseBlobType);
   }
 
@@ -753,7 +753,7 @@ public class CassandraTypeHandler {
    * @return a {@link List} object containing List of Type T as value represented in cassandra type
    *     which will be assigned runtime.
    */
-  public static <T> List<T> handleArrayType(
+  private static <T> List<T> handleArrayType(
       String colName, JSONObject valuesJson, TypeParser<T> parser) {
     return valuesJson.getJSONArray(colName).toList().stream()
         .map(parser::parse)
@@ -768,7 +768,7 @@ public class CassandraTypeHandler {
    * @return a {@link Set} object containing Set of ByteBuffer as value represented in cassandra
    *     type.
    */
-  public static Set<ByteBuffer> handleByteSetType(String colName, JSONObject valuesJson) {
+  private static Set<ByteBuffer> handleByteSetType(String colName, JSONObject valuesJson) {
     return new HashSet<>(handleByteArrayType(colName, valuesJson));
   }
 
@@ -784,7 +784,7 @@ public class CassandraTypeHandler {
    * @throws IllegalArgumentException If the {@code integerValue} is out of range for a {@code
    *     smallint}.
    */
-  public static short convertToSmallInt(Integer integerValue) {
+  private static short convertToSmallInt(Integer integerValue) {
     if (integerValue < Short.MIN_VALUE || integerValue > Short.MAX_VALUE) {
       throw new IllegalArgumentException("Value is out of range for smallint.");
     }
@@ -803,7 +803,7 @@ public class CassandraTypeHandler {
    * @throws IllegalArgumentException If the {@code integerValue} is out of range for a {@code
    *     tinyint}.
    */
-  public static byte convertToTinyInt(Integer integerValue) {
+  private static byte convertToTinyInt(Integer integerValue) {
     if (integerValue < Byte.MIN_VALUE || integerValue > Byte.MAX_VALUE) {
       throw new IllegalArgumentException("Value is out of range for tinyint.");
     }
@@ -819,7 +819,7 @@ public class CassandraTypeHandler {
    * @param value The string to be escaped.
    * @return The escaped string where single quotes are replaced with double single quotes.
    */
-  public static String escapeCassandraString(String value) {
+  private static String escapeCassandraString(String value) {
     return value.replace("'", "''");
   }
 
@@ -833,7 +833,7 @@ public class CassandraTypeHandler {
    * @param dateString The date string in ISO-8601 format (e.g., "2024-12-05T00:00:00Z").
    * @return The {@link LocalDate} representation of the date.
    */
-  public static LocalDate convertToCassandraDate(String dateString) {
+  private static LocalDate convertToCassandraDate(String dateString) {
     Instant instant = convertToCassandraTimestamp(dateString);
     ZonedDateTime zonedDateTime = instant.atZone(ZoneId.systemDefault());
     return zonedDateTime.toLocalDate();
@@ -849,7 +849,7 @@ public class CassandraTypeHandler {
    * @param timestampValue The timestamp string in ISO-8601 format (e.g., "2024-12-05T10:15:30Z").
    * @return The {@link Instant} representation of the timestamp.
    */
-  public static Instant convertToCassandraTimestamp(String timestampValue) {
+  private static Instant convertToCassandraTimestamp(String timestampValue) {
     try {
       return Instant.parse(timestampValue);
     } catch (DateTimeParseException e) {
@@ -874,7 +874,7 @@ public class CassandraTypeHandler {
    * @param value The string to check if it represents a valid UUID.
    * @return {@code true} if the string is a valid UUID, {@code false} otherwise.
    */
-  public static boolean isValidUUID(String value) {
+  private static boolean isValidUUID(String value) {
     try {
       UUID.fromString(value);
       return true;
@@ -893,7 +893,7 @@ public class CassandraTypeHandler {
    * @param value The string to check if it represents a valid IP address.
    * @return {@code true} if the string is a valid IP address, {@code false} otherwise.
    */
-  public static boolean isValidIPAddress(String value) {
+  private static boolean isValidIPAddress(String value) {
     try {
       InetAddresses.forString(value);
       return true;
@@ -912,7 +912,7 @@ public class CassandraTypeHandler {
    * @param value The string to check if it represents a valid JSON object.
    * @return {@code true} if the string is a valid JSON object, {@code false} otherwise.
    */
-  public static boolean isValidJSON(String value) {
+  private static boolean isValidJSON(String value) {
     try {
       new JSONObject(value);
       return true;
@@ -931,7 +931,7 @@ public class CassandraTypeHandler {
    * @param value The string to check if it represents a valid JSON object.
    * @return {@code true} if the string is a valid JSON object, {@code false} otherwise.
    */
-  public static boolean isValidJSONArray(String value) {
+  private static boolean isValidJSONArray(String value) {
     try {
       new JSONArray(value);
       return true;
@@ -950,7 +950,7 @@ public class CassandraTypeHandler {
    * @param value The string to check if it represents a valid JSON object.
    * @return {@code true} if the string is a valid JSON object, {@code false} otherwise.
    */
-  public static boolean isValidJSONObject(String value) {
+  private static boolean isValidJSONObject(String value) {
     try {
       new JSONObject(value);
       return true;
@@ -965,7 +965,7 @@ public class CassandraTypeHandler {
    * @param value - The string to check.
    * @return true if the string contains only ASCII characters, false otherwise.
    */
-  public static boolean isAscii(String value) {
+  private static boolean isAscii(String value) {
     for (int i = 0; i < value.length(); i++) {
       if (value.charAt(i) > 127) {
         return false;
@@ -980,7 +980,7 @@ public class CassandraTypeHandler {
    * @param value - The string to check.
    * @return true if the string contains Duration Character, false otherwise.
    */
-  public static boolean isDurationString(String value) {
+  private static boolean isDurationString(String value) {
     try {
       Duration.parse(value);
       return true;

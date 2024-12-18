@@ -52,10 +52,14 @@ public class CassandraDaoTest {
     cassandraDao = new CassandraDao("cassandraUrl", "cassandraUser", mockConnectionHelper);
   }
 
-  @Test(expected = ConnectionException.class)
+  @Test
   public void testNullConnectionForWrite() throws Exception {
     when(mockConnectionHelper.getConnection(anyString())).thenReturn(null);
-    cassandraDao.write(mockPreparedStatementGeneratedResponse);
+    ConnectionException exception =
+        assertThrows(
+            ConnectionException.class,
+            () -> cassandraDao.write(mockPreparedStatementGeneratedResponse));
+    assertEquals("Connection is null", exception.getMessage());
   }
 
   @Test
@@ -129,11 +133,15 @@ public class CassandraDaoTest {
     verify(mockSession, never()).execute((Statement<?>) any());
   }
 
-  @Test(expected = ConnectionException.class)
+  @Test
   public void testConnectionExceptionDuringWrite() throws Exception {
     when(mockConnectionHelper.getConnection(anyString()))
         .thenThrow(new ConnectionException("Connection failed"));
-    cassandraDao.write(mockPreparedStatementGeneratedResponse);
+    ConnectionException exception =
+        assertThrows(
+            ConnectionException.class,
+            () -> cassandraDao.write(mockPreparedStatementGeneratedResponse));
+    assertEquals("Connection failed", exception.getMessage());
   }
 
   @Test

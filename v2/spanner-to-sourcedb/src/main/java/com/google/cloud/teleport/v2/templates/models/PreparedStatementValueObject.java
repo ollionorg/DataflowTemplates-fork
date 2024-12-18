@@ -16,46 +16,46 @@
 package com.google.cloud.teleport.v2.templates.models;
 
 public class PreparedStatementValueObject<T> {
-    private String dataType;
-    private T value;
+  private String dataType;
+  private T value;
 
-    public PreparedStatementValueObject(String dataType, T value) {
-        this.dataType = dataType;
-        this.value = value;
-    }
+  public PreparedStatementValueObject(String dataType, T value) {
+    this.dataType = dataType;
+    this.value = value;
+  }
 
-    public String getDataType() {
-        return dataType;
-    }
+  public String getDataType() {
+    return dataType;
+  }
 
-    public void setDataType(String dataType) {
-        this.dataType = dataType;
-    }
+  public void setDataType(String dataType) {
+    this.dataType = dataType;
+  }
 
-    public T getValue() {
-        return value;
-    }
+  public T getValue() {
+    return value;
+  }
 
-    public void setValue(T value) {
-        this.value = value;
-    }
+  public void setValue(T value) {
+    this.value = value;
+  }
 
-    // Override toString() for better readability when printing objects
-    @Override
-    public String toString() {
-        return "PreparedStatementValueObject{" + "key='" + dataType + '\'' + ", value=" + value + '}';
-    }
+  // Override toString() for better readability when printing objects
+  @Override
+  public String toString() {
+    return "PreparedStatementValueObject{" + "key='" + dataType + '\'' + ", value=" + value + '}';
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        PreparedStatementValueObject<?> that = (PreparedStatementValueObject<?>) obj;
-        return dataType.equals(that.dataType) && value.equals(that.value);
-    }
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    PreparedStatementValueObject<?> that = (PreparedStatementValueObject<?>) obj;
+    return dataType.equals(that.dataType) && value.equals(that.value);
+  }
 
-    @Override
-    public int hashCode() {
-        return 31 * dataType.hashCode() + (value != null ? value.hashCode() : 0);
-    }
+  @Override
+  public int hashCode() {
+    return 31 * dataType.hashCode() + (value != null ? value.hashCode() : 0);
+  }
 }

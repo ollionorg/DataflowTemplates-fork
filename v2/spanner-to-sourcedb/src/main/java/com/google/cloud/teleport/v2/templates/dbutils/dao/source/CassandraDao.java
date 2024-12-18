@@ -25,44 +25,44 @@ import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedR
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
 
 public class CassandraDao implements IDao<DMLGeneratorResponse> {
-    private final String cassandraUrl;
-    private final String cassandraUser;
-    private final IConnectionHelper connectionHelper;
+  private final String cassandraUrl;
+  private final String cassandraUser;
+  private final IConnectionHelper connectionHelper;
 
-    public CassandraDao(
-            String cassandraUrl, String cassandraUser, IConnectionHelper connectionHelper) {
-        this.cassandraUrl = cassandraUrl;
-        this.cassandraUser = cassandraUser;
-        this.connectionHelper = connectionHelper;
-    }
+  public CassandraDao(
+      String cassandraUrl, String cassandraUser, IConnectionHelper connectionHelper) {
+    this.cassandraUrl = cassandraUrl;
+    this.cassandraUser = cassandraUser;
+    this.connectionHelper = connectionHelper;
+  }
 
-    @Override
-    public void write(DMLGeneratorResponse dmlGeneratorResponse) throws Exception {
-        try (CqlSession session =
-                     (CqlSession)
-                             connectionHelper.getConnection(this.cassandraUrl)) { // Ensure connection is obtained
-            if (session == null) {
-                throw new ConnectionException("Connection is null");
-            }
-            if (dmlGeneratorResponse instanceof PreparedStatementGeneratedResponse) {
-                PreparedStatementGeneratedResponse preparedStatementGeneratedResponse =
-                        (PreparedStatementGeneratedResponse) dmlGeneratorResponse;
-                try {
-                    String dmlStatement = preparedStatementGeneratedResponse.getDmlStatement();
-                    PreparedStatement preparedStatement = session.prepare(dmlStatement);
-                    BoundStatement boundStatement =
-                            preparedStatement.bind(
-                                    preparedStatementGeneratedResponse.getValues().stream()
-                                            .map(PreparedStatementValueObject::getValue)
-                                            .toArray());
-                    session.execute(boundStatement);
-                } catch (Exception e) {
-                    throw e;
-                }
-            } else {
-                String simpleStatement = dmlGeneratorResponse.getDmlStatement();
-                session.execute(simpleStatement);
-            }
+  @Override
+  public void write(DMLGeneratorResponse dmlGeneratorResponse) throws Exception {
+    try (CqlSession session =
+        (CqlSession)
+            connectionHelper.getConnection(this.cassandraUrl)) { // Ensure connection is obtained
+      if (session == null) {
+        throw new ConnectionException("Connection is null");
+      }
+      if (dmlGeneratorResponse instanceof PreparedStatementGeneratedResponse) {
+        PreparedStatementGeneratedResponse preparedStatementGeneratedResponse =
+            (PreparedStatementGeneratedResponse) dmlGeneratorResponse;
+        try {
+          String dmlStatement = preparedStatementGeneratedResponse.getDmlStatement();
+          PreparedStatement preparedStatement = session.prepare(dmlStatement);
+          BoundStatement boundStatement =
+              preparedStatement.bind(
+                  preparedStatementGeneratedResponse.getValues().stream()
+                      .map(PreparedStatementValueObject::getValue)
+                      .toArray());
+          session.execute(boundStatement);
+        } catch (Exception e) {
+          throw e;
         }
+      } else {
+        String simpleStatement = dmlGeneratorResponse.getDmlStatement();
+        session.execute(simpleStatement);
+      }
     }
+  }
 }

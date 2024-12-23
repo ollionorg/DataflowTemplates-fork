@@ -23,11 +23,8 @@ import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CassandraDao implements IDao<DMLGeneratorResponse> {
-  private static final Logger LOG = LoggerFactory.getLogger(CassandraDao.class);
   private final String cassandraUrl;
   private final String cassandraUser;
   private final IConnectionHelper connectionHelper;
@@ -47,26 +44,16 @@ public class CassandraDao implements IDao<DMLGeneratorResponse> {
       if (session == null) {
         throw new ConnectionException("Connection is null");
       }
-      if (dmlGeneratorResponse instanceof PreparedStatementGeneratedResponse) {
-        PreparedStatementGeneratedResponse preparedStatementGeneratedResponse =
-            (PreparedStatementGeneratedResponse) dmlGeneratorResponse;
-        try {
-          String dmlStatement = preparedStatementGeneratedResponse.getDmlStatement();
-          PreparedStatement preparedStatement = session.prepare(dmlStatement);
-          BoundStatement boundStatement =
-              preparedStatement.bind(
-                  preparedStatementGeneratedResponse.getValues().stream()
-                      .map(PreparedStatementValueObject::getValue)
-                      .toArray());
-          session.execute(boundStatement);
-        } catch (Exception e) {
-          LOG.error(e.getMessage());
-        }
-
-      } else {
-        String simpleStatement = dmlGeneratorResponse.getDmlStatement();
-        session.execute(simpleStatement);
-      }
+      PreparedStatementGeneratedResponse preparedStatementGeneratedResponse =
+          (PreparedStatementGeneratedResponse) dmlGeneratorResponse;
+      String dmlStatement = preparedStatementGeneratedResponse.getDmlStatement();
+      PreparedStatement preparedStatement = session.prepare(dmlStatement);
+      BoundStatement boundStatement =
+          preparedStatement.bind(
+              preparedStatementGeneratedResponse.getValues().stream()
+                  .map(PreparedStatementValueObject::value)
+                  .toArray());
+      session.execute(boundStatement);
     }
   }
 }

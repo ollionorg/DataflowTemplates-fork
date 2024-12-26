@@ -38,15 +38,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.eclipse.jetty.util.StringUtil;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CassandraTypeHandler {
+  private static final Logger LOG = LoggerFactory.getLogger(CassandraTypeHandler.class);
 
   /**
    * Functional interface for parsing an object value to a specific type.
@@ -55,6 +54,7 @@ public class CassandraTypeHandler {
    * is parsed and transformed into the desired target type.
    *
    * <p>Example usage:
+   *
    * <pre>{@code
    * TypeParser<Integer> intParser = value -> Integer.parseInt(value.toString());
    * Integer parsedValue = intParser.parse("123");
@@ -74,7 +74,6 @@ public class CassandraTypeHandler {
     T parse(Object value);
   }
 
-
   /**
    * Functional interface for supplying a value with exception handling.
    *
@@ -82,6 +81,7 @@ public class CassandraTypeHandler {
    * making it useful for methods where exception handling is required.
    *
    * <p>Example usage:
+   *
    * <pre>{@code
    * HandlerSupplier<String> supplier = () -> {
    *     if (someCondition) {
@@ -1014,44 +1014,45 @@ public class CassandraTypeHandler {
    * <p>This method processes Spanner column types (e.g., bigint, string, timestamp, etc.) and
    * returns the parsed value for further handling.
    *
-   * @param colType The Spanner column type (e.g., "string", "bigint").
-   * @param colName The name of the column.
+   * @param spannerType The Spanner column type (e.g., "string", "bigint").
+   * @param columnName The name of the column.
    * @param valuesJson The JSON object containing the column value.
    * @return The extracted value for the column, or {@code null} if the column type is unsupported.
    */
   private static Object handleSpannerColumnType(
-      String colType, String colName, JSONObject valuesJson) {
-    switch (colType) {
+      String spannerType, String columnName, JSONObject valuesJson) {
+    switch (spannerType) {
       case "bigint":
       case "int64":
-        return CassandraTypeHandler.handleCassandraBigintType(colName, valuesJson);
+        return CassandraTypeHandler.handleCassandraBigintType(columnName, valuesJson);
 
       case "string":
-        return handleStringType(colName, valuesJson);
+        return handleStringType(columnName, valuesJson);
 
       case "timestamp":
       case "date":
       case "datetime":
-        return CassandraTypeHandler.handleCassandraTimestampType(colName, valuesJson);
+        return CassandraTypeHandler.handleCassandraTimestampType(columnName, valuesJson);
 
       case "boolean":
-        return CassandraTypeHandler.handleCassandraBoolType(colName, valuesJson);
+        return CassandraTypeHandler.handleCassandraBoolType(columnName, valuesJson);
 
       case "float64":
-        return CassandraTypeHandler.handleCassandraDoubleType(colName, valuesJson);
+        return CassandraTypeHandler.handleCassandraDoubleType(columnName, valuesJson);
 
       case "numeric":
       case "float":
-        return CassandraTypeHandler.handleCassandraFloatType(colName, valuesJson);
+        return CassandraTypeHandler.handleCassandraFloatType(columnName, valuesJson);
 
       case "bytes":
       case "bytes(max)":
-        return CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
+        return CassandraTypeHandler.handleCassandraBlobType(columnName, valuesJson);
 
       case "integer":
-        return CassandraTypeHandler.handleCassandraIntType(colName, valuesJson);
+        return CassandraTypeHandler.handleCassandraIntType(columnName, valuesJson);
 
       default:
+        LOG.warn("Unsupported Spanner column type: {}", spannerType);
         return null;
     }
   }
@@ -1106,40 +1107,40 @@ public class CassandraTypeHandler {
       case "ascii":
       case "text":
       case "varchar":
-        return new PreparedStatementValueObject<>(columnType, (String) colValue);
+        return PreparedStatementValueObject.create(columnType, (String) colValue);
 
       case "bigint":
-        return new PreparedStatementValueObject<>(columnType, (Long) colValue);
+        return PreparedStatementValueObject.create(columnType, (Long) colValue);
 
       case "boolean":
-        return new PreparedStatementValueObject<>(columnType, (Boolean) colValue);
+        return PreparedStatementValueObject.create(columnType, (Boolean) colValue);
 
       case "decimal":
-        return new PreparedStatementValueObject<>(columnType, (BigDecimal) colValue);
+        return PreparedStatementValueObject.create(columnType, (BigDecimal) colValue);
 
       case "double":
-        return new PreparedStatementValueObject<>(columnType, (Double) colValue);
+        return PreparedStatementValueObject.create(columnType, (Double) colValue);
 
       case "float":
-        return new PreparedStatementValueObject<>(columnType, (Float) colValue);
+        return PreparedStatementValueObject.create(columnType, (Float) colValue);
 
       case "inet":
-        return new PreparedStatementValueObject<>(columnType, (java.net.InetAddress) colValue);
+        return PreparedStatementValueObject.create(columnType, (java.net.InetAddress) colValue);
 
       case "int":
-        return new PreparedStatementValueObject<>(columnType, (Integer) colValue);
+        return PreparedStatementValueObject.create(columnType, (Integer) colValue);
 
       case "smallint":
-        return new PreparedStatementValueObject<>(
+        return PreparedStatementValueObject.create(
             columnType, convertToSmallInt((Integer) colValue));
 
       case "time":
       case "timestamp":
       case "datetime":
-        return new PreparedStatementValueObject<>(columnType, (Instant) colValue);
+        return PreparedStatementValueObject.create(columnType, (Instant) colValue);
 
       case "date":
-        return new PreparedStatementValueObject<>(
+        return PreparedStatementValueObject.create(
             columnType,
             safeHandle(
                 () -> {
@@ -1159,20 +1160,21 @@ public class CassandraTypeHandler {
 
       case "timeuuid":
       case "uuid":
-        return new PreparedStatementValueObject<>(columnType, (UUID) colValue);
+        return PreparedStatementValueObject.create(columnType, (UUID) colValue);
 
       case "tinyint":
-        return new PreparedStatementValueObject<>(columnType, convertToTinyInt((Integer) colValue));
+        return PreparedStatementValueObject.create(
+            columnType, convertToTinyInt((Integer) colValue));
 
       case "varint":
-        return new PreparedStatementValueObject<>(
+        return PreparedStatementValueObject.create(
             columnType, new BigInteger(((ByteBuffer) colValue).array()));
 
       case "duration":
-        return new PreparedStatementValueObject<>(columnType, (Duration) colValue);
+        return PreparedStatementValueObject.create(columnType, (Duration) colValue);
 
       default:
-        return new PreparedStatementValueObject<>(columnType, colValue);
+        return PreparedStatementValueObject.create(columnType, colValue);
     }
   }
 
@@ -1194,15 +1196,30 @@ public class CassandraTypeHandler {
       JSONObject valuesJson,
       String sourceDbTimezoneOffset) {
 
-    String columnType = sourceColDef.getType().getName().toLowerCase();
-    String colType = spannerColDef.getType().getName().toLowerCase();
-    String colName = spannerColDef.getName();
-
-    Object colValue = handleSpannerColumnType(colType, colName, valuesJson);
-
-    if (colValue == null) {
-      return new PreparedStatementValueObject<>(columnType, null);
+    if (spannerColDef == null || sourceColDef == null) {
+      throw new IllegalArgumentException("Column definitions cannot be null.");
     }
-    return parseAndGenerateCassandraType(columnType, colValue);
+
+    String spannerType = spannerColDef.getType().getName().toLowerCase();
+    String cassandraType = sourceColDef.getType().getName().toLowerCase();
+    String columnName = spannerColDef.getName();
+
+    Object columnValue = handleSpannerColumnType(spannerType, columnName, valuesJson);
+
+    if (columnValue == null) {
+      LOG.warn("Column value is null for column: {}, type: {}", columnName, spannerType);
+      return PreparedStatementValueObject.create(cassandraType, null);
+    }
+
+    try {
+      return parseAndGenerateCassandraType(cassandraType, columnValue);
+    } catch (ClassCastException | IllegalArgumentException e) {
+      LOG.error(
+          "Error converting value for column: {}, type: {}: {}",
+          columnName,
+          cassandraType,
+          e.getMessage());
+      throw e;
+    }
   }
 }

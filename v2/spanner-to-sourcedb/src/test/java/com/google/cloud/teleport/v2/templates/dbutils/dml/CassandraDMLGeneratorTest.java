@@ -701,7 +701,8 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void testUnsupportedModType() {
-    Schema schema = SessionFileReader.read("src/test/resources/CassandraJson/cassandraAllMatchSession.json");
+    Schema schema =
+        SessionFileReader.read("src/test/resources/CassandraJson/cassandraAllMatchSession.json");
     String tableName = "Singers";
     String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);

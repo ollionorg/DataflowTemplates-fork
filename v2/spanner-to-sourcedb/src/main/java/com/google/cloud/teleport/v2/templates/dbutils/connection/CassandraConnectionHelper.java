@@ -17,13 +17,13 @@ package com.google.cloud.teleport.v2.templates.dbutils.connection;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
-import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
-import com.datastax.oss.driver.api.core.config.ProgrammaticDriverConfigLoaderBuilder;
 import com.google.cloud.teleport.v2.spanner.migrations.shard.CassandraShard;
 import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.utils.CassandraDriverConfigLoader;
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 import com.google.cloud.teleport.v2.templates.models.ConnectionHelperRequest;
+import java.io.FileNotFoundException;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
@@ -145,7 +145,7 @@ public class CassandraConnectionHelper implements IConnectionHelper<CqlSession> 
             .withAuthCredentials(cassandraShard.getUserName(), cassandraShard.getPassword())
             .withKeyspace(cassandraShard.getKeySpaceName());
 
-    DriverConfigLoader configLoader = createConfigLoader(cassandraShard);
+    DriverConfigLoader configLoader = loadDriverConfig(cassandraShard.getConfigFilePath());
     builder.withConfigLoader(configLoader);
 
     return builder.build();
@@ -164,21 +164,26 @@ public class CassandraConnectionHelper implements IConnectionHelper<CqlSession> 
   }
 
   /**
-   * Creates a driver configuration loader for the given {@link CassandraShard}.
+   * Loads the Cassandra driver configuration from the specified file path.
    *
-   * @param cassandraShard The shard containing configuration details.
-   * @return A {@link DriverConfigLoader} instance.
+   * <p>This method uses the provided `configFilePath` to load the Cassandra driver configuration
+   * using the {@link CassandraDriverConfigLoader}. If the configuration file is not found, an error
+   * is logged, and a {@link RuntimeException} is thrown.
+   *
+   * @param configFilePath The path to the Cassandra driver configuration file. This should be a
+   *     valid path pointing to a configuration file (e.g., "gs://path/to/cassandra_config.yaml").
+   * @return A {@link DriverConfigLoader} that contains the loaded Cassandra driver configuration.
+   * @throws RuntimeException If an error occurs while loading the configuration (e.g., if the file
+   *     is not found). The underlying {@link FileNotFoundException} will be wrapped in a {@link
+   *     RuntimeException}.
    */
-  private DriverConfigLoader createConfigLoader(CassandraShard cassandraShard) {
-    ProgrammaticDriverConfigLoaderBuilder configLoaderBuilder =
-        DriverConfigLoader.programmaticBuilder();
-
-    configLoaderBuilder
-        .withInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE, cassandraShard.getLocalPoolSize())
-        .withInt(
-            DefaultDriverOption.CONNECTION_POOL_REMOTE_SIZE, cassandraShard.getRemotePoolSize());
-
-    return configLoaderBuilder.build();
+  private DriverConfigLoader loadDriverConfig(String configFilePath) {
+    try {
+      return CassandraDriverConfigLoader.loadFile(configFilePath);
+    } catch (FileNotFoundException e) {
+      LOG.error("Could not load Cassandra driver configuration from path: {}", configFilePath, e);
+      throw new RuntimeException("Error loading Cassandra configuration", e);
+    }
   }
 
   /**

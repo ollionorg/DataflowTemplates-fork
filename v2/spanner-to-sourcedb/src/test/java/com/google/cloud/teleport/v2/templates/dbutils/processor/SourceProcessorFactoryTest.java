@@ -102,7 +102,8 @@ public class SourceProcessorFactoryTest {
                 "v5",
                 "mynamespace",
                 1024,
-                1024));
+                1024,
+                ""));
     int maxConnections = 10;
     CassandraConnectionHelper mockConnectionHelper = Mockito.mock(CassandraConnectionHelper.class);
     doNothing().when(mockConnectionHelper).init(any());

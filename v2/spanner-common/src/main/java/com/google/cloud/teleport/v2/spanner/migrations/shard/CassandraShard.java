@@ -25,6 +25,7 @@ public class CassandraShard extends Shard {
   private String dataCenter = "datacenter1";
   private int localPoolSize = 1024;
   private int remotePoolSize = 256;
+  private String configFilePath;
 
   public CassandraShard(
       String logicalShardId,
@@ -38,7 +39,8 @@ public class CassandraShard extends Shard {
       String protocolVersion,
       String dataCenter,
       Integer localPoolSize,
-      Integer remotePoolSize) {
+      Integer remotePoolSize,
+      String configFilePath) {
     super(logicalShardId, host, port, user, password, null, null, null, null);
     this.keyspace = keyspace;
     this.consistencyLevel = consistencyLevel;
@@ -47,9 +49,9 @@ public class CassandraShard extends Shard {
     this.dataCenter = dataCenter;
     this.localPoolSize = localPoolSize;
     this.remotePoolSize = remotePoolSize;
+    this.configFilePath = configFilePath;
   }
 
-  // Getters
   public String getKeySpaceName() {
     return keyspace;
   }
@@ -78,7 +80,10 @@ public class CassandraShard extends Shard {
     return remotePoolSize;
   }
 
-  // Setters
+  public String getConfigFilePath() { // Getter for the configFilePath
+    return configFilePath;
+  }
+
   public void setKeySpaceName(String keySpaceName) {
     this.keyspace = keySpaceName;
   }
@@ -107,12 +112,17 @@ public class CassandraShard extends Shard {
     this.remotePoolSize = remotePoolSize;
   }
 
+  public void setConfigFilePath(String configFilePath) { // Setter for the configFilePath
+    this.configFilePath = configFilePath;
+  }
+
   public void validate() {
     validateField(getHost(), "Host");
     validateField(getPort(), "Port");
     validateField(getUserName(), "Username");
     validateField(getPassword(), "Password");
     validateField(getKeySpaceName(), "Keyspace");
+    validateField(getConfigFilePath(), "ConfigFilePath"); // Validate configFilePath
   }
 
   private void validateField(String value, String fieldName) {
@@ -124,7 +134,7 @@ public class CassandraShard extends Shard {
   @Override
   public String toString() {
     return String.format(
-        "CassandraShard{logicalShardId='%s', host='%s', port='%s', user='%s', keySpaceName='%s', datacenter='%s', consistencyLevel='%s', protocolVersion='%s'}",
+        "CassandraShard{logicalShardId='%s', host='%s', port='%s', user='%s', keySpaceName='%s', datacenter='%s', consistencyLevel='%s', protocolVersion='%s', configFilePath='%s'}",
         getLogicalShardId(),
         getHost(),
         getPort(),
@@ -132,7 +142,8 @@ public class CassandraShard extends Shard {
         getKeySpaceName(),
         getDataCenter(),
         getConsistencyLevel(),
-        getProtocolVersion());
+        getProtocolVersion(),
+        getConfigFilePath());
   }
 
   @Override
@@ -151,7 +162,8 @@ public class CassandraShard extends Shard {
         && Objects.equals(keyspace, that.keyspace)
         && Objects.equals(dataCenter, that.dataCenter)
         && Objects.equals(consistencyLevel, that.consistencyLevel)
-        && Objects.equals(protocolVersion, that.protocolVersion);
+        && Objects.equals(protocolVersion, that.protocolVersion)
+        && Objects.equals(configFilePath, that.configFilePath);
   }
 
   @Override
@@ -168,6 +180,7 @@ public class CassandraShard extends Shard {
         protocolVersion,
         sslOptions,
         localPoolSize,
-        remotePoolSize);
+        remotePoolSize,
+        configFilePath);
   }
 }

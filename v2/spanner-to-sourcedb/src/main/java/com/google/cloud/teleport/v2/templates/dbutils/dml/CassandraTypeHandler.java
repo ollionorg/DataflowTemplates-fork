@@ -31,9 +31,13 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -1103,6 +1107,18 @@ public class CassandraTypeHandler {
    */
   private static PreparedStatementValueObject<?> parseAndGenerateCassandraType(
       String columnType, Object colValue) {
+
+    if (columnType.startsWith("list<") && colValue instanceof JSONArray) {
+      return PreparedStatementValueObject.create(
+          columnType, parseCassandraList(columnType, (JSONArray) colValue));
+    } else if (columnType.startsWith("set<") && colValue instanceof JSONArray) {
+      return PreparedStatementValueObject.create(
+          columnType, parseCassandraSet(columnType, (JSONArray) colValue));
+    } else if (columnType.startsWith("map<") && colValue instanceof JSONObject) {
+      return PreparedStatementValueObject.create(
+          columnType, parseCassandraMap(columnType, (JSONObject) colValue));
+    }
+
     switch (columnType) {
       case "ascii":
       case "text":
@@ -1176,6 +1192,106 @@ public class CassandraTypeHandler {
       default:
         return PreparedStatementValueObject.create(columnType, colValue);
     }
+  }
+
+  /**
+   * Parses a Cassandra list from the given JSON array.
+   *
+   * @param columnType the Cassandra column type (e.g., "list of int", "list of text")
+   * @param colValue the JSON array representing the list values
+   * @return a {@link List} containing parsed values, or an empty list if {@code colValue} is null
+   */
+  private static List<?> parseCassandraList(String columnType, JSONArray colValue) {
+    if (colValue == null) {
+      return Collections.emptyList();
+    }
+    String innerType = extractInnerType(columnType);
+    List<Object> parsedList = new ArrayList<>();
+    for (int i = 0; i < colValue.length(); i++) {
+      Object value = colValue.get(i);
+      parsedList.add(parseNestedType(innerType, value).value());
+    }
+    return parsedList;
+  }
+
+  /**
+   * Extracts the inner type of a Cassandra collection column (e.g., "list of int" -> "int").
+   *
+   * @param columnType the Cassandra column type
+   * @return the extracted inner type as a {@link String}
+   */
+  private static String extractInnerType(String columnType) {
+    return columnType.substring(columnType.indexOf('<') + 1, columnType.lastIndexOf('>'));
+  }
+
+  /**
+   * Extracts the key and value types from a Cassandra map column type (e.g., "map of int and
+   * text").
+   *
+   * @param columnType the Cassandra column type
+   * @return an array of two {@link String}s, where the first element is the key type and the second
+   *     element is the value type
+   */
+  private static String[] extractKeyValueTypes(String columnType) {
+    String innerTypes =
+        columnType.substring(columnType.indexOf('<') + 1, columnType.lastIndexOf('>'));
+    return innerTypes.split(",", 2);
+  }
+
+  /**
+   * Parses a nested Cassandra type from a given value.
+   *
+   * @param type the Cassandra column type (e.g., "int", "text", "map<int,text>")
+   * @param value the value to parse
+   * @return a {@link PreparedStatementValueObject} representing the parsed type
+   */
+  private static PreparedStatementValueObject<?> parseNestedType(String type, Object value) {
+    return parseAndGenerateCassandraType(type.trim(), value);
+  }
+
+  /**
+   * Parses a Cassandra set from the given JSON array.
+   *
+   * @param columnType the Cassandra column type (e.g., "set of int", "set of text")
+   * @param colValue the JSON array representing the set values
+   * @return a {@link Set} containing parsed values, or an empty set if {@code colValue} is null
+   */
+  private static Set<?> parseCassandraSet(String columnType, JSONArray colValue) {
+    if (colValue == null) {
+      return Collections.emptySet();
+    }
+    String innerType = extractInnerType(columnType);
+    Set<Object> parsedSet = new HashSet<>();
+    for (int i = 0; i < colValue.length(); i++) {
+      Object value = colValue.get(i);
+      parsedSet.add(parseNestedType(innerType, value).value());
+    }
+    return parsedSet;
+  }
+
+  /**
+   * Parses a Cassandra map from the given JSON object.
+   *
+   * @param columnType the Cassandra column type (e.g., "map of int and text")
+   * @param colValue the JSON object representing the map values
+   * @return a {@link Map} containing parsed key-value pairs, or an empty map if {@code colValue} is
+   *     null
+   */
+  private static Map<?, ?> parseCassandraMap(String columnType, JSONObject colValue) {
+    if (colValue == null) {
+      return Collections.emptyMap();
+    }
+    String[] keyValueTypes = extractKeyValueTypes(columnType);
+    String keyType = keyValueTypes[0];
+    String valueType = keyValueTypes[1];
+
+    Map<Object, Object> parsedMap = new HashMap<>();
+    for (String key : colValue.keySet()) {
+      Object parsedKey = parseNestedType(keyType, key).value();
+      Object parsedValue = parseNestedType(valueType, colValue.get(key)).value();
+      parsedMap.put(parsedKey, parsedValue);
+    }
+    return parsedMap;
   }
 
   /**

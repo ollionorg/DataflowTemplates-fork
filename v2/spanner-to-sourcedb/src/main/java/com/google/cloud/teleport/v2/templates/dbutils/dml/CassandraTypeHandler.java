@@ -1105,7 +1105,7 @@ public class CassandraTypeHandler {
    * @return A {@link PreparedStatementValueObject} containing the parsed column value.
    * @throws IllegalArgumentException If the column value cannot be converted to the specified type.
    */
-  private static PreparedStatementValueObject<?> parseAndGenerateCassandraType(
+  private static PreparedStatementValueObject<?> parseAndCastToCassandraType(
       String columnType, Object colValue) {
 
     if (columnType.startsWith("list<") && colValue instanceof JSONArray) {
@@ -1246,7 +1246,7 @@ public class CassandraTypeHandler {
    * @return a {@link PreparedStatementValueObject} representing the parsed type
    */
   private static PreparedStatementValueObject<?> parseNestedType(String type, Object value) {
-    return parseAndGenerateCassandraType(type.trim(), value);
+    return parseAndCastToCassandraType(type.trim(), value);
   }
 
   /**
@@ -1326,15 +1326,28 @@ public class CassandraTypeHandler {
       LOG.warn("Column value is null for column: {}, type: {}", columnName, spannerType);
       return PreparedStatementValueObject.create(cassandraType, null);
     }
+    return PreparedStatementValueObject.create(cassandraType, columnValue);
+  }
 
+  /**
+   * Casts the given column value to the expected type based on the Cassandra column type.
+   *
+   * <p>This method attempts to parse and cast the column value to a type compatible with the
+   * provided Cassandra column type using {@code parseAndGenerateCassandraType}. If the value cannot
+   * be cast correctly, an error is logged, and an exception is thrown.
+   *
+   * @param cassandraType the Cassandra data type of the column (e.g., "text", "bigint",
+   *     "list<text>")
+   * @param columnValue the value of the column to be cast
+   * @return the column value cast to the expected type
+   * @throws ClassCastException if the value cannot be cast to the expected type
+   * @throws IllegalArgumentException if the Cassandra type is unsupported or the value is invalid
+   */
+  public static Object castToExpectedType(String cassandraType, Object columnValue) {
     try {
-      return parseAndGenerateCassandraType(cassandraType, columnValue);
+      return parseAndCastToCassandraType(cassandraType, columnValue).value();
     } catch (ClassCastException | IllegalArgumentException e) {
-      LOG.error(
-          "Error converting value for column: {}, type: {}: {}",
-          columnName,
-          cassandraType,
-          e.getMessage());
+      LOG.error("Error converting value for column: {}, type: {}", cassandraType, e.getMessage());
       throw e;
     }
   }

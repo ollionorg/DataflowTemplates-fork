@@ -91,6 +91,7 @@ public class SourceProcessorFactoryTest {
     CassandraShard mockCassandraShard = Mockito.mock(CassandraShard.class);
     Mockito.when(mockCassandraShard.getContactPoints()).thenReturn(List.of("localhost:9042"));
     Mockito.when(mockCassandraShard.getKeySpaceName()).thenReturn("mydatabase");
+    Mockito.when(mockCassandraShard.getLogicalShardId()).thenReturn("shard1");
     Mockito.when(mockCassandraShard.getConsistencyLevel()).thenReturn("LOCAL_QUORUM");
     Mockito.when(mockCassandraShard.getProtocolVersion()).thenReturn("v5");
     Mockito.when(mockCassandraShard.getLocalPoolSize()).thenReturn(1024);

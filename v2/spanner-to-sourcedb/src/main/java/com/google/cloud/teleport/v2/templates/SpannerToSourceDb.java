@@ -419,15 +419,6 @@ public class SpannerToSourceDb {
     String getFilterEventsDirectoryName();
 
     void setFilterEventsDirectoryName(String value);
-
-    @TemplateParameter.GcsReadFile(
-        order = 10,
-        optional = false,
-        description = "Path to GCS file containing the the Cassandra Config details",
-        helpText = "Path to GCS file containing connection profile info for cassandra.")
-    String getCassandraConfigFilePath();
-
-    void setCassandraConfigFilePath(String value);
   }
 
   /**
@@ -550,7 +541,7 @@ public class SpannerToSourceDb {
       }
     } else {
       CassandraConfigFileReader cassandraConfigFileReader = new CassandraConfigFileReader();
-      shards = cassandraConfigFileReader.getCassandraShard(options.getCassandraConfigFilePath());
+      shards = cassandraConfigFileReader.getCassandraShard(options.getSourceShardsFilePath());
       LOG.info("Cassandra config is: {}", shards.get(0));
       if (shards.size() == 1) {
         shardingMode = Constants.SHARDING_MODE_SINGLE_SHARD;
@@ -656,9 +647,6 @@ public class SpannerToSourceDb {
                         options.getShardingCustomParameters(),
                         options.getMaxShardConnections()
                             * shards.size()))) // currently assuming that all mySqlShards
-            // accept the same// currently assuming
-            // that all shards accept the same
-            // number of max connections
             .setCoder(
                 KvCoder.of(
                     VarLongCoder.of(), SerializableCoder.of(TrimmedShardedDataChangeRecord.class)))

@@ -562,7 +562,7 @@ public class SpannerToSourceDb {
                   + Constants.DEFAULT_SHARD_ID);
         }
       } else {
-        throw new IllegalArgumentException("We have no options of shards in cassandra");
+        throw new IllegalArgumentException("Not Supporting more than one shard for cassandra");
       }
     }
     boolean isRegularMode = "regular".equals(options.getRunMode());

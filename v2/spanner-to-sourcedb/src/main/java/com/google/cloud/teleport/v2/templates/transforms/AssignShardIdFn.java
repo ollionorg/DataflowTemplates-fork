@@ -90,10 +90,6 @@ public class AssignShardIdFn
 
   private final Long maxConnectionsAcrossAllShards;
 
-  private final Long maxConnections;
-
-  private String sourceType;
-
   public AssignShardIdFn(
       SpannerConfig spannerConfig,
       Schema schema,
@@ -104,9 +100,7 @@ public class AssignShardIdFn
       String customJarPath,
       String shardingCustomClassName,
       String shardingCustomParameters,
-      Long maxConnectionsAcrossAllShards,
-      String sourceType,
-      Long maxConnections) {
+      Long maxConnectionsAcrossAllShards) {
     this.spannerConfig = spannerConfig;
     this.schema = schema;
     this.ddl = ddl;
@@ -117,8 +111,6 @@ public class AssignShardIdFn
     this.shardingCustomClassName = shardingCustomClassName;
     this.shardingCustomParameters = shardingCustomParameters;
     this.maxConnectionsAcrossAllShards = maxConnectionsAcrossAllShards;
-    this.sourceType = sourceType;
-    this.maxConnections = maxConnections;
   }
 
   // setSpannerAccessor is added to be used by unit tests
@@ -189,10 +181,9 @@ public class AssignShardIdFn
     String qualifiedShard = "";
     String tableName = record.getTableName();
     String keysJsonStr = record.getMod().getKeysJson();
-    Long finalKey;
+    long finalKey;
 
     try {
-      if ("mysql".equals(this.sourceType)) {
         if (shardingMode.equals(Constants.SHARDING_MODE_SINGLE_SHARD)) {
           record.setShard(this.shardName);
           qualifiedShard = this.shardName;
@@ -245,12 +236,6 @@ public class AssignShardIdFn
         record.setShard(qualifiedShard);
         String finalKeyString = tableName + "_" + keysJsonStr + "_" + qualifiedShard;
         finalKey = finalKeyString.hashCode() % maxConnectionsAcrossAllShards;
-      } else {
-        record.setShard(this.shardName);
-        qualifiedShard = this.shardName;
-        String finalKeyString = tableName + "_" + keysJsonStr + "_" + qualifiedShard;
-        finalKey = finalKeyString.hashCode() % maxConnections;
-      }
       c.output(KV.of(finalKey, record));
 
     } catch (Exception e) {

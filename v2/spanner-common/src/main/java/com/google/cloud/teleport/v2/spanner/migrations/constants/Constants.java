@@ -20,7 +20,6 @@ public class Constants {
 
   /* The source type value for MySql databases */
   public static final String MYSQL_SOURCE_TYPE = "mysql";
-  public static final String CASSANDRA_SOURCE_TYPE = "cassandra";
 
   /* The source type value for CASSANDRA databases */
   public static final String CASSANDRA_SOURCE_TYPE = "cassandra";

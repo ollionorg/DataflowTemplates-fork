@@ -83,7 +83,6 @@ public class CassandraConnectionHelper implements IConnectionHelper<CqlSession> 
 
       CassandraShard cassandraShard = (CassandraShard) shard;
       try {
-        cassandraShard.validate();
         CqlSession session = createCqlSession(cassandraShard);
         String connectionKey = generateConnectionKey(cassandraShard);
         connectionPoolMap.put(connectionKey, session);
@@ -137,15 +136,21 @@ public class CassandraConnectionHelper implements IConnectionHelper<CqlSession> 
    * @return A {@link CqlSession} instance.
    */
   private CqlSession createCqlSession(CassandraShard cassandraShard) {
-    CqlSessionBuilder builder =
-        CqlSession.builder()
-            .addContactPoint(
-                new InetSocketAddress(
-                    cassandraShard.getHost(), Integer.parseInt(cassandraShard.getPort())))
-            .withAuthCredentials(cassandraShard.getUserName(), cassandraShard.getPassword())
-            .withKeyspace(cassandraShard.getKeySpaceName());
+    CqlSessionBuilder builder = CqlSession.builder();
 
-    DriverConfigLoader configLoader = loadDriverConfig(cassandraShard.getConfigFilePath());
+    for (String contactPoint : cassandraShard.getContactPoints()) {
+      String[] parts = contactPoint.split(":");
+      String host = parts[0];
+      int port = Integer.parseInt(parts[1]);
+      builder.addContactPoint(new InetSocketAddress(host, port));
+    }
+
+    builder
+        .withAuthCredentials(cassandraShard.getUserName(), cassandraShard.getPassword())
+        .withKeyspace(cassandraShard.getKeySpaceName());
+
+    DriverConfigLoader configLoader = cassandraShard.getConfigLoader();
+    configLoader.getInitialConfig();
     builder.withConfigLoader(configLoader);
 
     return builder.build();

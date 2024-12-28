@@ -88,21 +88,16 @@ public class SourceProcessorFactoryTest {
 
   @Test
   public void testCreateSourceProcessor_cassandra_validSource() throws Exception {
-    List<Shard> shards =
-        Arrays.asList(
-            new CassandraShard(
-                "shard1",
-                "localhost",
-                "3306",
-                "myuser",
-                "mypassword",
-                "mydatabase",
-                "LOCAL_QUORUM",
-                false,
-                "v5",
-                "mynamespace",
-                1024,
-                1024));
+    CassandraShard mockCassandraShard = Mockito.mock(CassandraShard.class);
+    Mockito.when(mockCassandraShard.getContactPoints()).thenReturn(List.of("localhost:9042"));
+    Mockito.when(mockCassandraShard.getKeySpaceName()).thenReturn("mydatabase");
+    Mockito.when(mockCassandraShard.getLogicalShardId()).thenReturn("shard1");
+    Mockito.when(mockCassandraShard.getConsistencyLevel()).thenReturn("LOCAL_QUORUM");
+    Mockito.when(mockCassandraShard.getProtocolVersion()).thenReturn("v5");
+    Mockito.when(mockCassandraShard.getLocalPoolSize()).thenReturn(1024);
+    Mockito.when(mockCassandraShard.getRemotePoolSize()).thenReturn(1024);
+
+    List<Shard> shards = List.of(mockCassandraShard);
     int maxConnections = 10;
     CassandraConnectionHelper mockConnectionHelper = Mockito.mock(CassandraConnectionHelper.class);
     doNothing().when(mockConnectionHelper).init(any());

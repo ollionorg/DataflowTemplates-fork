@@ -7,11 +7,11 @@ import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceTable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-
+import org.mockito.MockitoAnnotations;
+import org.junit.jupiter.api.BeforeEach;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 import static org.mockito.Mockito.when;
 
 
@@ -27,6 +27,12 @@ class CassandraSourceMetadataTest {
     private Schema mockSchema;
 
     private CassandraSourceMetadata.Builder builder;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        builder = new CassandraSourceMetadata.Builder();
+    }
 
     @Test
     void testBuilderSetSchemaAndResultSet() {

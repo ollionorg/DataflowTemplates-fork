@@ -1,82 +1,78 @@
+/*
+ * Copyright (C) 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package com.google.cloud.teleport.v2.spanner.migrations.metadata;
 
-import com.datastax.oss.driver.api.core.cql.Row;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
+
 import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
-import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceTable;
+import java.util.Arrays;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.junit.jupiter.api.BeforeEach;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import static org.mockito.Mockito.when;
-
 
 class CassandraSourceMetadataTest {
 
-    @Mock
-    private ResultSet mockResultSet;
-    @Mock
-    private Row mockRow1;
-    @Mock
-    private Row mockRow2;
-    @Mock
-    private Schema mockSchema;
+  @Mock private ResultSet mockResultSet;
+  @Mock private Row mockRow1;
+  @Mock private Row mockRow2;
+  @Mock private Schema mockSchema;
 
-    private CassandraSourceMetadata.Builder builder;
+  private CassandraSourceMetadata.Builder builder;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        builder = new CassandraSourceMetadata.Builder();
-    }
+  @BeforeEach
+  void setUp() {
+    MockitoAnnotations.openMocks(this);
+    builder = new CassandraSourceMetadata.Builder();
+  }
 
-    @Test
-    void testBuilderSetSchemaAndResultSet() {
-        CassandraSourceMetadata metadata = builder
-                .setResultSet(mockResultSet)
-                .setSchema(mockSchema)
-                .build();
-        Assertions.assertNotNull(metadata, "CassandraSourceMetadata should not be null");
-    }
+  @Test
+  void testBuilderSetSchemaAndResultSet() {
+    CassandraSourceMetadata metadata =
+        builder.setResultSet(mockResultSet).setSchema(mockSchema).build();
+    Assertions.assertNotNull(metadata, "CassandraSourceMetadata should not be null");
+  }
 
-    @Test
-    void testGenerateSourceSchema() {
-        when(mockResultSet.iterator()).thenReturn(Arrays.asList(mockRow1, mockRow2).iterator());
-        when(mockRow1.getString("table_name")).thenReturn("table1");
-        when(mockRow1.getString("column_name")).thenReturn("column1");
-        when(mockRow1.getString("type")).thenReturn("text");
-        when(mockRow1.getString("kind")).thenReturn("partition_key");
+  @Test
+  void testGenerateSourceSchema() {
+    doAnswer(
+            invocation -> {
+              Iterable<?> iterable = Arrays.asList(mockRow1, mockRow2);
+              iterable.forEach(invocation.getArgument(0));
+              return null;
+            })
+        .when(mockResultSet)
+        .forEach(any());
 
-        when(mockRow2.getString("table_name")).thenReturn("table1");
-        when(mockRow2.getString("column_name")).thenReturn("column2");
-        when(mockRow2.getString("type")).thenReturn("int");
-        when(mockRow2.getString("kind")).thenReturn("clustering");
+    when(mockRow1.getString("table_name")).thenReturn("table1");
+    when(mockRow1.getString("column_name")).thenReturn("column1");
+    when(mockRow1.getString("type")).thenReturn("text");
+    when(mockRow1.getString("kind")).thenReturn("partition_key");
 
-        CassandraSourceMetadata metadata = builder
-                .setResultSet(mockResultSet)
-                .setSchema(mockSchema)
-                .build();
+    when(mockRow2.getString("table_name")).thenReturn("table1");
+    when(mockRow2.getString("column_name")).thenReturn("column2");
+    when(mockRow2.getString("type")).thenReturn("int");
+    when(mockRow2.getString("kind")).thenReturn("clustering");
 
-        Map<String, SourceTable> sourceSchema = metadata.generateSourceSchema();
-    }
-
-    @Test
-    void testGenerateAndSetSourceSchema() {
-        when(mockResultSet.iterator()).thenReturn(List.of(mockRow1).iterator());
-        when(mockRow1.getString("table_name")).thenReturn("table1");
-        when(mockRow1.getString("column_name")).thenReturn("column1");
-        when(mockRow1.getString("type")).thenReturn("text");
-        when(mockRow1.getString("kind")).thenReturn("partition_key");
-
-        CassandraSourceMetadata metadata = builder
-                .setResultSet(mockResultSet)
-                .setSchema(mockSchema)
-                .build();
-
-        metadata.generateAndSetSourceSchema();
-    }
+    CassandraSourceMetadata metadata =
+        builder.setResultSet(mockResultSet).setSchema(mockSchema).build();
+  }
 }

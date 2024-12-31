@@ -5,10 +5,8 @@ import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceTable;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,12 +27,6 @@ class CassandraSourceMetadataTest {
     private Schema mockSchema;
 
     private CassandraSourceMetadata.Builder builder;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        builder = new CassandraSourceMetadata.Builder();
-    }
 
     @Test
     void testBuilderSetSchemaAndResultSet() {

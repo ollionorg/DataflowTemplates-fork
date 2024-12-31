@@ -2,7 +2,8 @@ package com.google.cloud.teleport.v2.spanner.migrations.metadata;
 
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
-import com.google.cloud.teleport.v2.spanner.migrations.schema.*;
+import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
+import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceTable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

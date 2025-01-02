@@ -30,23 +30,26 @@ import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 import com.google.cloud.teleport.v2.templates.models.ConnectionHelperRequest;
 import java.util.Arrays;
 import java.util.Map;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 
-class CassandraConnectionHelperTest {
+@RunWith(JUnit4.class)
+public class CassandraConnectionHelperTest {
 
   @Mock private CassandraShard cassandraShard;
   @Mock private CassandraConnectionHelper connectionHelper;
 
-  @BeforeEach
-  void setUp() {
+  @Before
+  public void setUp() {
     connectionHelper = new CassandraConnectionHelper();
     cassandraShard = mock(CassandraShard.class);
   }
 
   @Test
-  void testInit_ShouldInitializeConnectionPool() {
+  public void testInit_ShouldInitializeConnectionPool() {
     when(cassandraShard.getHost()).thenReturn("localhost");
     when(cassandraShard.getPort()).thenReturn("9042");
     when(cassandraShard.getUserName()).thenReturn("user");
@@ -61,7 +64,7 @@ class CassandraConnectionHelperTest {
   }
 
   @Test
-  void testGetConnection_ShouldReturnValidSession() throws ConnectionException {
+  public void testGetConnection_ShouldReturnValidSession() throws ConnectionException {
     String connectionKey = "localhost:9042/user/mykeyspace";
     CqlSession mockSession = mock(CqlSession.class);
     connectionHelper.setConnectionPoolMap(Map.of(connectionKey, mockSession));
@@ -73,7 +76,7 @@ class CassandraConnectionHelperTest {
   }
 
   @Test
-  void testGetConnection_ShouldThrowException_WhenConnectionNotFound() {
+  public void testGetConnection_ShouldThrowException_WhenConnectionNotFound() {
     assertThrows(
         ConnectionException.class,
         () -> {
@@ -82,7 +85,7 @@ class CassandraConnectionHelperTest {
   }
 
   @Test
-  void testIsConnectionPoolInitialized_ShouldReturnTrue_WhenInitialized() {
+  public void testIsConnectionPoolInitialized_ShouldReturnTrue_WhenInitialized() {
     ConnectionHelperRequest request = mock(ConnectionHelperRequest.class);
     when(request.getShards()).thenReturn(Arrays.asList(mock(CassandraShard.class)));
     when(request.getMaxConnections()).thenReturn(10);
@@ -93,7 +96,7 @@ class CassandraConnectionHelperTest {
   }
 
   @Test
-  void testGetConnection_ShouldThrowConnectionException_WhenPoolNotInitialized() {
+  public void testGetConnection_ShouldThrowConnectionException_WhenPoolNotInitialized() {
     assertThrows(
         ConnectionException.class,
         () -> {
@@ -102,7 +105,7 @@ class CassandraConnectionHelperTest {
   }
 
   @Test
-  void testInit_ShouldHandleException_WhenCqlSessionCreationFails() {
+  public void testInit_ShouldHandleException_WhenCqlSessionCreationFails() {
     CassandraShard invalidShard = mock(CassandraShard.class);
     when(invalidShard.getHost()).thenReturn("localhost");
     when(invalidShard.getPort()).thenReturn("9042");
@@ -119,7 +122,8 @@ class CassandraConnectionHelperTest {
   }
 
   @Test
-  void testSetConnectionPoolMap_ShouldOverrideConnectionPoolMap() throws ConnectionException {
+  public void testSetConnectionPoolMap_ShouldOverrideConnectionPoolMap()
+      throws ConnectionException {
     CqlSession mockSession = mock(CqlSession.class);
     connectionHelper.setConnectionPoolMap(Map.of("localhost:9042/user/mykeyspace", mockSession));
 
@@ -129,7 +133,7 @@ class CassandraConnectionHelperTest {
   }
 
   @Test
-  void testGetConnectionPoolNotFound() {
+  public void testGetConnectionPoolNotFound() {
     connectionHelper.setConnectionPoolMap(Map.of());
 
     ConnectionException exception =
@@ -143,7 +147,7 @@ class CassandraConnectionHelperTest {
   }
 
   @Test
-  void testGetConnectionWhenPoolNotInitialized() {
+  public void testGetConnectionWhenPoolNotInitialized() {
     connectionHelper.setConnectionPoolMap(null);
     ConnectionException exception =
         assertThrows(
@@ -155,7 +159,7 @@ class CassandraConnectionHelperTest {
   }
 
   @Test
-  void testGetConnectionWithValidKey() throws ConnectionException {
+  public void testGetConnectionWithValidKey() throws ConnectionException {
     CqlSession mockSession = mock(CqlSession.class);
 
     String connectionKey = "localhost:9042/testuser/testKeyspace";
@@ -167,7 +171,7 @@ class CassandraConnectionHelperTest {
   }
 
   @Test
-  void testInit_ShouldThrowIllegalArgumentException_WhenInvalidShardTypeIsProvideds() {
+  public void testInit_ShouldThrowIllegalArgumentException_WhenInvalidShardTypeIsProvideds() {
     Shard invalidShard = mock(Shard.class);
     CassandraConnectionHelper connectionHelper = new CassandraConnectionHelper();
     ConnectionHelperRequest request = mock(ConnectionHelperRequest.class);

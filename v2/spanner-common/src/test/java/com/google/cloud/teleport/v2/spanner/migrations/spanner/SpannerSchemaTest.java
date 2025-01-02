@@ -15,8 +15,8 @@
  */
 package com.google.cloud.teleport.v2.spanner.migrations.spanner;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.cloud.teleport.v2.spanner.ddl.Ddl;

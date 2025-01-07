@@ -1,6 +1,0 @@
-{
-  "SchemaToShardId": {
-    "shard1": "id1",
-    "shard2": "id2"
-  }
-}

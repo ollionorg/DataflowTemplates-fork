@@ -1,3 +1,0 @@
-# keep this sorted
-com.google.cloud.teleport.v2.neo4j.model.sources.BigQuerySourceProvider
-com.google.cloud.teleport.v2.neo4j.model.sources.TextSourceProvider

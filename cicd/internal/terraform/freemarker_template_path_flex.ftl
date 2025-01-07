@@ -1,1 +1,0 @@
-container_spec_gcs_path = "gs://dataflow-templates-${r"${var.region}"}/latest/flex/${templateName}"

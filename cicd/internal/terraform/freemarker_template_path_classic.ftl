@@ -1,1 +1,0 @@
-template_gcs_path = "gs://dataflow-templates-${r"${var.region}"}/latest/${templateName}"

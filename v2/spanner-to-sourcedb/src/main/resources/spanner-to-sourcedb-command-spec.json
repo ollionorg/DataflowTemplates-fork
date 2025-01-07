@@ -1,7 +1,0 @@
-{
-  "mainClass": "com.google.cloud.teleport.v2.templates.SpannerToSourceDb",
-  "classPath": "/template/spanner-to-sourcedb/spanner-to-sourcedb-conscrypt.jar:/template/spanner-to-sourcedb/*:/template/spanner-to-sourcedb/libs/*:/template/spanner-to-sourcedb/classes",
-  "defaultParameterValues": {
-    "labels": "{\"goog-dataflow-provided-template-type\":\"flex\",\"goog-dataflow-provided-template-name\":\"spanner_to_sourcedb\"}"
-  }
-}

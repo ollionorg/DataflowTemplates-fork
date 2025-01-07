@@ -1,7 +1,0 @@
-{
-  "renamedTables":{
-    "Hello":"World",
-    "Singers":"Vocalists",
-    "Albums":"Records"
-  }
-}

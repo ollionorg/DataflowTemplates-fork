@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Google LLC
+ * Copyright (C) 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -58,8 +58,7 @@ public class CassandraDMLGeneratorTest {
   @Test
   public void tableNameMismatchAllColumnNameTypesMatch() {
     Schema schema =
-        SessionFileReader.read(
-            "src/test/resources/CassandraJson/cassandraAllDatatypeSession.json");
+        SessionFileReader.read("src/test/resources/CassandraJson/cassandraAllDatatypeSession.json");
     String tableName = "leChanteur";
     String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);
@@ -84,8 +83,7 @@ public class CassandraDMLGeneratorTest {
   @Test
   public void tableNameMatchColumnNameTypeMismatch() {
     Schema schema =
-        SessionFileReader.read(
-            "src/test/resources/CassandraJson/cassandraAllDatatypeSession.json");
+        SessionFileReader.read("src/test/resources/CassandraJson/cassandraAllDatatypeSession.json");
     String tableName = "Singers";
     String newValuesString = "{\"FirstName\":\"John\",\"LastName\":\"ll\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);
@@ -110,8 +108,7 @@ public class CassandraDMLGeneratorTest {
   @Test
   public void tableNameMatchSourceColumnNotPresentInSpanner() {
     Schema schema =
-        SessionFileReader.read(
-            "src/test/resources/CassandraJson/cassandraAllDatatypeSession.json");
+        SessionFileReader.read("src/test/resources/CassandraJson/cassandraAllDatatypeSession.json");
     String tableName = "Singers";
     String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);
@@ -137,8 +134,7 @@ public class CassandraDMLGeneratorTest {
   public void tableNameMatchSpannerColumnNotPresentInSource() {
 
     Schema schema =
-        SessionFileReader.read(
-            "src/test/resources/CassandraJson/cassandraAllDatatypeSession.json");
+        SessionFileReader.read("src/test/resources/CassandraJson/cassandraAllDatatypeSession.json");
     String tableName = "Singers";
     String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\",\"hb_shardId\":\"shardA\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);
@@ -209,8 +205,7 @@ public class CassandraDMLGeneratorTest {
   @Test
   public void primaryKeyMismatch() {
     Schema schema =
-        SessionFileReader.read(
-            "src/test/resources/CassandraJson/cassandraAllDatatypeSession.json");
+        SessionFileReader.read("src/test/resources/CassandraJson/cassandraAllDatatypeSession.json");
     String tableName = "Singers";
     String newValuesString = "{\"SingerId\":\"999\",\"LastName\":\"ll\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);

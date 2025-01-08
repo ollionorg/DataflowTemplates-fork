@@ -102,7 +102,7 @@ public class CassandraTypeHandlerTest {
     when(sourceColDef.getType()).thenReturn(new SourceColumnType("sourceType", myArray, myArray));
 
     Object result =
-            getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
+        getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
 
     assertNotNull(result);
   }
@@ -127,7 +127,7 @@ public class CassandraTypeHandlerTest {
     when(sourceColDef.getType()).thenReturn(new SourceColumnType("sourceType", myArray, myArray));
 
     Object result =
-            getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
+        getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
 
     assertNotNull(result);
   }
@@ -152,7 +152,7 @@ public class CassandraTypeHandlerTest {
     when(sourceColDef.getType()).thenReturn(new SourceColumnType("sourceType", myArray, myArray));
 
     Object result =
-            getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
+        getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
 
     assertNotNull(result);
   }
@@ -177,7 +177,7 @@ public class CassandraTypeHandlerTest {
     when(sourceColDef.getType()).thenReturn(new SourceColumnType("sourceType", myArray, myArray));
 
     Object result =
-            getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
+        getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
 
     assertNotNull(result);
   }
@@ -202,7 +202,7 @@ public class CassandraTypeHandlerTest {
     when(sourceColDef.getType()).thenReturn(new SourceColumnType("sourceType", myArray, myArray));
 
     Object result =
-            getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
+        getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
 
     assertNotNull(result);
   }
@@ -227,7 +227,7 @@ public class CassandraTypeHandlerTest {
     when(sourceColDef.getType()).thenReturn(new SourceColumnType("sourceType", myArray, myArray));
 
     Object result =
-            getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
+        getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
 
     assertNotNull(result);
   }
@@ -252,11 +252,10 @@ public class CassandraTypeHandlerTest {
     when(sourceColDef.getType()).thenReturn(new SourceColumnType("sourceType", myArray, myArray));
 
     assertThrows(
-            NullPointerException.class,
-            () -> {
-              getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
-            });
-
+        NullPointerException.class,
+        () -> {
+          getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
+        });
   }
 
   @Test
@@ -279,13 +278,10 @@ public class CassandraTypeHandlerTest {
     when(sourceColDef.getType()).thenReturn(new SourceColumnType("sourceType", myArray, myArray));
 
     Object result =
-            getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
+        getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
 
     assertNotNull(result);
   }
-
-
-
 
   @Test
   public void testGetColumnValueByTypeForDates() {
@@ -674,14 +670,15 @@ public class CassandraTypeHandlerTest {
         });
   }
 
-    @Test
-    public void testGetColumnValueByTypeForNullBothColumnDefs() {
-        JSONObject valuesJson = mock(JSONObject.class);
-        String sourceDbTimezoneOffset = "UTC";
+  @Test
+  public void testGetColumnValueByTypeForNullBothColumnDefs() {
+    JSONObject valuesJson = mock(JSONObject.class);
+    String sourceDbTimezoneOffset = "UTC";
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            getColumnValueByType(null, null, valuesJson, sourceDbTimezoneOffset);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          getColumnValueByType(null, null, valuesJson, sourceDbTimezoneOffset);
         });
-    }
-
+  }
 }

@@ -53,9 +53,7 @@ public class SourceProcessorFactory {
 
   static {
     dmlGeneratorMap.put(Constants.SOURCE_MYSQL, new MySQLDMLGenerator());
-    dmlGeneratorMap.put(
-        Constants.SOURCE_CASSANDRA,
-        new CassandraDMLGenerator());
+    dmlGeneratorMap.put(Constants.SOURCE_CASSANDRA, new CassandraDMLGenerator());
 
     connectionHelperMap.put(Constants.SOURCE_MYSQL, new JdbcConnectionHelper());
     connectionHelperMap.put(Constants.SOURCE_CASSANDRA, new CassandraConnectionHelper());

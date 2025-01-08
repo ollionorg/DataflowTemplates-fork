@@ -18,7 +18,6 @@ package com.google.cloud.teleport.v2.templates.dbutils.dao.source;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.google.cloud.teleport.v2.templates.dbutils.connection.IConnectionHelper;
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;

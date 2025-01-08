@@ -307,6 +307,21 @@ public class CassandraTypeHandler {
     return ByteBuffer.wrap(byteArray);
   }
 
+  /**
+   * Converts a hexadecimal string into a byte array.
+   *
+   * @param hex the hexadecimal string to be converted. It must have an even number of characters,
+   *     as each pair of characters represents one byte.
+   * @return a byte array representing the binary data equivalent of the hexadecimal string.
+   * @throws IllegalArgumentException if the input string contains non-hexadecimal characters.
+   *     <p>This method: 1. Calculates the length of the input string and initializes a byte array
+   *     of half the length, as two hexadecimal characters represent one byte. 2. Iterates through
+   *     the string in steps of two characters. 3. Converts each pair of characters into a single
+   *     byte by: - Extracting the numeric value of the first character (most significant 4 bits). -
+   *     Extracting the numeric value of the second character (least significant 4 bits). -
+   *     Combining the two values into a single byte. 4. Returns the resulting byte array.
+   *     <p>Example: Input: "4A3F" Output: byte[] { 0x4A, 0x3F }
+   */
   private static byte[] convertHexStringToByteArray(String hex) {
     int len = hex.length();
     byte[] data = new byte[len / 2];

@@ -36,7 +36,33 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Creates DML statements For Cassandra */
+/**
+ * A generator for creating Data Manipulation Language (DML) statements for Cassandra. Implements
+ * the {@link IDMLGenerator} interface to handle various types of DML operations, such as insert,
+ * update, delete, and upsert.
+ *
+ * <p>This class is designed to construct Cassandra-specific DML statements by mapping input data
+ * and schema information to query formats that align with Cassandra's syntax and structure. It also
+ * validates primary keys, handles data type conversions, and manages timestamps in queries.
+ *
+ * <p>Key Responsibilities:
+ *
+ * <ul>
+ *   <li>Generating upsert statements for inserting or updating records.
+ *   <li>Creating delete statements for rows identified by primary key values.
+ *   <li>Mapping input data to Cassandra-compatible column values.
+ *   <li>Handling specific data types and ensuring query compatibility with Cassandra.
+ * </ul>
+ *
+ * <p>Usage Example:
+ *
+ * <pre>{@code
+ * IDMLGenerator generator = new CassandraDMLGenerator();
+ * DMLGeneratorResponse response = generator.getDMLStatement(dmlGeneratorRequest);
+ * }</pre>
+ *
+ * @see IDMLGenerator
+ */
 public class CassandraDMLGenerator implements IDMLGenerator {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraDMLGenerator.class);
 

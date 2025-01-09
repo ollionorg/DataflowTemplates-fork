@@ -1,12 +1,6 @@
 {
-  "SessionName": "NewSession",
-  "EditorName": "",
-  "DatabaseType": "mysql",
-  "DatabaseName": "ui_demo",
-  "Dialect": "google_standard_sql",
-  "Notes": null,
-  "Tags": null,
-  "SpSchema": {
+    "SyntheticPKeys": {},
+     "SpSchema": {
       "t1": {
           "Name": "Singers",
           "ColIds": [
@@ -18,7 +12,7 @@
               "c5": {
                   "Name": "SingerId",
                   "T": {
-                      "Name": "int",
+                      "Name": "int64",
                       "Len": 0,
                       "IsArray": false
                   },
@@ -78,119 +72,51 @@
           "Id": "t1"
       }
   },
-  "SyntheticPKeys": {
-  },
-  "SrcSchema": {
-      "t1": {
-          "Name": "Singers",
-          "Schema": "ui_demo",
-          "ColIds": [
-              "c5",
-              "c6",
-              "c7"
-          ],
-          "ColDefs": {
-              "c5": {
-                  "Name": "SingerId",
-                  "Type": {
-                      "Name": "int",
-                      "Mods": null,
-                      "ArrayBounds": null
-                  },
-                  "NotNull": true,
-                  "Ignored": {
-                      "Check": false,
-                      "Identity": false,
-                      "Default": false,
-                      "Exclusion": false,
-                      "ForeignKey": false,
-                      "AutoIncrement": false
-                  },
-                  "Id": "c5"
-              },
-              "c6": {
-                  "Name": "FirstName",
-                  "Type": {
-                      "Name": "varchar",
-                      "Mods": [
-                          1024
-                      ],
-                      "ArrayBounds": null
-                  },
-                  "NotNull": false,
-                  "Ignored": {
-                      "Check": false,
-                      "Identity": false,
-                      "Default": false,
-                      "Exclusion": false,
-                      "ForeignKey": false,
-                      "AutoIncrement": false
-                  },
-                  "Id": "c6"
-              },
-              "c7": {
-                  "Name": "LastName",
-                  "Type": {
-                      "Name": "varchar",
-                      "Mods": [
-                          1024
-                      ],
-                      "ArrayBounds": null
-                  },
-                  "NotNull": false,
-                  "Ignored": {
-                      "Check": false,
-                      "Identity": false,
-                      "Default": false,
-                      "Exclusion": false,
-                      "ForeignKey": false,
-                      "AutoIncrement": false
-                  },
-                  "Id": "c7"
-              }
-          },
-          "PrimaryKeys": [
-              {
-                  "ColId": "c5",
-                  "Desc": false,
-                  "Order": 1
-              },
-              {
-                "ColId": "c6",
-                "Desc": false,
-                "Order": 2
-            }
-          ],
-          "ForeignKeys": null,
-          "Indexes": [
-              {
-                  "Name": "ind1",
-                  "Unique": false,
-                  "Keys": [
-                      {
-                          "ColId": "c5",
-                          "Desc": false,
-                          "Order": 1
-                      }
-                  ],
-                  "Id": "i9",
-                  "StoredColumnIds": null
-              }
-          ],
-          "Id": "t1"
-      }
-  },
-  "SchemaIssues": {
-      "t1": {
-          "c5": [
-              13,
-              18
-          ]
-      }
-  },
-  "Location": {},
-  "TimezoneOffset": "+00:00",
-  "SpDialect": "google_standard_sql",
-  "UniquePKey": {},
-  "Rules": []
+    "SrcSchema": {
+        "t1": {
+            "Name": "Singers",
+            "Schema": "ui_demo",
+            "ColIds": [
+                "c5",
+                "c6",
+                "c7"
+            ],
+            "ColDefs": {
+                "c5": {
+                    "Name": "SingerId",
+                    "Type": {
+                        "Name": "int"
+                    },
+                    "Id": "c5"
+                },
+                "c6": {
+                    "Name": "FirstName",
+                    "Type": {
+                        "Name": "varchar"
+                    },
+                    "Id": "c6"
+                },
+                "c7": {
+                    "Name": "LastName",
+                    "Type": {
+                        "Name": "varchar"
+                    },
+                    "Id": "c7"
+                }
+            },
+            "PrimaryKeys": [
+                {
+                    "ColId": "c5",
+                    "Desc": false,
+                    "Order": 1
+                },
+                {
+                    "ColId": "c6",
+                    "Desc": false,
+                    "Order": 2
+                }
+            ],
+            "Id": "t1"
+        }
+    }
 }

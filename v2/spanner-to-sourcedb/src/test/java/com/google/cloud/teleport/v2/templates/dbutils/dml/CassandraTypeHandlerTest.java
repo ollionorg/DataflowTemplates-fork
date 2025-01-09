@@ -776,7 +776,7 @@ public class CassandraTypeHandlerTest {
 
   @Test
   public void testCastToExpectedTypeForDate_InvalidString() {
-    String invalidDateString = "invalid-date"; // Not a valid date format
+    String invalidDateString = "invalid-date";
     IllegalArgumentException exception =
         assertThrows(
             IllegalArgumentException.class,
@@ -790,7 +790,7 @@ public class CassandraTypeHandlerTest {
 
   @Test
   public void testCastToExpectedTypeForDate_UnsupportedType() {
-    Integer unsupportedType = 123; // Unsupported type for date conversion
+    Integer unsupportedType = 123;
     IllegalArgumentException exception =
         assertThrows(
             IllegalArgumentException.class,
@@ -803,7 +803,7 @@ public class CassandraTypeHandlerTest {
 
   @Test
   public void testHandleCassandraVarintType_String() {
-    String validString = "12345678901234567890"; // A valid large number as a string
+    String validString = "12345678901234567890";
     Object result = CassandraTypeHandler.castToExpectedType("varint", validString);
     BigInteger expected = new BigInteger(validString);
     assertEquals(expected, result);
@@ -811,7 +811,7 @@ public class CassandraTypeHandlerTest {
 
   @Test
   public void testHandleCassandraVarintType_InvalidString() {
-    String invalidString = "invalid-number"; // Not a valid number string
+    String invalidString = "invalid-number";
     IllegalArgumentException exception =
         assertThrows(
             IllegalArgumentException.class,
@@ -824,8 +824,7 @@ public class CassandraTypeHandlerTest {
 
   @Test
   public void testHandleCassandraVarintType_ByteArray() {
-    byte[] validByteArray =
-        new byte[] {0, 0, 0, 0, 0, 0, 0, 10}; // Valid byte array representing a number
+    byte[] validByteArray = new byte[] {0, 0, 0, 0, 0, 0, 0, 10};
     Object result = CassandraTypeHandler.castToExpectedType("varint", validByteArray);
     BigInteger expected = new BigInteger(validByteArray);
     assertEquals(expected, result);
@@ -833,9 +832,7 @@ public class CassandraTypeHandlerTest {
 
   @Test
   public void testHandleCassandraVarintType_ByteBuffer() {
-    ByteBuffer byteBuffer =
-        ByteBuffer.wrap(
-            new byte[] {0, 0, 0, 0, 0, 0, 0, 20}); // ByteBuffer wrapping a valid byte array
+    ByteBuffer byteBuffer = ByteBuffer.wrap(new byte[] {0, 0, 0, 0, 0, 0, 0, 20});
     Object result = CassandraTypeHandler.castToExpectedType("varint", byteBuffer);
     BigInteger expected = new BigInteger(new byte[] {0, 0, 0, 0, 0, 0, 0, 20});
     assertEquals(expected, result);
@@ -843,7 +840,7 @@ public class CassandraTypeHandlerTest {
 
   @Test
   public void testHandleCassandraVarintType_UnsupportedType() {
-    Integer unsupportedType = 123; // Unsupported type for varint conversion
+    Integer unsupportedType = 123;
     IllegalArgumentException exception =
         assertThrows(
             IllegalArgumentException.class,

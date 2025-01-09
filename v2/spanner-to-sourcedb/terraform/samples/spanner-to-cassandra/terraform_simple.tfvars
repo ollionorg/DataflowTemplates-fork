@@ -25,7 +25,7 @@ dataflow_params = {
 
 shard_config = {
   host             = "10.0.0.2"
-  port             = "9402"
+  port             = "9042"
   username         = "ollion"
   password         = "Ollion_2023"
   keyspace         = "ecommerce"

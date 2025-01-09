@@ -1,42 +1,40 @@
 # Common Parameters
 common_params = {
-  project = "<YOUR_PROJECT_ID>" # Replace with your GCP project ID
-  region  = "<YOUR_GCP_REGION>" # Replace with your desired GCP region
+  project = "daring-fiber-439305-v4" # Replace with your GCP project ID
+  region  = "asia-south1" # Replace with your desired GCP region
 }
 
 # Dataflow parameters
 dataflow_params = {
   template_params = {
-    instance_id             = "<YOUR_SPANNER_INSTANCE_ID>" # Spanner instance ID
-    database_id             = "<YOUR_SPANNER_DATABASE_ID>" # Spanner database ID
+    instance_id             = "spanner-reverse-replication" # Spanner instance ID
+    database_id             = "ecommerce" # Spanner database ID
     local_session_file_path = "session.json"
+    source_type             = "cassandra"
   }
   runner_params = {
-    max_workers      = "<YOUR_MAX_WORKERS>"         # Maximum number of worker VMs
-    num_workers      = "<YOUR_NUM_WORKERS>"         # Initial number of worker VMs
-    machine_type     = "<YOUR_MACHINE_TYPE>"        # Machine type for worker VMs (e.g., "n2-standard-2")
-    network          = "<YOUR_VPC_NETWORK>"         # VPC network for the Dataflow job
-    subnetwork       = "<YOUR-FULL-PATH-SUBNETWORK" # Give the full path to the subnetwork
+    max_workers      = "1"         # Maximum number of worker VMs
+    num_workers      = "1"         # Initial number of worker VMs
+    machine_type     = "n2-standard-2"        # Machine type for worker VMs (e.g., "n2-standard-2")
+    network          = "reverse-replication"         # VPC network for the Dataflow job
+    subnetwork       = "reverse-replication-asia-south1" # Give the full path to the subnetwork
     ip_configuration = "WORKER_IP_PRIVATE"
+    sdk_container_image = "gcr.io/daring-fiber-439305-v4/templates/spanner-to-sourcedb:latest"
   }
 }
 
-# Shards
-shard_list = [
-  {
-    logicalShardId = "<YOUR_SHARD_ID1>"            # Value of the shard populated in Spanner
-    host           = "<YOUR_IP_ADDRESS"            # Public or private IP address of shard
-    user           = "<YOUR_USERNAME>"             # user of the source MySQL shard
-    password       = "<YOUR_PASSWORD>",            # password of the source MySQL shard. For production migrations, use the secretManagerUri variable instead.
-    port           = "<YOUR_PORT>"                 # Port, usually 3306
-    dbName         = "<YOUR_SOURCE_DATABASE_NAME>" # name of the source database to replicate to
-  },
-  {
-    logicalShardId = "<YOUR_SHARD_ID2>"
-    host           = "<YOUR_IP_ADDRESS>"
-    user           = "<YOUR_USERNAME>"
-    password       = "<YOUR_PASSWORD>",
-    port           = "<YOUR_PORT>"
-    dbName         = "<YOUR_SOURCE_DATABASE_NAME>"
-  }
-]
+shard_config = {
+  host             = "10.0.0.2"
+  port             = "9042"
+  username         = "ollion"
+  password         = "Ollion_2023"
+  keyspace         = "ecommerce"
+  consistencyLevel = "LOCAL_QUORUM"
+  sslOptions       = false
+  protocolVersion  = "v5"
+  dataCenter       = "datacenter1"
+  localPoolSize    = "2"
+  remotePoolSize   = "1"
+}
+
+cassandra_template_config_file = "./cassandra-config-template.conf"

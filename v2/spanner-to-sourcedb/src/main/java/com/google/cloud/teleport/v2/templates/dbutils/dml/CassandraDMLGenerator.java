@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Google LLC
+ * Copyright (C) 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -36,7 +36,33 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Creates DML statements For Cassandra. */
+/**
+ * A generator for creating Data Manipulation Language (DML) statements for Cassandra. Implements
+ * the {@link IDMLGenerator} interface to handle various types of DML operations, such as insert,
+ * update, delete, and upsert.
+ *
+ * <p>This class is designed to construct Cassandra-specific DML statements by mapping input data
+ * and schema information to query formats that align with Cassandra's syntax and structure. It also
+ * validates primary keys, handles data type conversions, and manages timestamps in queries.
+ *
+ * <p>Key Responsibilities:
+ *
+ * <ul>
+ *   <li>Generating upsert statements for inserting or updating records.
+ *   <li>Creating delete statements for rows identified by primary key values.
+ *   <li>Mapping input data to Cassandra-compatible column values.
+ *   <li>Handling specific data types and ensuring query compatibility with Cassandra.
+ * </ul>
+ *
+ * <p>Usage Example:
+ *
+ * <pre>{@code
+ * IDMLGenerator generator = new CassandraDMLGenerator();
+ * DMLGeneratorResponse response = generator.getDMLStatement(dmlGeneratorRequest);
+ * }</pre>
+ *
+ * @see IDMLGenerator
+ */
 public class CassandraDMLGenerator implements IDMLGenerator {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraDMLGenerator.class);
 
@@ -121,6 +147,24 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     }
   }
 
+  /**
+   * Generates an upsert (insert or update) DML statement for a given Spanner table based on the
+   * provided source table, request parameters, and primary key column values.
+   *
+   * @param spannerTable the Spanner table metadata containing column definitions and constraints.
+   * @param sourceTable the source table metadata containing the table name and structure.
+   * @param dmlGeneratorRequest the request containing new values, key values, and timezone offset
+   *     for generating the DML.
+   * @param pkColumnNameValues a map of primary key column names and their corresponding prepared
+   *     statement value objects.
+   * @return a {@link DMLGeneratorResponse} containing the generated upsert statement and associated
+   *     data.
+   *     <p>This method: 1. Extracts column values from the provided request using the
+   *     `getColumnValues` method. 2. Combines the column values with the primary key column values.
+   *     3. Constructs the upsert statement using the `getUpsertStatementCQL` method.
+   *     <p>The upsert statement ensures that the record is inserted or updated in the Spanner table
+   *     based on the primary key.
+   */
   private static DMLGeneratorResponse generateUpsertStatement(
       SpannerTable spannerTable,
       SourceTable sourceTable,
@@ -140,6 +184,26 @@ public class CassandraDMLGenerator implements IDMLGenerator {
         pkColumnNameValues);
   }
 
+  /**
+   * Constructs an upsert (insert or update) CQL statement for a Cassandra or similar database using
+   * the provided table name, timestamp, column values, and primary key values.
+   *
+   * @param tableName the name of the table to which the upsert statement applies.
+   * @param timestamp the timestamp (in microseconds) to use for the operation.
+   * @param columnNameValues a map of column names and their corresponding prepared statement value
+   *     objects for non-primary key columns.
+   * @param pkColumnNameValues a map of primary key column names and their corresponding prepared
+   *     statement value objects.
+   * @return a {@link DMLGeneratorResponse} containing the generated CQL statement and a list of
+   *     values to be used with the prepared statement.
+   *     <p>This method: 1. Iterates through the primary key and column values, appending column
+   *     names and placeholders to the generated CQL statement. 2. Constructs the `INSERT INTO` CQL
+   *     statement with the provided table name, columns, and placeholders. 3. Appends a `USING
+   *     TIMESTAMP` clause to include the provided timestamp in the statement. 4. Creates a list of
+   *     values to bind to the placeholders in the prepared statement.
+   *     <p>The returned response contains the complete prepared CQL statement and the values
+   *     required to execute it.
+   */
   private static DMLGeneratorResponse getUpsertStatementCQL(
       String tableName,
       long timestamp,
@@ -163,7 +227,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     for (Map.Entry<String, PreparedStatementValueObject<?>> entry : columnNameValues.entrySet()) {
       String colName = entry.getKey();
       PreparedStatementValueObject<?> colValue = entry.getValue();
-      if (colValue.value() != null) {
+      if (colValue.value() != CassandraTypeHandler.NullClass.INSTANCE) {
         allColumns.append(colName).append(", ");
         placeholders.append("?, ");
         values.add(colValue);
@@ -193,6 +257,24 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     return new PreparedStatementGeneratedResponse(preparedStatement, values);
   }
 
+  /**
+   * Constructs a delete statement in CQL (Cassandra Query Language) using the provided table name,
+   * primary key values, and timestamp.
+   *
+   * @param tableName the name of the table from which records will be deleted.
+   * @param pkColumnNameValues a map containing the primary key column names and their corresponding
+   *     prepared statement value objects.
+   * @param timestamp the timestamp (in microseconds) to use for the delete operation.
+   * @return a {@link DMLGeneratorResponse} containing the generated CQL delete statement and a list
+   *     of values to bind to the prepared statement.
+   *     <p>This method: 1. Iterates through the provided primary key column values, appending
+   *     conditions to the WHERE clause of the CQL delete statement. 2. Constructs the `DELETE FROM`
+   *     CQL statement with the specified table name, primary key conditions, and a `USING
+   *     TIMESTAMP` clause. 3. Creates a list of values to be used with the prepared statement,
+   *     including the timestamp.
+   *     <p>If no primary key column values are provided, an empty WHERE clause is generated. An
+   *     exception may be thrown if any value type does not match the expected type.
+   */
   private static DMLGeneratorResponse getDeleteStatementCQL(
       String tableName,
       Map<String, PreparedStatementValueObject<?>> pkColumnNameValues,
@@ -204,7 +286,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     for (Map.Entry<String, PreparedStatementValueObject<?>> entry : pkColumnNameValues.entrySet()) {
       String colName = entry.getKey();
       PreparedStatementValueObject<?> colValue = entry.getValue();
-      if (colValue.value() != null) {
+      if (colValue.value() != CassandraTypeHandler.NullClass.INSTANCE) {
         deleteConditions.append(colName).append(" = ? AND ");
         values.add(entry.getValue());
       }
@@ -224,6 +306,22 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     return new PreparedStatementGeneratedResponse(preparedStatement, values);
   }
 
+  /**
+   * Extracts the column values from the source table based on the provided Spanner schema, new
+   * values, and key values JSON objects.
+   *
+   * @param spannerTable the Spanner table schema.
+   * @param sourceTable the source table schema.
+   * @param newValuesJson the JSON object containing new values for columns.
+   * @param keyValuesJson the JSON object containing key values for columns.
+   * @param sourceDbTimezoneOffset the timezone offset of the source database.
+   * @return a map of column names to their corresponding prepared statement value objects.
+   *     <p>This method: 1. Iterates over the non-primary key column definitions in the source table
+   *     schema. 2. Maps each column in the source table schema to its corresponding column in the
+   *     Spanner schema. 3. Checks if the column values exist in the `keyValuesJson` or
+   *     `newValuesJson` and retrieves the appropriate value. 4. Skips columns that do not exist in
+   *     any of the JSON objects or are marked as null.
+   */
   private static Map<String, PreparedStatementValueObject<?>> getColumnValues(
       SpannerTable spannerTable,
       SourceTable sourceTable,
@@ -231,20 +329,6 @@ public class CassandraDMLGenerator implements IDMLGenerator {
       JSONObject keyValuesJson,
       String sourceDbTimezoneOffset) {
     Map<String, PreparedStatementValueObject<?>> response = new HashMap<>();
-
-    /*
-    Get all non-primary key col ids from source table
-    For each - get the corresponding column name from spanner Schema
-    if the column cannot be found in spanner schema - continue to next,
-      as the column will be stored with default/null values
-    check if the column name found in Spanner schema exists in keyJson -
-      if so, get the string value
-    else
-    check if the column name found in Spanner schema exists in valuesJson -
-      if so, get the string value
-    if the column does not exist in any of the JSON - continue to next,
-      as the column will be stored with default/null values
-    */
     Set<String> sourcePKs = sourceTable.getPrimaryKeySet();
     for (Map.Entry<String, SourceColumnDefinition> entry : sourceTable.getColDefs().entrySet()) {
       SourceColumnDefinition sourceColDef = entry.getValue();
@@ -287,6 +371,23 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     return response;
   }
 
+  /**
+   * Extracts the primary key column values from the source table based on the provided Spanner
+   * schema, new values, and key values JSON objects.
+   *
+   * @param spannerTable the Spanner table schema.
+   * @param sourceTable the source table schema.
+   * @param newValuesJson the JSON object containing new values for columns.
+   * @param keyValuesJson the JSON object containing key values for columns.
+   * @param sourceDbTimezoneOffset the timezone offset of the source database.
+   * @return a map of primary key column names to their corresponding prepared statement value
+   *     objects, or null if a required column is missing.
+   *     <p>This method: 1. Iterates over the primary key definitions in the source table schema. 2.
+   *     Maps each primary key column in the source table schema to its corresponding column in the
+   *     Spanner schema. 3. Checks if the primary key column values exist in the `keyValuesJson` or
+   *     `newValuesJson` and retrieves the appropriate value. 4. Returns null if any required
+   *     primary key column is missing in the JSON objects.
+   */
   private static Map<String, PreparedStatementValueObject<?>> getPkColumnValues(
       SpannerTable spannerTable,
       SourceTable sourceTable,
@@ -294,17 +395,6 @@ public class CassandraDMLGenerator implements IDMLGenerator {
       JSONObject keyValuesJson,
       String sourceDbTimezoneOffset) {
     Map<String, PreparedStatementValueObject<?>> response = new HashMap<>();
-    /*
-    Get all primary key col ids from source table
-    For each - get the corresponding column name from spanner Schema
-    if the column cannot be found in spanner schema - return null
-    check if the column name found in Spanner schema exists in keyJson -
-      if so, get the string value
-    else
-    check if the column name found in Spanner schema exists in valuesJson -
-      if so, get the string value
-    if the column does not exist in any of the JSON - return null
-    */
     ColumnPK[] sourcePKs = sourceTable.getPrimaryKeys();
 
     for (ColumnPK currentSourcePK : sourcePKs) {
@@ -346,6 +436,19 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     return response;
   }
 
+  /**
+   * Maps a column value from the source table to its corresponding Spanner column value based on
+   * their respective definitions.
+   *
+   * @param spannerColDef the Spanner column definition.
+   * @param sourceColDef the source column definition.
+   * @param valuesJson the JSON object containing column values.
+   * @param sourceDbTimezoneOffset the timezone offset of the source database.
+   * @return a {@link PreparedStatementValueObject} containing the mapped value for the column.
+   *     <p>This method: 1. Retrieves the value of the column from the JSON object. 2. Converts the
+   *     value to the appropriate type based on the Spanner and source column definitions. 3. Uses a
+   *     type handler to map the value if necessary.
+   */
   private static PreparedStatementValueObject<?> getMappedColumnValue(
       SpannerColumnDefinition spannerColDef,
       SourceColumnDefinition sourceColDef,

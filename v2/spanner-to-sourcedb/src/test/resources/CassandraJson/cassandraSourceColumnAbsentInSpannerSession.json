@@ -1,11 +1,4 @@
 {
-  "SessionName": "NewSession",
-  "EditorName": "",
-  "DatabaseType": "cassandra",
-  "DatabaseName": "ui_demo",
-  "Dialect": "google_standard_sql",
-  "Notes": null,
-  "Tags": null,
   "SpSchema": {
       "t1": {
           "Name": "Singers",
@@ -308,12 +301,7 @@
           "Id": "t4"
       }
   },
-  "SyntheticPKeys": {
-      "t4": {
-          "ColId": "c22",
-          "Sequence": 0
-      }
-  },
+    "SyntheticPKeys": {},
   "SrcSchema": {
       "t1": {
           "Name": "Singers",
@@ -740,36 +728,5 @@
           "Indexes": null,
           "Id": "t4"
       }
-  },
-  "SchemaIssues": {
-      "t1": {
-          "c5": [
-              13,
-              18
-          ]
-      },
-      "t2": {
-          "c18": [
-              13
-          ],
-          "c19": [
-              13
-          ]
-      },
-      "t3": {
-          "c10": [
-              13
-          ]
-      },
-      "t4": {
-          "c13": [
-              13
-          ]
-      }
-  },
-  "Location": {},
-  "TimezoneOffset": "+00:00",
-  "SpDialect": "google_standard_sql",
-  "UniquePKey": {},
-  "Rules": []
+  }
 }

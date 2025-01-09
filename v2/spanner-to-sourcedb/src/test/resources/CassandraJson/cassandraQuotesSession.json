@@ -1,10 +1,4 @@
 {
-  "SessionName": "NewSession",
-  "EditorName": "",
-  "DatabaseType": "cassandra",
-  "DatabaseName": "test",
-  "Notes": null,
-  "Tags": null,
   "SpSchema": {
     "sample_table": {
       "Name": "sample_table",
@@ -149,19 +143,6 @@
       "Id": "t1"
     }
   },
-  "Issues": {
-    "sample_table": {
-      "blob_column": [
-        0
-      ],
-      "id": [
-        13
-      ],
-      "varchar_column": [
-        0
-      ]
-    }
-  },
   "ToSpanner": {
     "sample_table": {
       "Name": "sample_table",
@@ -182,37 +163,6 @@
         "id": "id",
        
         "varchar_column": "varchar_column"
-      }
-    }
-  },
-  "UsedNames": {
-    "sample_table": true
-  },
-  "Location": {},
-  "Stats": {
-    "Rows": {},
-    "GoodRows": {},
-    "BadRows": {},
-    "Statement": {},
-    "Unexpected": {},
-    "Reparsed": 0
-  },
-  "TimezoneOffset": "+00:00",
-  "TargetDb": "spanner",
-  "UniquePKey": {},
-  "Audit": {
-    "ToSpannerFkIdx": {
-      "sample_table": {
-        "Name": "sample_table",
-        "ForeignKey": {},
-        "Index": {}
-      }
-    },
-    "ToSourceFkIdx": {
-      "sample_table": {
-        "Name": "sample_table",
-        "ForeignKey": {},
-        "Index": {}
       }
     }
   }

@@ -56,7 +56,7 @@ public class CassandraTypeHandler {
    * the string representation "NULL_CLASS". This can be used to signify a special state where an
    * object is not present or explicitly set to null.
    */
-  public static final class NULL_CLASS {
+  public static final class NullClass {
 
     /**
      * Private constructor to prevent instantiation of the NULL_CLASS.
@@ -64,7 +64,7 @@ public class CassandraTypeHandler {
      * <p>This ensures that only one instance of the NULL_CLASS exists, following the singleton
      * pattern.
      */
-    private NULL_CLASS() {}
+    private NullClass() {}
 
     /**
      * The singleton instance of the NULL_CLASS.
@@ -72,7 +72,7 @@ public class CassandraTypeHandler {
      * <p>This instance can be accessed statically via this field to represent a "null" or empty
      * value in various contexts.
      */
-    public static final NULL_CLASS INSTANCE = new NULL_CLASS();
+    public static final NullClass INSTANCE = new NullClass();
 
     /**
      * Returns the string representation of the NULL_CLASS instance.
@@ -968,7 +968,7 @@ public class CassandraTypeHandler {
 
     if (columnValue == null) {
       LOG.warn("Column value is null for column: {}, type: {}", columnName, spannerType);
-      return PreparedStatementValueObject.create(cassandraType, NULL_CLASS.INSTANCE);
+      return PreparedStatementValueObject.create(cassandraType, NullClass.INSTANCE);
     }
     return PreparedStatementValueObject.create(cassandraType, columnValue);
   }

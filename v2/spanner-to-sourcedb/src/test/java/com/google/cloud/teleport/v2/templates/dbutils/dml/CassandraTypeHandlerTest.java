@@ -264,7 +264,7 @@ public class CassandraTypeHandlerTest {
     PreparedStatementValueObject preparedStatementValueObject =
         getColumnValueByType(spannerColDef, sourceColDef, valuesJson, sourceDbTimezoneOffset);
 
-    assertEquals(CassandraTypeHandler.NULL_CLASS.INSTANCE, preparedStatementValueObject.value());
+    assertEquals(CassandraTypeHandler.NullClass.INSTANCE, preparedStatementValueObject.value());
   }
 
   @Test

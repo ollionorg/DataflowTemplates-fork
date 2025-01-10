@@ -144,6 +144,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
   /** Setup function connects to Cloud Spanner. */
   @Setup
   public void setup() throws UnsupportedSourceException {
+    LOG.info("Applying Source Written Function");
     mapper = new ObjectMapper();
     mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
     sourceProcessor =
@@ -162,20 +163,25 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
 
   @ProcessElement
   public void processElement(ProcessContext c) {
+    LOG.info("Process Element for Source Written Function");
     KV<Long, TrimmedShardedDataChangeRecord> element = c.element();
     TrimmedShardedDataChangeRecord spannerRec = element.getValue();
     String shardId = spannerRec.getShard();
+    LOG.info("shardId " + shardId);
     if (shardId == null) {
+      LOG.info("Skipping becasue of Shard is null");
       // no shard found, move to permanent error
       outputWithTag(
           c, Constants.PERMANENT_ERROR_TAG, Constants.SHARD_NOT_PRESENT_ERROR_MESSAGE, spannerRec);
     } else if (shardId.equals(skipDirName)) {
+      LOG.info("Skipping because It is under Skip Dir Name");
       // the record is skipped
       skippedRecordCountMetric.inc();
       outputWithTag(c, Constants.SKIPPED_TAG, Constants.SKIPPED_TAG_MESSAGE, spannerRec);
     } else {
       // Get the latest commit timestamp processed at source
       try {
+        LOG.info("Executing Record");
         JsonNode keysJson = mapper.readTree(spannerRec.getMod().getKeysJson());
         String tableName = spannerRec.getTableName();
         com.google.cloud.spanner.Key primaryKey =
@@ -199,6 +205,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
                             == 0
                         && shadowTableRecord.getRecordSequence()
                             > Long.parseLong(spannerRec.getRecordSequence())));
+        LOG.info("isSourceAhead " + isSourceAhead);
 
         if (!isSourceAhead) {
           IDao sourceDao = sourceProcessor.getSourceDao(shardId);

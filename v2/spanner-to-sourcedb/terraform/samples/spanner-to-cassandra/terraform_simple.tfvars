@@ -2,6 +2,7 @@
 common_params = {
   project = "daring-fiber-439305-v4" # Replace with your GCP project ID
   region  = "asia-south1" # Replace with your desired GCP region
+  target_tags = ["reverse-replication-cassandra"] # Target tags for the firewall rule
 }
 
 # Dataflow parameters
@@ -24,10 +25,10 @@ dataflow_params = {
 }
 
 shard_config = {
-  host             = "10.0.0.2"
+  host             = "35.244.21.233"
   port             = "9042"
   username         = "ollion"
-  password         = "Ollion_2023"
+  password         = "ollion_2024"
   keyspace         = "ecommerce"
   consistencyLevel = "LOCAL_QUORUM"
   sslOptions       = false

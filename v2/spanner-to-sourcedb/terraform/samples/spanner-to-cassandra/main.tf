@@ -61,7 +61,22 @@ resource "google_compute_firewall" "allow_dataflow_to_source" {
   }
   source_tags = ["dataflow"]
   target_tags = var.common_params.target_tags
-  source_ranges = ["0.0.0.0/0"]
+}
+
+# Setup network firewalls rules to enable Dataflow VMs to talk to each other
+resource "google_compute_firewall" "allow_dataflow_vms_communication" {
+  depends_on  = [google_project_service.enabled_apis]
+  project     = var.common_params.host_project != null ? var.common_params.host_project : var.common_params.project
+  name        = "allow-dataflow-vms-communication"
+  network     = var.dataflow_params.runner_params.network != null ? var.common_params.host_project != null ? "projects/${var.common_params.host_project}/global/networks/${var.dataflow_params.runner_params.network}" : "projects/${var.common_params.project}/global/networks/${var.dataflow_params.runner_params.network}" : "default"
+  description = "Allow traffic between Dataflow VMs"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["12345", "12346"]
+  }
+  source_tags = ["dataflow"]
+  target_tags = ["dataflow"]
 }
 
 # GCS bucket for holding configuration objects

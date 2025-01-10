@@ -1,17 +1,16 @@
 resource "random_pet" "migration_id" {
   prefix = "spanner-csdr"
-}
+} 
 
 resource "null_resource" "replace_keys" {
   triggers = {
     always_run = timestamp()
   }
   provisioner "local-exec" {
-    command = <<-EOT
-    sed "s~##host##~${var.shard_config.host}~g; s~##port##~${var.shard_config.port}~g; s~##keyspace##~${var.shard_config.keyspace}~g; s~##dataCenter##~${var.shard_config.dataCenter}~g; s~##localPoolSize##~${var.shard_config.localPoolSize}~g; s~##remotePoolSize##~${var.shard_config.remotePoolSize}~g; s~##username##~${var.shard_config.username}~g; s~##password##~${var.shard_config.password}~g; s~##sslOptions##~${var.shard_config.sslOptions}~g; s~##protocolVersion##~${var.shard_config.protocolVersion}~g; s~##consistency##~${var.shard_config.consistencyLevel}~g;" ${var.cassandra_template_config_file} > "cassandra-config.conf"
-    EOT
+    interpreter = ["/bin/bash", "-c"]
+    command = "sed \"s~##host##~${var.shard_config.host}~g; s~##port##~${var.shard_config.port}~g; s~##keyspace##~${var.shard_config.keyspace}~g; s~##dataCenter##~${var.shard_config.dataCenter}~g; s~##username##~${var.shard_config.username}~g; s~##password##~${var.shard_config.password}~g\" ${var.cassandra_template_config_file} > cassandra-config.conf"
   }
-}
+}  
 
 # Upload the modified .conf file to the GCS bucket
 resource "google_storage_bucket_object" "shard_config" {
@@ -19,7 +18,8 @@ resource "google_storage_bucket_object" "shard_config" {
   bucket     = google_storage_bucket.reverse_replication_bucket.id
   source     = "./cassandra-config.conf"
   depends_on = [google_project_service.enabled_apis, null_resource.replace_keys]
-}
+  # depends_on = [google_project_service.enabled_apis]  
+} 
 
 locals {
   migration_id  = var.common_params.migration_id != null ? var.common_params.migration_id : random_pet.migration_id.id
@@ -41,6 +41,7 @@ resource "google_compute_firewall" "allow_dataflow_to_source" {
   }
   source_tags = ["dataflow"]
   target_tags = var.common_params.target_tags
+  source_ranges = ["0.0.0.0/0"]
 }
 
 # GCS bucket for holding configuration objects
@@ -164,7 +165,7 @@ resource "google_dataflow_flex_template_job" "reverse_replication_job" {
     google_project_service.enabled_apis, google_project_iam_member.reverse_replication_roles, google_spanner_database.reverse_replication_metadata_database, null_resource.create_spanner_change_stream, google_pubsub_subscription.dlq_pubsub_subscription
   ] # Launch the template once the stream is created.
   provider                = google-beta
-#   container_spec_gcs_path = "gs://dataflow-templates-${var.common_params.region}/latest/flex/Spanner_to_SourceDb"
+  # container_spec_gcs_path = "gs://dataflow-templates-${var.common_params.region}/latest/flex/Spanner_to_SourceDb"
   container_spec_gcs_path = "gs://dataflow-templates-spanner-to-cassandra/templates/flex/Spanner_to_SourceDb"
   # Parameters from Dataflow Template
   parameters = {

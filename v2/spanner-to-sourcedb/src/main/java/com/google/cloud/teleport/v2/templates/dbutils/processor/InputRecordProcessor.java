@@ -60,7 +60,7 @@ public class InputRecordProcessor {
       throws Exception {
 
     try {
-
+      LOG.info("Input Recodr is going to Process");
       String tableName = spannerRecord.getTableName();
       String modType = spannerRecord.getModType().name();
       String keysJsonStr = spannerRecord.getMod().getKeysJson();
@@ -68,7 +68,7 @@ public class InputRecordProcessor {
       JSONObject newValuesJson = new JSONObject(newValueJsonStr);
       JSONObject keysJson = new JSONObject(keysJsonStr);
       Map<String, Object> customTransformationResponse = null;
-
+      LOG.info("Input Recodr is going to Process for " + tableName);
       if (spannerToSourceTransformer != null) {
         org.joda.time.Instant startTimestamp = org.joda.time.Instant.now();
         Map<String, Object> mapRequest =

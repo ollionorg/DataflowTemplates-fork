@@ -177,6 +177,7 @@ public class AssignShardIdFn
    */
   @ProcessElement
   public void processElement(ProcessContext c) throws Exception {
+    LOG.info("Going to Process Element for Assign Shard ID");
     TrimmedShardedDataChangeRecord record = new TrimmedShardedDataChangeRecord(c.element());
     String qualifiedShard = "";
     String tableName = record.getTableName();
@@ -233,6 +234,7 @@ public class AssignShardIdFn
       record.setShard(qualifiedShard);
       String finalKeyString = tableName + "_" + keysJsonStr + "_" + qualifiedShard;
       finalKey = finalKeyString.hashCode() % maxConnectionsAcrossAllShards;
+      LOG.info(" Generated Final Key for Assign Shard Id " + finalKey + " " + finalKeyString);
       c.output(KV.of(finalKey, record));
 
     } catch (Exception e) {

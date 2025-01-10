@@ -105,6 +105,7 @@ public class SourceProcessorFactoryTest {
             Constants.SOURCE_CASSANDRA, shards, maxConnections);
 
     Assert.assertNotNull(processor);
+
     Assert.assertTrue(processor.getDmlGenerator() instanceof CassandraDMLGenerator);
     Assert.assertEquals(1, processor.getSourceDaoMap().size());
     Assert.assertTrue(processor.getSourceDaoMap().get("shard1") instanceof CassandraDao);

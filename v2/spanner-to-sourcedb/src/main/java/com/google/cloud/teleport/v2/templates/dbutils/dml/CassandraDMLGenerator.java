@@ -74,10 +74,10 @@ public class CassandraDMLGenerator implements IDMLGenerator {
   @Override
   public DMLGeneratorResponse getDMLStatement(DMLGeneratorRequest dmlGeneratorRequest) {
     if (dmlGeneratorRequest == null) {
-      LOG.warn("DMLGeneratorRequest is null. Cannot process the request.");
+      LOG.info("DMLGeneratorRequest is null. Cannot process the request.");
       return new DMLGeneratorResponse("");
     }
-
+    LOG.info("DMLGeneratorRequest is not null, process the request.");
     String spannerTableName = dmlGeneratorRequest.getSpannerTableName();
     Schema schema = dmlGeneratorRequest.getSchema();
 
@@ -85,13 +85,13 @@ public class CassandraDMLGenerator implements IDMLGenerator {
         || schema.getSpannerToID() == null
         || schema.getSpSchema() == null
         || schema.getSrcSchema() == null) {
-      LOG.warn("Schema is invalid or incomplete for table: {}", spannerTableName);
+      LOG.info("Schema is invalid or incomplete for table: {}", spannerTableName);
       return new DMLGeneratorResponse("");
     }
 
     NameAndCols tableMapping = schema.getSpannerToID().get(spannerTableName);
     if (tableMapping == null) {
-      LOG.warn(
+      LOG.info(
           "Spanner table {} not found in session file. Dropping the record.", spannerTableName);
       return new DMLGeneratorResponse("");
     }
@@ -99,20 +99,20 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     String spannerTableId = tableMapping.getName();
     SpannerTable spannerTable = schema.getSpSchema().get(spannerTableId);
     if (spannerTable == null) {
-      LOG.warn(
+      LOG.info(
           "Spanner table {} not found in session file. Dropping the record.", spannerTableName);
       return new DMLGeneratorResponse("");
     }
 
     SourceTable sourceTable = schema.getSrcSchema().get(spannerTableId);
     if (sourceTable == null) {
-      LOG.warn(
+      LOG.info(
           "Source table {} not found for Spanner table ID: {}", spannerTableName, spannerTableId);
       return new DMLGeneratorResponse("");
     }
 
     if (sourceTable.getPrimaryKeys() == null || sourceTable.getPrimaryKeys().length == 0) {
-      LOG.warn(
+      LOG.info(
           "Cannot reverse replicate table {} without primary key. Skipping the record.",
           sourceTable.getName());
       return new DMLGeneratorResponse("");
@@ -126,7 +126,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             dmlGeneratorRequest.getKeyValuesJson(),
             dmlGeneratorRequest.getSourceDbTimezoneOffset());
     if (pkColumnNameValues == null) {
-      LOG.warn(
+      LOG.info(
           "Failed to generate primary key values for table {}. Skipping the record.",
           sourceTable.getName());
       return new DMLGeneratorResponse("");
@@ -402,7 +402,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
       SourceColumnDefinition sourceColDef = sourceTable.getColDefs().get(colId);
       SpannerColumnDefinition spannerColDef = spannerTable.getColDefs().get(colId);
       if (spannerColDef == null) {
-        LOG.warn(
+        LOG.info(
             "The corresponding primary key column {} was not found in Spanner",
             sourceColDef.getName());
         return null;
@@ -426,7 +426,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             getMappedColumnValue(
                 spannerColDef, sourceColDef, newValuesJson, sourceDbTimezoneOffset);
       } else {
-        LOG.warn("The column {} was not found in input record", spannerColumnName);
+        LOG.info("The column {} was not found in input record", spannerColumnName);
         return null;
       }
 

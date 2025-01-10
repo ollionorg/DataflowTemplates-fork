@@ -66,27 +66,6 @@ public class Schema implements Serializable {
     this.empty = true;
   }
 
-  public Schema(Map<String, SpannerTable> spSchema, Map<String, SourceTable> srcSchema) {
-    this.spSchema = spSchema;
-    this.srcSchema = srcSchema;
-    this.syntheticPKeys = new HashMap<String, SyntheticPKey>();
-    this.empty = (spSchema == null || srcSchema == null);
-  }
-
-  public Schema(
-      Map<String, SpannerTable> spSchema,
-      Map<String, SyntheticPKey> syntheticPKeys,
-      Map<String, SourceTable> srcSchema,
-      Map<String, NameAndCols> toSpanner,
-      Map<String, NameAndCols> toSource) {
-    this.spSchema = spSchema;
-    this.syntheticPKeys = syntheticPKeys;
-    this.srcSchema = srcSchema;
-    this.toSpanner = toSpanner;
-    this.toSource = toSource;
-    this.empty = (spSchema == null || srcSchema == null);
-  }
-
   public Schema(
       Map<String, SpannerTable> spSchema,
       Map<String, SyntheticPKey> syntheticPKeys,
@@ -94,6 +73,20 @@ public class Schema implements Serializable {
     this.spSchema = spSchema;
     this.syntheticPKeys = syntheticPKeys;
     this.srcSchema = srcSchema;
+    this.empty = (spSchema == null || srcSchema == null);
+  }
+
+  public Schema(
+      Map<String, SpannerTable> spannerTableMap,
+      Map<String, SyntheticPKey> syntheticPKeys,
+      Map<String, SourceTable> sourceTableMap,
+      Map<String, NameAndCols> spannerTableNameColsMap,
+      Map<String, NameAndCols> nameAndColsMap) {
+    this.spSchema = spannerTableMap;
+    this.syntheticPKeys = syntheticPKeys;
+    this.srcSchema = sourceTableMap;
+    this.toSpanner = spannerTableNameColsMap;
+    this.toSource = nameAndColsMap;
     this.empty = (spSchema == null || srcSchema == null);
   }
 

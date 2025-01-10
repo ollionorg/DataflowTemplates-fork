@@ -451,7 +451,7 @@ public class SpannerToSourceDb {
    * @return The result of the pipeline execution.
    */
   public static PipelineResult run(Options options) {
-
+    LOG.info("Going to Start The Pipeline");
     Pipeline pipeline = Pipeline.create(options);
     pipeline
         .getOptions()
@@ -481,7 +481,7 @@ public class SpannerToSourceDb {
               + " database connections than desired. Either reduce the max allowed workers or"
               + " incease the max shard connections");
     }
-
+    LOG.info("Going to read schema for the source " + options.getSourceType());
     // Read the session file for Mysql Only
     Schema schema =
         MYSQL_SOURCE_TYPE.equals(options.getSourceType())
@@ -495,7 +495,7 @@ public class SpannerToSourceDb {
             .withProjectId(ValueProvider.StaticValueProvider.of(options.getSpannerProjectId()))
             .withInstanceId(ValueProvider.StaticValueProvider.of(options.getInstanceId()))
             .withDatabaseId(ValueProvider.StaticValueProvider.of(options.getDatabaseId()));
-
+    LOG.info("Spanner Config Generation Completed Successfully");
     // Create shadow tables
     // Note that there is a limit on the number of tables that can be created per DB: 5000.
     // If we create shadow tables per shard, there will be an explosion of tables.
@@ -509,6 +509,8 @@ public class SpannerToSourceDb {
             .withInstanceId(ValueProvider.StaticValueProvider.of(options.getMetadataInstance()))
             .withDatabaseId(ValueProvider.StaticValueProvider.of(options.getMetadataDatabase()));
 
+    LOG.info("Spanner Config Metadata Generation Completed Successfully");
+
     ShadowTableCreator shadowTableCreator =
         new ShadowTableCreator(
             spannerConfig,
@@ -520,7 +522,7 @@ public class SpannerToSourceDb {
                     spannerMetadataConfig.getDatabaseId().get())
                 .getDialect(),
             options.getShadowTablePrefix());
-
+    LOG.info("Shadow Table Generation Completed Successfully");
     DataflowPipelineDebugOptions debugOptions = options.as(DataflowPipelineDebugOptions.class);
 
     shadowTableCreator.createShadowTablesInSpanner();
@@ -547,8 +549,9 @@ public class SpannerToSourceDb {
             "Logical shard id was not found, hence setting it to : " + Constants.DEFAULT_SHARD_ID);
       }
     }
-
+    LOG.info("Shards Generation Completed Successfully");
     if (options.getSourceType().equals(CASSANDRA_SOURCE_TYPE)) {
+      LOG.info("Going to Generate Schema for Cassandra");
       Map<String, SpannerTable> spannerTableMap =
           SpannerSchema.convertDDLTableToSpannerTable(ddl.allTables());
       Map<String, NameAndCols> spannerTableNameColsMap =
@@ -568,6 +571,7 @@ public class SpannerToSourceDb {
                 spannerTableNameColsMap,
                 cassandraSourceMetadata.getNameAndColsMap());
       } catch (Exception e) {
+        LOG.error("Exception while Generate Schema for Cassandra");
         throw new IllegalArgumentException(e);
       }
     }

@@ -649,7 +649,7 @@ public class CassandraTypeHandler {
 
       default:
         LOG.warn("Unsupported Spanner column type: {}", spannerType);
-        throw new IllegalArgumentException("Unsupported Spanner column type: "+spannerType);
+        throw new IllegalArgumentException("Unsupported Spanner column type: " + spannerType);
     }
   }
 

@@ -27,9 +27,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -427,18 +432,37 @@ public class CassandraTypeHandler {
    * @return The {@link Instant} representation of the timestamp.
    */
   private static Instant convertToCassandraTimestamp(String timestampValue) {
-    try {
-      return Instant.parse(timestampValue);
-    } catch (DateTimeParseException e) {
+    if (timestampValue == null || timestampValue.trim().isEmpty()) {
+      throw new IllegalArgumentException("Timestamp value cannot be null or empty");
+    }
+
+    List<DateTimeFormatter> formatters =
+        Arrays.asList(
+            DateTimeFormatter.ISO_INSTANT,
+            DateTimeFormatter.ISO_DATE_TIME,
+            DateTimeFormatter.ISO_LOCAL_DATE,
+            DateTimeFormatter.ofPattern("MM/dd/yyyy"),
+            DateTimeFormatter.ofPattern("yyyy/MM/dd"),
+            DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+            DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("MM-dd-yyyy"),
+            DateTimeFormatter.ofPattern("dd MMM yyyy"));
+
+    for (DateTimeFormatter formatter : formatters) {
       try {
-        return ZonedDateTime.parse(timestampValue)
-            .withZoneSameInstant(java.time.ZoneOffset.UTC)
-            .toInstant();
-      } catch (DateTimeParseException nestedException) {
+        TemporalAccessor temporal = formatter.parse(timestampValue);
+        if (temporal.isSupported(ChronoField.INSTANT_SECONDS)) {
+          return Instant.from(temporal);
+        } else if (temporal.isSupported(ChronoField.EPOCH_DAY)) {
+          return LocalDate.from(temporal).atStartOfDay(ZoneOffset.UTC).toInstant();
+        }
+      } catch (DateTimeParseException ignored) {
         throw new IllegalArgumentException(
-            "Failed to parse timestamp value" + timestampValue, nestedException);
+            "Failed to parse timestamp value" + timestampValue, ignored);
       }
     }
+    throw new IllegalArgumentException("Failed to parse timestamp value: " + timestampValue);
   }
 
   /**

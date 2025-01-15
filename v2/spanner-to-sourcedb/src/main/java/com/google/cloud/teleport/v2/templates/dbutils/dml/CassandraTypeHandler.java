@@ -27,9 +27,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -38,9 +43,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.apache.commons.lang3.BooleanUtils;
 import org.eclipse.jetty.util.StringUtil;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,59 +90,6 @@ public class CassandraTypeHandler {
     }
   }
 
-  /**
-   * Functional interface for parsing an object value to a specific type.
-   *
-   * <p>This interface provides a contract to implement type conversion logic where an input object
-   * is parsed and transformed into the desired target type.
-   *
-   * <p>Example usage:
-   *
-   * <pre>{@code
-   * TypeParser<Integer> intParser = value -> Integer.parseInt(value.toString());
-   * Integer parsedValue = intParser.parse("123");
-   * }</pre>
-   *
-   * @param <T> The target type to which the value will be parsed.
-   */
-  @FunctionalInterface
-  public interface TypeParser<T> {
-
-    /**
-     * Parses the given value and converts it into the target type {@code T}.
-     *
-     * @param value The input value to be parsed.
-     * @return The parsed value of type {@code T}.
-     */
-    T parse(Object value);
-  }
-
-  /**
-   * Functional interface for supplying a value with exception handling.
-   *
-   * <p>This interface provides a mechanism to execute logic that may throw a checked exception,
-   * making it useful for methods where exception handling is required.
-   *
-   * <p>Example usage:
-   *
-   * <pre>{@code
-   * HandlerSupplier<String> supplier = () -> {
-   *     if (someCondition) {
-   *         throw new IOException("Error occurred");
-   *     }
-   *     return "Success";
-   * };
-   *
-   * try {
-   *     String result = supplier.get();
-   *     System.out.println(result);
-   * } catch (Exception e) {
-   *     e.printStackTrace();
-   * }
-   * }</pre>
-   *
-   * @param <T> The type of value supplied by the supplier.
-   */
   @FunctionalInterface
   private interface HandlerSupplier<T> {
 
@@ -290,11 +242,11 @@ public class CassandraTypeHandler {
    * @return a {@link Float} object containing the value represented in cassandra type.
    */
   private static Float handleCassandraFloatType(String colName, JSONObject valuesJson) {
-    try {
-      return valuesJson.getBigDecimal(colName).floatValue();
-    } catch (JSONException e) {
+    BigDecimal colValue = valuesJson.optBigDecimal(colName, null);
+    if (colValue == null) {
       return null;
     }
+    return colValue.floatValue();
   }
 
   /**
@@ -305,11 +257,11 @@ public class CassandraTypeHandler {
    * @return a {@link Double} object containing the value represented in cassandra type.
    */
   private static Double handleCassandraDoubleType(String colName, JSONObject valuesJson) {
-    try {
-      return valuesJson.getBigDecimal(colName).doubleValue();
-    } catch (JSONException e) {
+    BigDecimal colValue = valuesJson.optBigDecimal(colName, null);
+    if (colValue == null) {
       return null;
     }
+    return colValue.doubleValue();
   }
 
   /**
@@ -447,11 +399,11 @@ public class CassandraTypeHandler {
    * @return a {@link Long} object containing Long as value represented in cassandra type.
    */
   private static Long handleCassandraBigintType(String colName, JSONObject valuesJson) {
-    try {
-      return valuesJson.getBigInteger(colName).longValue();
-    } catch (JSONException e) {
+    BigInteger colValue = valuesJson.optBigInteger(colName, null);
+    if (colValue == null) {
       return null;
     }
+    return colValue.longValue();
   }
 
   /**
@@ -462,49 +414,11 @@ public class CassandraTypeHandler {
    * @return a {@link Integer} object containing Integer as value represented in cassandra type.
    */
   private static Integer handleCassandraIntType(String colName, JSONObject valuesJson) {
-    try {
-      return valuesJson.getBigInteger(colName).intValue();
-    } catch (JSONException e) {
+    BigInteger colValue = valuesJson.optBigInteger(colName, null);
+    if (colValue == null) {
       return null;
     }
-  }
-
-  /**
-   * Converts an {@link Integer} to a {@code short} (SmallInt).
-   *
-   * <p>This method checks if the {@code integerValue} is within the valid range for a {@code
-   * smallint} (i.e., between {@link Short#MIN_VALUE} and {@link Short#MAX_VALUE}). If the value is
-   * out of range, it throws an {@link IllegalArgumentException}.
-   *
-   * @param integerValue The integer value to be converted.
-   * @return The converted {@code short} value.
-   * @throws IllegalArgumentException If the {@code integerValue} is out of range for a {@code
-   *     smallint}.
-   */
-  private static short convertToSmallInt(Integer integerValue) {
-    if (integerValue < Short.MIN_VALUE || integerValue > Short.MAX_VALUE) {
-      throw new IllegalArgumentException("Value is out of range for smallint.");
-    }
-    return integerValue.shortValue();
-  }
-
-  /**
-   * Converts an {@link Integer} to a {@code byte} (TinyInt).
-   *
-   * <p>This method checks if the {@code integerValue} is within the valid range for a {@code
-   * tinyint} (i.e., between {@link Byte#MIN_VALUE} and {@link Byte#MAX_VALUE}). If the value is out
-   * of range, it throws an {@link IllegalArgumentException}.
-   *
-   * @param integerValue The integer value to be converted.
-   * @return The converted {@code byte} value.
-   * @throws IllegalArgumentException If the {@code integerValue} is out of range for a {@code
-   *     tinyint}.
-   */
-  private static byte convertToTinyInt(Integer integerValue) {
-    if (integerValue < Byte.MIN_VALUE || integerValue > Byte.MAX_VALUE) {
-      throw new IllegalArgumentException("Value is out of range for tinyint.");
-    }
-    return integerValue.byteValue();
+    return colValue.intValue();
   }
 
   /**
@@ -518,18 +432,37 @@ public class CassandraTypeHandler {
    * @return The {@link Instant} representation of the timestamp.
    */
   private static Instant convertToCassandraTimestamp(String timestampValue) {
-    try {
-      return Instant.parse(timestampValue);
-    } catch (DateTimeParseException e) {
+    if (timestampValue == null || timestampValue.trim().isEmpty()) {
+      throw new IllegalArgumentException("Timestamp value cannot be null or empty");
+    }
+
+    List<DateTimeFormatter> formatters =
+        Arrays.asList(
+            DateTimeFormatter.ISO_INSTANT,
+            DateTimeFormatter.ISO_DATE_TIME,
+            DateTimeFormatter.ISO_LOCAL_DATE,
+            DateTimeFormatter.ofPattern("MM/dd/yyyy"),
+            DateTimeFormatter.ofPattern("yyyy/MM/dd"),
+            DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+            DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("MM-dd-yyyy"),
+            DateTimeFormatter.ofPattern("dd MMM yyyy"));
+
+    for (DateTimeFormatter formatter : formatters) {
       try {
-        return ZonedDateTime.parse(timestampValue)
-            .withZoneSameInstant(java.time.ZoneOffset.UTC)
-            .toInstant();
-      } catch (DateTimeParseException nestedException) {
+        TemporalAccessor temporal = formatter.parse(timestampValue);
+        if (temporal.isSupported(ChronoField.INSTANT_SECONDS)) {
+          return Instant.from(temporal);
+        } else if (temporal.isSupported(ChronoField.EPOCH_DAY)) {
+          return LocalDate.from(temporal).atStartOfDay(ZoneOffset.UTC).toInstant();
+        }
+      } catch (DateTimeParseException ignored) {
         throw new IllegalArgumentException(
-            "Failed to parse timestamp value" + timestampValue, nestedException);
+            "Failed to parse timestamp value" + timestampValue, ignored);
       }
     }
+    throw new IllegalArgumentException("Failed to parse timestamp value: " + timestampValue);
   }
 
   /**
@@ -678,11 +611,11 @@ public class CassandraTypeHandler {
       return CassandraTypeHandler.handleCassandraTimestampType(columnName, valuesJson);
     } else if ("boolean".equals(spannerType)) {
       return CassandraTypeHandler.handleCassandraBoolType(columnName, valuesJson);
-    } else if (spannerType.matches("numeric|float")) {
+    } else if (spannerType.matches("float")) {
       return CassandraTypeHandler.handleCassandraFloatType(columnName, valuesJson);
-    } else if (spannerType.contains("float")) {
+    } else if (spannerType.contains("float") || spannerType.contains("numeric")) {
       return CassandraTypeHandler.handleCassandraDoubleType(columnName, valuesJson);
-    } else if (spannerType.contains("bytes")) {
+    } else if (spannerType.contains("bytes") || spannerType.contains("blob")) {
       return CassandraTypeHandler.handleCassandraBlobType(columnName, valuesJson);
     } else if ("integer".equals(spannerType)) {
       return CassandraTypeHandler.handleCassandraIntType(columnName, valuesJson);
@@ -757,29 +690,27 @@ public class CassandraTypeHandler {
         return PreparedStatementValueObject.create(columnType, (String) colValue);
 
       case "bigint":
-        return PreparedStatementValueObject.create(columnType, (Long) colValue);
+      case "int":
+      case "smallint":
+      case "tinyint":
+        return PreparedStatementValueObject.create(
+            columnType, parseNumericType(columnType, colValue));
 
       case "boolean":
-        return PreparedStatementValueObject.create(columnType, (Boolean) colValue);
+        return PreparedStatementValueObject.create(
+            columnType, safeHandle(() -> parseBoolean(colValue)));
 
       case "decimal":
-        return PreparedStatementValueObject.create(columnType, (BigDecimal) colValue);
+        return PreparedStatementValueObject.create(
+            columnType, safeHandle(() -> parseDecimal(colValue)));
 
       case "double":
-        return PreparedStatementValueObject.create(columnType, (Double) colValue);
-
       case "float":
-        return PreparedStatementValueObject.create(columnType, (Float) colValue);
+        return PreparedStatementValueObject.create(
+            columnType, safeHandle(() -> parseFloatingPoint(columnType, colValue)));
 
       case "inet":
         return PreparedStatementValueObject.create(columnType, (java.net.InetAddress) colValue);
-
-      case "int":
-        return PreparedStatementValueObject.create(columnType, (Integer) colValue);
-
-      case "smallint":
-        return PreparedStatementValueObject.create(
-            columnType, convertToSmallInt((Integer) colValue));
 
       case "time":
       case "timestamp":
@@ -788,30 +719,11 @@ public class CassandraTypeHandler {
 
       case "date":
         return PreparedStatementValueObject.create(
-            columnType,
-            safeHandle(
-                () -> {
-                  if (colValue instanceof String) {
-                    return LocalDate.parse((String) colValue);
-                  } else if (colValue instanceof Instant) {
-                    return ((Instant) colValue).atZone(ZoneId.systemDefault()).toLocalDate();
-                  } else if (colValue instanceof Date) {
-                    return ((Date) colValue)
-                        .toInstant()
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate();
-                  }
-                  throw new IllegalArgumentException(
-                      "Unsupported value for date conversion: " + colValue);
-                }));
+            columnType, safeHandle(() -> parseDate(colValue)));
 
       case "timeuuid":
       case "uuid":
         return PreparedStatementValueObject.create(columnType, (UUID) colValue);
-
-      case "tinyint":
-        return PreparedStatementValueObject.create(
-            columnType, convertToTinyInt((Integer) colValue));
 
       case "varint":
         return PreparedStatementValueObject.create(columnType, handleCassandraVarintType(colValue));
@@ -822,6 +734,113 @@ public class CassandraTypeHandler {
       default:
         return PreparedStatementValueObject.create(columnType, colValue);
     }
+  }
+
+  /**
+   * Parses a numeric value to the corresponding type based on the given column type.
+   *
+   * @param columnType the type of the column (e.g., "bigint", "int", "smallint", "tinyint").
+   * @param colValue the value to parse, either as a {@code String} or a {@code Number}.
+   * @return the parsed numeric value as the appropriate type (e.g., {@code Long}, {@code Integer},
+   *     {@code Short}, {@code Byte}).
+   * @throws IllegalArgumentException if the {@code colValue} type is unsupported or does not match
+   *     the column type.
+   */
+  private static Object parseNumericType(String columnType, Object colValue) {
+    return safeHandle(
+        () -> {
+          if (colValue instanceof String) {
+            switch (columnType) {
+              case "bigint":
+                return Long.parseLong((String) colValue);
+              case "int":
+                return Integer.parseInt((String) colValue);
+              case "smallint":
+                return Short.parseShort((String) colValue);
+              case "tinyint":
+                return Byte.parseByte((String) colValue);
+            }
+          } else if (colValue instanceof Number) {
+            switch (columnType) {
+              case "bigint":
+                return ((Number) colValue).longValue();
+              case "int":
+                return ((Number) colValue).intValue();
+              case "smallint":
+                return ((Number) colValue).shortValue();
+              case "tinyint":
+                return ((Number) colValue).byteValue();
+            }
+          }
+          throw new IllegalArgumentException(
+              "Unsupported type for " + columnType + ": " + colValue.getClass());
+        });
+  }
+
+  /**
+   * Parses a boolean value from the provided input.
+   *
+   * @param colValue the value to parse, either as a {@code String} or a {@code Boolean}.
+   * @return the parsed boolean value.
+   * @throws ClassCastException if the {@code colValue} is not a {@code String} or {@code Boolean}.
+   */
+  private static Boolean parseBoolean(Object colValue) {
+    if (colValue instanceof String) {
+      if (Arrays.asList("0", "1").contains((String) colValue)) {
+        return colValue.equals("1");
+      }
+      return BooleanUtils.toBoolean((String) colValue);
+    }
+    return (Boolean) colValue;
+  }
+
+  /**
+   * Parses a decimal value from the provided input.
+   *
+   * @param colValue the value to parse, either as a {@code String} or a {@code Number}.
+   * @return the parsed decimal value as a {@code BigDecimal}.
+   * @throws NumberFormatException if the {@code colValue} is a {@code String} and cannot be
+   *     converted to {@code BigDecimal}.
+   * @throws ClassCastException if the {@code colValue} is not a {@code String}, {@code Number}, or
+   *     {@code BigDecimal}.
+   */
+  private static BigDecimal parseDecimal(Object colValue) {
+    if (colValue instanceof String) {
+      return new BigDecimal((String) colValue);
+    } else if (colValue instanceof Float) {
+      return BigDecimal.valueOf((Float) colValue);
+    } else if (colValue instanceof Double) {
+      return BigDecimal.valueOf((Double) colValue);
+    }
+    return (BigDecimal) colValue;
+  }
+
+  /**
+   * Parses a floating-point value to the corresponding type based on the given column type.
+   *
+   * @param columnType the type of the column (e.g., "double", "float").
+   * @param colValue the value to parse, either as a {@code String} or a {@code Number}.
+   * @return the parsed floating-point value as a {@code Double} or {@code Float}.
+   * @throws IllegalArgumentException if the column type is invalid or the value cannot be parsed.
+   */
+  private static Object parseFloatingPoint(String columnType, Object colValue) {
+    if (colValue instanceof String) {
+      return columnType.equals("double")
+          ? Double.parseDouble((String) colValue)
+          : Float.parseFloat((String) colValue);
+    }
+    return columnType.equals("double") ? (Double) colValue : (Float) colValue;
+  }
+
+  private static LocalDate parseDate(Object colValue) {
+    if (colValue instanceof String) {
+      return LocalDate.parse((String) colValue);
+    } else if (colValue instanceof Instant) {
+      return ((Instant) colValue).atZone(ZoneId.systemDefault()).toLocalDate();
+    } else if (colValue instanceof Date) {
+      return ((Date) colValue).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    }
+    throw new IllegalArgumentException("Unsupported value for date conversion: " + colValue);
   }
 
   /**
@@ -978,7 +997,8 @@ public class CassandraTypeHandler {
       return parseAndCastToCassandraType(cassandraType, columnValue).value();
     } catch (ClassCastException | IllegalArgumentException e) {
       LOG.error("Error converting value for column: {}, type: {}", cassandraType, e.getMessage());
-      throw e;
+      throw new IllegalArgumentException(
+          "Error converting value for cassandraType: " + cassandraType);
     }
   }
 }

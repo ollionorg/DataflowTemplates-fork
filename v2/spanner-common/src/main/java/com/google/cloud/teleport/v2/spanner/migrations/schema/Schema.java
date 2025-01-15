@@ -103,6 +103,8 @@ public class Schema implements Serializable {
     this.srcSchema = sourceTableMap;
     this.toSpanner = spannerTableNameColsMap;
     this.toSource = nameAndColsMap;
+    this.srcToID = nameAndColsMap;
+    this.spannerToID = spannerTableNameColsMap;
     this.empty = (spSchema == null || srcSchema == null);
   }
 

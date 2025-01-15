@@ -670,39 +670,25 @@ public class CassandraTypeHandler {
    */
   private static Object handleSpannerColumnType(
       String spannerType, String columnName, JSONObject valuesJson) {
-    switch (spannerType) {
-      case "bigint":
-      case "int64":
-        return CassandraTypeHandler.handleCassandraBigintType(columnName, valuesJson);
-
-      case "string":
-        return handleStringType(columnName, valuesJson);
-
-      case "timestamp":
-      case "date":
-      case "datetime":
-        return CassandraTypeHandler.handleCassandraTimestampType(columnName, valuesJson);
-
-      case "boolean":
-        return CassandraTypeHandler.handleCassandraBoolType(columnName, valuesJson);
-
-      case "float64":
-        return CassandraTypeHandler.handleCassandraDoubleType(columnName, valuesJson);
-
-      case "numeric":
-      case "float":
-        return CassandraTypeHandler.handleCassandraFloatType(columnName, valuesJson);
-
-      case "bytes":
-      case "bytes(max)":
-        return CassandraTypeHandler.handleCassandraBlobType(columnName, valuesJson);
-
-      case "integer":
-        return CassandraTypeHandler.handleCassandraIntType(columnName, valuesJson);
-
-      default:
-        LOG.warn("Unsupported Spanner column type: {}", spannerType);
-        return null;
+    if (spannerType.contains("int")) {
+      return CassandraTypeHandler.handleCassandraBigintType(columnName, valuesJson);
+    } else if (spannerType.contains("string")) {
+      return handleStringType(columnName, valuesJson);
+    } else if (spannerType.matches("timestamp|date|datetime")) {
+      return CassandraTypeHandler.handleCassandraTimestampType(columnName, valuesJson);
+    } else if ("boolean".equals(spannerType)) {
+      return CassandraTypeHandler.handleCassandraBoolType(columnName, valuesJson);
+    } else if (spannerType.matches("numeric|float")) {
+      return CassandraTypeHandler.handleCassandraFloatType(columnName, valuesJson);
+    } else if (spannerType.contains("float")) {
+      return CassandraTypeHandler.handleCassandraDoubleType(columnName, valuesJson);
+    } else if (spannerType.contains("bytes")) {
+      return CassandraTypeHandler.handleCassandraBlobType(columnName, valuesJson);
+    } else if ("integer".equals(spannerType)) {
+      return CassandraTypeHandler.handleCassandraIntType(columnName, valuesJson);
+    } else {
+      LOG.warn("Unsupported Spanner column type: {}", spannerType);
+      throw new IllegalArgumentException("Unsupported Spanner column type: " + spannerType);
     }
   }
 

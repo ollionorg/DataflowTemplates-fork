@@ -563,6 +563,11 @@ public class SpannerToSourceDb {
                     CassandraSourceSchemaReader.getInformationSchemaAsResultSet(
                         (CassandraShard) shards.get(0)))
                 .build();
+
+        LOG.info("spannerTableMap " + spannerTableMap.toString());
+        LOG.info("spannerTableNameColsMap " + spannerTableNameColsMap.toString());
+        LOG.info("cassandraSourceMetadata " + cassandraSourceMetadata.toString());
+
         schema =
             new Schema(
                 spannerTableMap,
@@ -570,6 +575,8 @@ public class SpannerToSourceDb {
                 cassandraSourceMetadata.getSourceTableMap(),
                 spannerTableNameColsMap,
                 cassandraSourceMetadata.getNameAndColsMap());
+        schema.setSpannerToID(spannerTableNameColsMap);
+        schema.setSrcToID(cassandraSourceMetadata.getNameAndColsMap());
       } catch (Exception e) {
         LOG.error("Exception while Generate Schema for Cassandra");
         throw new IllegalArgumentException(e);

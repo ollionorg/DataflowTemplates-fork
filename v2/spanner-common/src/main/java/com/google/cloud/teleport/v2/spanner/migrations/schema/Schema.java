@@ -112,20 +112,12 @@ public class Schema implements Serializable {
     return spSchema;
   }
 
-  public Map<String, SpannerTable> setSpSchema(Map<String, SpannerTable> spSchema) {
-    return this.spSchema = spSchema;
-  }
-
   public Map<String, SyntheticPKey> getSyntheticPks() {
     return syntheticPKeys;
   }
 
   public Map<String, SourceTable> getSrcSchema() {
     return srcSchema;
-  }
-
-  public Map<String, SourceTable> setSrcSchema(Map<String, SourceTable> srcSchema) {
-    return this.srcSchema = srcSchema;
   }
 
   public Map<String, NameAndCols> getToSpanner() {

@@ -61,6 +61,7 @@ public class InputRecordProcessor {
 
     try {
       LOG.info("Input Recodr is going to Process");
+      LOG.info("Processing for Spanner Record " + spannerRecord.toString());
       String tableName = spannerRecord.getTableName();
       String modType = spannerRecord.getModType().name();
       String keysJsonStr = spannerRecord.getMod().getKeysJson();

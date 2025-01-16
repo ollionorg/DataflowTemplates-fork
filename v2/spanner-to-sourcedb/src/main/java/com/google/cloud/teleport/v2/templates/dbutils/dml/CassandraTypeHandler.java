@@ -418,7 +418,7 @@ public class CassandraTypeHandler {
                 () ->
                     handleCassandraTimestampType(colValue.toString())
                         .atZone(ZoneId.systemDefault())
-                        .toLocalDate()));
+                        .toLocalTime()));
       case "timestamp":
       case "datetime":
         return PreparedStatementValueObject.create(

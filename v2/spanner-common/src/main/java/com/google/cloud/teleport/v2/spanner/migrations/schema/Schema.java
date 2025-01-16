@@ -30,13 +30,13 @@ import java.util.stream.Collectors;
  */
 public class Schema implements Serializable {
   /** Maps the HarbourBridge table ID to the Spanner table details. */
-  private Map<String, SpannerTable> spSchema;
+  private final Map<String, SpannerTable> spSchema;
 
   /** Maps the Spanner table ID to the synthetic PK. */
   private final Map<String, SyntheticPKey> syntheticPKeys;
 
   /** Maps the HarbourBridge table ID to the Source table details. */
-  private Map<String, SourceTable> srcSchema;
+  private final Map<String, SourceTable> srcSchema;
 
   // The columns below are not part of the session file. They are computed based on the fields
   // above.
@@ -69,26 +69,26 @@ public class Schema implements Serializable {
   public Schema(
       Map<String, SpannerTable> spSchema,
       Map<String, SyntheticPKey> syntheticPKeys,
-      Map<String, SourceTable> srcSchema) {
+      Map<String, SourceTable> srcSchema,
+      Map<String, NameAndCols> toSpanner,
+      Map<String, NameAndCols> toSource) {
     this.spSchema = spSchema;
     this.syntheticPKeys = syntheticPKeys;
     this.srcSchema = srcSchema;
+    this.toSpanner = toSpanner;
+    this.toSource = toSource;
+    this.srcToID = toSource;
+    this.spannerToID = toSpanner;
     this.empty = (spSchema == null || srcSchema == null);
   }
 
   public Schema(
-      Map<String, SpannerTable> spannerTableMap,
+      Map<String, SpannerTable> spSchema,
       Map<String, SyntheticPKey> syntheticPKeys,
-      Map<String, SourceTable> sourceTableMap,
-      Map<String, NameAndCols> spannerTableNameColsMap,
-      Map<String, NameAndCols> nameAndColsMap) {
-    this.spSchema = spannerTableMap;
+      Map<String, SourceTable> srcSchema) {
+    this.spSchema = spSchema;
     this.syntheticPKeys = syntheticPKeys;
-    this.srcSchema = sourceTableMap;
-    this.toSpanner = spannerTableNameColsMap;
-    this.toSource = nameAndColsMap;
-    this.srcToID = nameAndColsMap;
-    this.spannerToID = spannerTableNameColsMap;
+    this.srcSchema = srcSchema;
     this.empty = (spSchema == null || srcSchema == null);
   }
 

@@ -458,8 +458,7 @@ public class CassandraTypeHandler {
           return LocalDate.from(temporal).atStartOfDay(ZoneOffset.UTC).toInstant();
         }
       } catch (DateTimeParseException ignored) {
-        throw new IllegalArgumentException(
-            "Failed to parse timestamp value" + timestampValue, ignored);
+        LOG.info("Exception found from different formatter " + ignored.getMessage());
       }
     }
     throw new IllegalArgumentException("Failed to parse timestamp value: " + timestampValue);
@@ -647,7 +646,8 @@ public class CassandraTypeHandler {
       return new JSONArray(inputValue);
     } else if (isValidJSONObject(inputValue)) {
       return new JSONObject(inputValue);
-    } else if (StringUtil.isHex(inputValue, 0, inputValue.length())) {
+    } else if (StringUtil.isHex(inputValue, 0, inputValue.length())
+        && inputValue.startsWith("0x")) {
       return CassandraTypeHandler.handleCassandraBlobType(colName, valuesJson);
     } else if (isAscii(inputValue)) {
       return CassandraTypeHandler.handleCassandraAsciiType(colName, valuesJson);

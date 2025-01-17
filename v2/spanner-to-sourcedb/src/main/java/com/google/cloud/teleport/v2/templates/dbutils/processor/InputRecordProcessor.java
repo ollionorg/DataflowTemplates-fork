@@ -99,6 +99,7 @@ public class InputRecordProcessor {
                   modType, tableName, newValuesJson, keysJson, sourceDbTimezoneOffset)
               .setSchema(schema)
               .setCustomTransformationResponse(customTransformationResponse)
+              .setCommitTimestamp(spannerRecord.getCommitTimestamp())
               .build();
 
       DMLGeneratorResponse dmlGeneratorResponse = dmlGenerator.getDMLStatement(dmlGeneratorRequest);

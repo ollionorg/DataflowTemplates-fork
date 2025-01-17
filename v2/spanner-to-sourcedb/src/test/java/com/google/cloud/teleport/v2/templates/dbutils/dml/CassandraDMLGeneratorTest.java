@@ -22,6 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.cloud.Timestamp;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.ColumnPK;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.NameAndCols;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
@@ -96,13 +97,13 @@ public class CassandraDMLGeneratorTest {
     String keyValueString = "{\"SingerId\":\"999\"}";
     JSONObject keyValuesJson = new JSONObject(keyValueString);
     String modType = "INSERT";
-
     CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
     DMLGeneratorResponse dmlGeneratorResponse =
         cassandraDMLGenerator.getDMLStatement(
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -126,6 +127,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
     assertEquals("", sql);
@@ -147,6 +149,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -171,6 +174,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -195,6 +199,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -218,6 +223,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -240,6 +246,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -262,6 +269,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -286,6 +294,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -309,9 +318,10 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
-    assertEquals(1, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -330,6 +340,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -354,6 +365,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
     assertEquals(3, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
@@ -376,6 +388,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
     assertEquals(3, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
@@ -398,6 +411,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
     assertEquals(3, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
@@ -420,6 +434,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
     assertTrue(sql.contains("sample_table"));
@@ -443,6 +458,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -467,6 +483,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -491,6 +508,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -515,6 +533,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -538,6 +557,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -561,6 +581,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -583,6 +604,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -606,6 +628,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -628,6 +651,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -652,6 +676,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -674,6 +699,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -698,6 +724,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
     assertTrue(sql.isEmpty());
@@ -719,6 +746,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -741,6 +769,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -764,6 +793,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
 
@@ -790,6 +820,7 @@ public class CassandraDMLGeneratorTest {
             new DMLGeneratorRequest.Builder(
                     modType, tableName, newValuesJson, keyValuesJson, "+00:00")
                 .setSchema(schema)
+                .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
     CassandraDMLGenerator test = new CassandraDMLGenerator();

@@ -210,10 +210,6 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     String escapedTableName = "\"" + tableName.replace("\"", "\"\"") + "\"";
     List<Map.Entry<String, PreparedStatementValueObject<?>>> allEntries =
         Stream.concat(pkColumnNameValues.entrySet().stream(), columnNameValues.entrySet().stream())
-            .filter(
-                entry ->
-                    entry.getValue().value() != null
-                        && entry.getValue().value() != CassandraTypeHandler.NullClass.INSTANCE)
             .collect(Collectors.toList());
 
     String allColumns =
@@ -264,13 +260,11 @@ public class CassandraDMLGenerator implements IDMLGenerator {
 
     String deleteConditions =
         pkColumnNameValues.entrySet().stream()
-            .filter(entry -> entry.getValue().value() != CassandraTypeHandler.NullClass.INSTANCE)
             .map(entry -> "\"" + entry.getKey().replace("\"", "\"\"") + "\" = ?")
             .collect(Collectors.joining(" AND "));
 
     List<PreparedStatementValueObject<?>> values =
         pkColumnNameValues.entrySet().stream()
-            .filter(entry -> entry.getValue().value() != CassandraTypeHandler.NullClass.INSTANCE)
             .map(Map.Entry::getValue)
             .collect(Collectors.toList());
 

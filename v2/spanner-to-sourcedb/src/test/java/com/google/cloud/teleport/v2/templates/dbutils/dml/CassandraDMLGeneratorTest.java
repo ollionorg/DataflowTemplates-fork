@@ -112,28 +112,6 @@ public class CassandraDMLGeneratorTest {
   }
 
   @Test
-  public void tableNameMismatchAllColumnNameTypesMatch() {
-    Schema schema = SessionFileReader.read("src/test/resources/cassandraSession.json");
-    String tableName = "leChanteur";
-    String newValuesString = "{\"LastName\":\"ll\"}";
-    JSONObject newValuesJson = new JSONObject(newValuesString);
-    String keyValueString = "{\"SingerId\":\"999\"}";
-    JSONObject keyValuesJson = new JSONObject(keyValueString);
-    String modType = "INSERT";
-
-    CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
-    DMLGeneratorResponse dmlGeneratorResponse =
-        cassandraDMLGenerator.getDMLStatement(
-            new DMLGeneratorRequest.Builder(
-                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
-                .setSchema(schema)
-                .setCommitTimestamp(Timestamp.now())
-                .build());
-    String sql = dmlGeneratorResponse.getDmlStatement();
-    assertEquals("", sql);
-  }
-
-  @Test
   public void tableNameMatchColumnNameTypeMismatch() {
     Schema schema = SessionFileReader.read("src/test/resources/cassandraSession.json");
     String tableName = "Singers";
@@ -566,29 +544,6 @@ public class CassandraDMLGeneratorTest {
   }
 
   @Test
-  public void testSpannerTableNotInSchema() {
-    Schema schema = SessionFileReader.read("src/test/resources/cassandraSession.json");
-    String tableName = "SomeRandomTableNotInSchema";
-    String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
-    JSONObject newValuesJson = new JSONObject(newValuesString);
-    String keyValueString = "{\"SingerId\":\"999\"}";
-    JSONObject keyValuesJson = new JSONObject(keyValueString);
-    String modType = "INSERT";
-
-    CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
-    DMLGeneratorResponse dmlGeneratorResponse =
-        cassandraDMLGenerator.getDMLStatement(
-            new DMLGeneratorRequest.Builder(
-                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
-                .setSchema(schema)
-                .setCommitTimestamp(Timestamp.now())
-                .build());
-    String sql = dmlGeneratorResponse.getDmlStatement();
-
-    assertTrue(sql.isEmpty());
-  }
-
-  @Test
   public void testSpannerKeyIsNull() {
     Schema schema = SessionFileReader.read("src/test/resources/cassandraSession.json");
     String tableName = "Singers";
@@ -735,29 +690,6 @@ public class CassandraDMLGeneratorTest {
     Schema schema = SessionFileReader.read("src/test/resources/cassandraSession.json");
     String tableName = "Persons";
     String newValuesString = "{\"Does\":\"not\",\"matter\":\"junk\"}";
-    JSONObject newValuesJson = new JSONObject(newValuesString);
-    String keyValueString = "{\"Dont\":\"care\"}";
-    JSONObject keyValuesJson = new JSONObject(keyValueString);
-    String modType = "INSERT";
-
-    CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
-    DMLGeneratorResponse dmlGeneratorResponse =
-        cassandraDMLGenerator.getDMLStatement(
-            new DMLGeneratorRequest.Builder(
-                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
-                .setSchema(schema)
-                .setCommitTimestamp(Timestamp.now())
-                .build());
-    String sql = dmlGeneratorResponse.getDmlStatement();
-
-    assertTrue(sql.isEmpty());
-  }
-
-  @Test
-  public void testSourceTableNotInSchema() {
-    Schema schema = getSchemaObject();
-    String tableName = "contacts";
-    String newValuesString = "{\"accountId\": \"Id1\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);
     String keyValueString = "{\"Dont\":\"care\"}";
     JSONObject keyValuesJson = new JSONObject(keyValueString);

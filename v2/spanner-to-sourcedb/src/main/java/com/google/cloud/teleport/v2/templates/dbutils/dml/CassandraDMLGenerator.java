@@ -90,24 +90,19 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     }
 
     NameAndCols tableMapping = schema.getSpannerToID().get(spannerTableName);
-    if (tableMapping == null) {
-      LOG.warn(
-          "Spanner table {} not found in session file. Dropping the record.", spannerTableName);
-      return new DMLGeneratorResponse("");
-    }
-
-    String spannerTableId = tableMapping.getName();
-    SpannerTable spannerTable = schema.getSpSchema().get(spannerTableId);
+    SpannerTable spannerTable = schema.getSpSchema().get(tableMapping.getName());
     if (spannerTable == null) {
       LOG.warn(
           "Spanner table {} not found in session file. Dropping the record.", spannerTableName);
       return new DMLGeneratorResponse("");
     }
 
-    SourceTable sourceTable = schema.getSrcSchema().get(spannerTableId);
+    SourceTable sourceTable = schema.getSrcSchema().get(tableMapping.getName());
     if (sourceTable == null) {
       LOG.warn(
-          "Source table {} not found for Spanner table ID: {}", spannerTableName, spannerTableId);
+          "Source table {} not found for Spanner table Name: {}",
+          spannerTableName,
+          tableMapping.getName());
       return new DMLGeneratorResponse("");
     }
 

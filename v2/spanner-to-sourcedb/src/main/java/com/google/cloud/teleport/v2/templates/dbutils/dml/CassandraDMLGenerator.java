@@ -26,7 +26,6 @@ import com.google.cloud.teleport.v2.templates.models.DMLGeneratorRequest;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,15 +131,14 @@ public class CassandraDMLGenerator implements IDMLGenerator {
           sourceTable.getName());
       return new DMLGeneratorResponse("");
     }
-
+    java.sql.Timestamp timestamp = dmlGeneratorRequest.getCommitTimestamp().toSqlTimestamp();
     String modType = dmlGeneratorRequest.getModType();
     switch (modType) {
       case "INSERT":
       case "UPDATE":
         return generateUpsertStatement(
-            spannerTable, sourceTable, dmlGeneratorRequest, pkColumnNameValues);
+            spannerTable, sourceTable, dmlGeneratorRequest, pkColumnNameValues, timestamp);
       case "DELETE":
-        long timestamp = Instant.now().toEpochMilli() * 1000;
         return getDeleteStatementCQL(sourceTable.getName(), pkColumnNameValues, timestamp);
       default:
         LOG.error("Unsupported modType: {} for table {}", modType, spannerTableName);
@@ -170,7 +168,8 @@ public class CassandraDMLGenerator implements IDMLGenerator {
       SpannerTable spannerTable,
       SourceTable sourceTable,
       DMLGeneratorRequest dmlGeneratorRequest,
-      Map<String, PreparedStatementValueObject<?>> pkColumnNameValues) {
+      Map<String, PreparedStatementValueObject<?>> pkColumnNameValues,
+      java.sql.Timestamp timestamp) {
     Map<String, PreparedStatementValueObject<?>> columnNameValues =
         getColumnValues(
             spannerTable,
@@ -179,10 +178,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             dmlGeneratorRequest.getKeyValuesJson(),
             dmlGeneratorRequest.getSourceDbTimezoneOffset());
     return getUpsertStatementCQL(
-        sourceTable.getName(),
-        Instant.now().toEpochMilli() * 1000,
-        columnNameValues,
-        pkColumnNameValues);
+        sourceTable.getName(), timestamp, columnNameValues, pkColumnNameValues);
   }
 
   /**
@@ -190,7 +186,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
    * the provided table name, timestamp, column values, and primary key values.
    *
    * @param tableName the name of the table to which the upsert statement applies.
-   * @param timestamp the timestamp (in microseconds) to use for the operation.
+   * @param timestamp the timestamp (in java.sql.Timestamp) to use for the operation.
    * @param columnNameValues a map of column names and their corresponding prepared statement value
    *     objects for non-primary key columns.
    * @param pkColumnNameValues a map of primary key column names and their corresponding prepared
@@ -207,7 +203,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
    */
   private static DMLGeneratorResponse getUpsertStatementCQL(
       String tableName,
-      long timestamp,
+      java.sql.Timestamp timestamp,
       Map<String, PreparedStatementValueObject<?>> columnNameValues,
       Map<String, PreparedStatementValueObject<?>> pkColumnNameValues) {
 
@@ -229,7 +225,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     List<PreparedStatementValueObject<?>> values =
         allEntries.stream().map(Map.Entry::getValue).collect(Collectors.toList());
 
-    PreparedStatementValueObject<Long> timestampObj =
+    PreparedStatementValueObject<java.sql.Timestamp> timestampObj =
         PreparedStatementValueObject.create("USING_TIMESTAMP", timestamp);
     values.add(timestampObj);
 
@@ -248,7 +244,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
    * @param tableName the name of the table from which records will be deleted.
    * @param pkColumnNameValues a map containing the primary key column names and their corresponding
    *     prepared statement value objects.
-   * @param timestamp the timestamp (in microseconds) to use for the delete operation.
+   * @param timestamp the timestamp (in java.sql.Timestamp) to use for the delete operation.
    * @return a {@link DMLGeneratorResponse} containing the generated CQL delete statement and a list
    *     of values to bind to the prepared statement.
    *     <p>This method: 1. Iterates through the provided primary key column values, appending
@@ -262,7 +258,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
   private static DMLGeneratorResponse getDeleteStatementCQL(
       String tableName,
       Map<String, PreparedStatementValueObject<?>> pkColumnNameValues,
-      long timestamp) {
+      java.sql.Timestamp timestamp) {
 
     String escapedTableName = "\"" + tableName.replace("\"", "\"\"") + "\"";
 
@@ -279,7 +275,14 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             .collect(Collectors.toList());
 
     String preparedStatement =
-        String.format("DELETE FROM %s WHERE %s", escapedTableName, deleteConditions);
+        String.format(
+            "DELETE FROM %s USING TIMESTAMP ? WHERE %s", escapedTableName, deleteConditions);
+
+    if (timestamp != null) {
+      PreparedStatementValueObject<java.sql.Timestamp> timestampObj =
+          PreparedStatementValueObject.create("USING_TIMESTAMP", timestamp);
+      values.add(0, timestampObj);
+    }
 
     return new PreparedStatementGeneratedResponse(preparedStatement, values);
   }

@@ -222,7 +222,6 @@ public class CassandraDMLGenerator implements IDMLGenerator {
         allEntries.stream().map(Map.Entry::getValue).collect(Collectors.toList());
 
     PreparedStatementValueObject<java.sql.Timestamp> timestampObj =
-
         PreparedStatementValueObject.create("USING_TIMESTAMP", timestamp);
     values.add(timestampObj);
 

@@ -27,11 +27,12 @@ import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,26 +75,24 @@ public class CassandraDMLGenerator implements IDMLGenerator {
   @Override
   public DMLGeneratorResponse getDMLStatement(DMLGeneratorRequest dmlGeneratorRequest) {
     if (dmlGeneratorRequest == null) {
-      LOG.info("DMLGeneratorRequest is null. Cannot process the request.");
+      LOG.warn("DMLGeneratorRequest is null. Cannot process the request.");
       return new DMLGeneratorResponse("");
     }
-    LOG.info("DMLGeneratorRequest is not null, process the request.");
+
     String spannerTableName = dmlGeneratorRequest.getSpannerTableName();
     Schema schema = dmlGeneratorRequest.getSchema();
-
-    LOG.info("Schema " + schema.toString());
 
     if (schema == null
         || schema.getSpannerToID() == null
         || schema.getSpSchema() == null
         || schema.getSrcSchema() == null) {
-      LOG.info("Schema is invalid or incomplete for table: {}", spannerTableName);
+      LOG.warn("Schema is invalid or incomplete for table: {}", spannerTableName);
       return new DMLGeneratorResponse("");
     }
 
     NameAndCols tableMapping = schema.getSpannerToID().get(spannerTableName);
     if (tableMapping == null) {
-      LOG.info(
+      LOG.warn(
           "Spanner table {} not found in session file. Dropping the record.", spannerTableName);
       return new DMLGeneratorResponse("");
     }
@@ -101,20 +100,20 @@ public class CassandraDMLGenerator implements IDMLGenerator {
     String spannerTableId = tableMapping.getName();
     SpannerTable spannerTable = schema.getSpSchema().get(spannerTableId);
     if (spannerTable == null) {
-      LOG.info(
+      LOG.warn(
           "Spanner table {} not found in session file. Dropping the record.", spannerTableName);
       return new DMLGeneratorResponse("");
     }
 
     SourceTable sourceTable = schema.getSrcSchema().get(spannerTableId);
     if (sourceTable == null) {
-      LOG.info(
+      LOG.warn(
           "Source table {} not found for Spanner table ID: {}", spannerTableName, spannerTableId);
       return new DMLGeneratorResponse("");
     }
 
     if (sourceTable.getPrimaryKeys() == null || sourceTable.getPrimaryKeys().length == 0) {
-      LOG.info(
+      LOG.warn(
           "Cannot reverse replicate table {} without primary key. Skipping the record.",
           sourceTable.getName());
       return new DMLGeneratorResponse("");
@@ -128,7 +127,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             dmlGeneratorRequest.getKeyValuesJson(),
             dmlGeneratorRequest.getSourceDbTimezoneOffset());
     if (pkColumnNameValues == null) {
-      LOG.info(
+      LOG.warn(
           "Failed to generate primary key values for table {}. Skipping the record.",
           sourceTable.getName());
       return new DMLGeneratorResponse("");
@@ -212,49 +211,32 @@ public class CassandraDMLGenerator implements IDMLGenerator {
       Map<String, PreparedStatementValueObject<?>> columnNameValues,
       Map<String, PreparedStatementValueObject<?>> pkColumnNameValues) {
 
-    StringBuilder allColumns = new StringBuilder();
-    StringBuilder placeholders = new StringBuilder();
-    List<PreparedStatementValueObject<?>> values = new ArrayList<>();
+    String escapedTableName = "\"" + tableName.replace("\"", "\"\"") + "\"";
+    List<Map.Entry<String, PreparedStatementValueObject<?>>> allEntries =
+        Stream.concat(pkColumnNameValues.entrySet().stream(), columnNameValues.entrySet().stream())
+            .filter(
+                entry ->
+                    entry.getValue().value() != null
+                        && entry.getValue().value() != CassandraTypeHandler.NullClass.INSTANCE)
+            .collect(Collectors.toList());
 
-    for (Map.Entry<String, PreparedStatementValueObject<?>> entry : pkColumnNameValues.entrySet()) {
-      String colName = entry.getKey();
-      PreparedStatementValueObject<?> colValue = entry.getValue();
-      if (colValue.value() != null) {
-        allColumns.append(colName).append(", ");
-        placeholders.append("?, ");
-        values.add(colValue);
-      }
-    }
+    String allColumns =
+        allEntries.stream()
+            .map(entry -> "\"" + entry.getKey().replace("\"", "\"\"") + "\"")
+            .collect(Collectors.joining(", "));
+    String placeholders = allEntries.stream().map(entry -> "?").collect(Collectors.joining(", "));
 
-    for (Map.Entry<String, PreparedStatementValueObject<?>> entry : columnNameValues.entrySet()) {
-      String colName = entry.getKey();
-      PreparedStatementValueObject<?> colValue = entry.getValue();
-      if (colValue.value() != CassandraTypeHandler.NullClass.INSTANCE) {
-        allColumns.append(colName).append(", ");
-        placeholders.append("?, ");
-        values.add(colValue);
-      }
-    }
-
-    if (allColumns.length() > 0) {
-      allColumns.setLength(allColumns.length() - 2);
-    }
-    if (placeholders.length() > 0) {
-      placeholders.setLength(placeholders.length() - 2);
-    }
-
-    String preparedStatement =
-        "INSERT INTO "
-            + tableName
-            + " ("
-            + allColumns
-            + ") VALUES ("
-            + placeholders
-            + ") USING TIMESTAMP ?;";
+    List<PreparedStatementValueObject<?>> values =
+        allEntries.stream().map(Map.Entry::getValue).collect(Collectors.toList());
 
     PreparedStatementValueObject<Long> timestampObj =
         PreparedStatementValueObject.create("USING_TIMESTAMP", timestamp);
     values.add(timestampObj);
+
+    String preparedStatement =
+        String.format(
+            "INSERT INTO %s (%s) VALUES (%s) USING TIMESTAMP ?",
+            escapedTableName, allColumns, placeholders);
 
     return new PreparedStatementGeneratedResponse(preparedStatement, values);
   }
@@ -282,23 +264,22 @@ public class CassandraDMLGenerator implements IDMLGenerator {
       Map<String, PreparedStatementValueObject<?>> pkColumnNameValues,
       long timestamp) {
 
-    StringBuilder deleteConditions = new StringBuilder();
-    List<PreparedStatementValueObject<?>> values = new ArrayList<>();
+    String escapedTableName = "\"" + tableName.replace("\"", "\"\"") + "\"";
 
-    for (Map.Entry<String, PreparedStatementValueObject<?>> entry : pkColumnNameValues.entrySet()) {
-      String colName = entry.getKey();
-      PreparedStatementValueObject<?> colValue = entry.getValue();
-      if (colValue.value() != CassandraTypeHandler.NullClass.INSTANCE) {
-        deleteConditions.append(colName).append(" = ? AND ");
-        values.add(entry.getValue());
-      }
-    }
+    String deleteConditions =
+        pkColumnNameValues.entrySet().stream()
+            .filter(entry -> entry.getValue().value() != CassandraTypeHandler.NullClass.INSTANCE)
+            .map(entry -> "\"" + entry.getKey().replace("\"", "\"\"") + "\" = ?")
+            .collect(Collectors.joining(" AND "));
 
-    if (deleteConditions.length() > 0) {
-      deleteConditions.setLength(deleteConditions.length() - 5);
-    }
+    List<PreparedStatementValueObject<?>> values =
+        pkColumnNameValues.entrySet().stream()
+            .filter(entry -> entry.getValue().value() != CassandraTypeHandler.NullClass.INSTANCE)
+            .map(Map.Entry::getValue)
+            .collect(Collectors.toList());
 
-    String preparedStatement = "DELETE FROM " + tableName + " WHERE " + deleteConditions + ";";
+    String preparedStatement =
+        String.format("DELETE FROM %s WHERE %s", escapedTableName, deleteConditions);
 
     return new PreparedStatementGeneratedResponse(preparedStatement, values);
   }
@@ -399,7 +380,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
       SourceColumnDefinition sourceColDef = sourceTable.getColDefs().get(colId);
       SpannerColumnDefinition spannerColDef = spannerTable.getColDefs().get(colId);
       if (spannerColDef == null) {
-        LOG.info(
+        LOG.warn(
             "The corresponding primary key column {} was not found in Spanner",
             sourceColDef.getName());
         return null;
@@ -423,7 +404,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             getMappedColumnValue(
                 spannerColDef, sourceColDef, newValuesJson, sourceDbTimezoneOffset);
       } else {
-        LOG.info("The column {} was not found in input record", spannerColumnName);
+        LOG.warn("The column {} was not found in input record", spannerColumnName);
         return null;
       }
 

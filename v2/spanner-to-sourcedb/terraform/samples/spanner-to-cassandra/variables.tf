@@ -67,6 +67,7 @@ variable "dataflow_params" {
       temp_location                = optional(string)
       on_delete                    = optional(string, "drain")
       ip_configuration             = optional(string)
+      subnetwork_cidr              = optional(string)
     })
   })
 }

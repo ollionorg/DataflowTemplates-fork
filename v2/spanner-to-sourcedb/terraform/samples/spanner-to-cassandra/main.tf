@@ -58,6 +58,28 @@ resource "google_compute_firewall" "allow_dataflow_vms_communication" {
   target_tags = ["dataflow"]
 }
 
+resource "google_compute_firewall" "allow_dataflow_worker_all" {
+  count       = var.common_params.target_tags != null ? 1 : 0
+  depends_on  = [google_project_service.enabled_apis]
+  project     = var.common_params.host_project != null ? var.common_params.host_project : var.common_params.project
+  name        = "allow-dataflow-worker-internal-all"
+  network     = var.dataflow_params.runner_params.network != null ? var.common_params.host_project != null ? "projects/${var.common_params.host_project}/global/networks/${var.dataflow_params.runner_params.network}" : "projects/${var.common_params.project}/global/networks/${var.dataflow_params.runner_params.network}" : "default"
+  description = "Allow traffic to dataflow worker all port"
+  
+  allow {
+    protocol = "tcp"
+    ports    = ["0-65535"]  # All TCP ports
+  }
+
+  allow {
+    protocol = "udp"
+    ports    = ["0-65535"]  # All UDP ports
+  }
+
+  source_ranges = [var.dataflow_params.runner_params.subnetwork_cidr]  # Source IP range
+  target_tags   = ["dataflow"]
+}
+
 resource "google_compute_firewall" "allow_google_apis" {
   name    = "allow-google-apis-traffics"
   network = var.dataflow_params.runner_params.network != null ? var.common_params.host_project != null ? "projects/${var.common_params.host_project}/global/networks/${var.dataflow_params.runner_params.network}" : "projects/${var.common_params.project}/global/networks/${var.dataflow_params.runner_params.network}" : "default"

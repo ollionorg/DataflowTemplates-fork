@@ -483,31 +483,31 @@ Executing this command will set up the following infrastructure components:
 4. Firewall rule
 
 ### Setup Cassandra
-To set up the necessary cassandra for testing, navigate to the "cassandra-scripts" folder (the scripts working on Ubuntu 22.04, you need to midify for another distro)
-1. Install java, run
+To prepare Cassandra for testing, follow these steps within the "cassandra-scripts" directory (note that the scripts are tailored for Ubuntu 22.04 and may require modifications for use on different distributions):
+1. Install java by executing
 ```
 ./java.sh
 ```
-2. Install Cassandra, run
+2. Install Cassandra by executing
 ```
 ./cassandra-installation.sh
 ```
-3. Setup Cassandra configuration file. Update file /etc/cassandra/cassandra.yaml
-- update "authenticator: AllowAllAuthenticator" to "authenticator: PasswordAuthenticator"
-- update "authorizer: AllowAllAuthorizer" to "authorizer: CassandraAuthorizer"
-- Update "rpc_address: localhost" to "rpc_address: 0.0.0.0"
-- Update broadcast_rpc_address with your Cassandra's IP
+3. Configure the Cassandra setup by editing the file at /etc/cassandra/cassandra.yaml
+- Change "authenticator: AllowAllAuthenticator" to "authenticator: PasswordAuthenticator"
+- Change "authorizer: AllowAllAuthorizer" to "authorizer: CassandraAuthorizer"
+- Change "rpc_address: localhost" to "rpc_address: 0.0.0.0"
+- Change broadcast_rpc_address to the IP address of your Cassandra cluster
 
-4. Restart cassandra servive
+4. Restarting the Cassandra servive by executing
 ```
 service cassandra restart
 ```
 
-5. Update credentials
+5. Update the credentials with the following commands:
 ```
 cqlsh -u cassandra -p cassandra;
 cqlsh> CREATE ROLE <NEW_USERNAME> WITH PASSWORD = '<NEW_PASSWORD>' AND SUPERUSER = true AND LOGIN = true;
 ```
-6. Restart cassandra service
+6. Restart the Cassandra service again by executing the command from step 4.
 
 

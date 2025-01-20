@@ -1,12 +1,12 @@
 {
   "SessionName": "NewSession",
   "Source": {
-    "Type": "cassandra", // Change to cassandra
+    "Type": "cassandra", 
     "Properties": {
       "contactPoints": ["10.0.0.2"], // Use the IP for Cassandra cluster
       "keyspace": "ecommerce", // Keyspace in Cassandra
       "user": "ollion", // If authentication is required
-      "password": "Ollion@2023" // If authentication is required
+      "password": "ollion_2024" // If authentication is required
     }
   },
   "SyntheticPKeys": {},

@@ -9,7 +9,7 @@ resource "null_resource" "replace_keys" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     # command = "sed \"s~##host##~${var.shard_config.host}~g; s~##port##~${var.shard_config.port}~g; s~##keyspace##~${var.shard_config.keyspace}~g; s~##dataCenter##~${var.shard_config.dataCenter}~g; s~##username##~${var.shard_config.username}~g; s~##password##~${var.shard_config.password}~g\" ${var.cassandra_template_config_file} > cassandra-config.conf"
-    command = "sed \"s~##host##~${var.shard_config.host}~g; s~##port##~${var.shard_config.port}~g; s~##keyspace##~${var.shard_config.keyspace}~g; s~##username##~${var.shard_config.username}~g; s~##password##~${var.shard_config.password}~g\" ${var.cassandra_template_config_file} > cassandra-config.conf"
+    command = "sed \"s~##host##~${var.shard_config.host}~g; s~##port##~${var.shard_config.port}~g; s~##keyspace##~${var.shard_config.keyspace}~g; s~##dataCenter##~${var.shard_config.dataCenter}~g; s~##username##~${var.shard_config.username}~g; s~##password##~${var.shard_config.password}~g\" ${var.cassandra_template_config_file} > cassandra-config.conf"
   }
 }  
 

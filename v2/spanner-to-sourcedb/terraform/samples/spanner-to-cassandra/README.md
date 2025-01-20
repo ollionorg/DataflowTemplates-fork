@@ -472,16 +472,42 @@ setting this value > 20. In most cases, the default value should suffice.
 
 
 ## Supporting Infra
-If you need suporting infra for testing purpose you go to folder supporting-infra and run
+To set up the necessary infrastructure for testing, navigate to the "supporting-infra" folder, update the values in the "config.yaml" file, and execute the following command:
 ```
 ./apply.sh
 ```
-
-Above command will create following infra
+Executing this command will set up the following infrastructure components:
 1. VPC and Subnet
 2. Spanner instance
 3. Cassandra VM
 4. Firewall rule
 
 ### Setup Cassandra
+To set up the necessary cassandra for testing, navigate to the "cassandra-scripts" folder (the scripts working on Ubuntu 22.04, you need to midify for another distro)
+1. Install java, run
+```
+./java.sh
+```
+2. Install Cassandra, run
+```
+./cassandra-installation.sh
+```
+3. Setup Cassandra configuration file. Update file /etc/cassandra/cassandra.yaml
+- update "authenticator: AllowAllAuthenticator" to "authenticator: PasswordAuthenticator"
+- update "authorizer: AllowAllAuthorizer" to "authorizer: CassandraAuthorizer"
+- Update "rpc_address: localhost" to "rpc_address: 0.0.0.0"
+- Update broadcast_rpc_address with your Cassandra's IP
+
+4. Restart cassandra servive
+```
+service cassandra restart
+```
+
+5. Update credentials
+```
+cqlsh -u cassandra -p cassandra;
+cqlsh> CREATE ROLE <NEW_USERNAME> WITH PASSWORD = '<NEW_PASSWORD>' AND SUPERUSER = true AND LOGIN = true;
+```
+6. Restart cassandra service
+
 

@@ -131,7 +131,6 @@ It takes the following assumptions -
 2. Ensure that the Cassandra instance and Dataflow workers can establish connectivity with each other. Template automatically adds networking firewalls rules to enable this access. This can differ depending on the source configuration. Please validate the template rules and ensure that network connectivity can be established.
 3. The Cassandra instance with database containing reverse-replication compatible
    schema is created.
-4. A session file has been generated to perform the spanner to Cassandra schema mapping.
 
 ## Cassandra Configuration
 
@@ -193,6 +192,7 @@ configuration and creates the following resources -
 2. Edit the `terraform.tfvars` or `terraform_simple.tfvars` file and replace the
    dummy variables with real values. Extend the configuration to meet your
    needs. It is recommended to get started with `terraform_simple.tfvars`.
+   shard_config part is your cassandra configuration.
 3. Run the following commands -
 
 ### Initialise Terraform
@@ -228,6 +228,8 @@ dataflow_job_urls = [
   "https://console.cloud.google.com/dataflow/jobs/us-central1/<JOB_ID>",
 ]
 ```
+
+File cassandra-config.conf will be created and upload to the bucket
 
 **Note:** Each of the jobs will have a random prefix added to it to prevent name
 collisions.
@@ -504,7 +506,7 @@ If you wish to dismantle the infrastructure that was set up, execute the followi
 ```
 
 ### Setup Cassandra
-To prepare Cassandra for testing, follow these steps within the "cassandra-scripts" directory (note that the scripts are tailored for Ubuntu 22.04 and may require modifications for use on different distributions):
+To prepare Cassandra for testing, follow these steps within the "cassandra-setup" directory (note that the scripts are tailored for Ubuntu 22.04 and may require modifications for use on different distributions):
 1. Install java by executing
 ```
 ./java.sh
@@ -518,6 +520,7 @@ To prepare Cassandra for testing, follow these steps within the "cassandra-scrip
 - Change "authorizer: AllowAllAuthorizer" to "authorizer: CassandraAuthorizer"
 - Change "rpc_address: localhost" to "rpc_address: 0.0.0.0"
 - Change broadcast_rpc_address to the IP address of your Cassandra cluster
+You can check sample of updated file in cassandra.yaml 
 
 4. Restarting the Cassandra servive by executing
 ```
@@ -530,5 +533,3 @@ cqlsh -u cassandra -p cassandra;
 cqlsh> CREATE ROLE <NEW_USERNAME> WITH PASSWORD = '<NEW_PASSWORD>' AND SUPERUSER = true AND LOGIN = true;
 ```
 6. Restart the Cassandra service again by executing the command from step 4.
-
-

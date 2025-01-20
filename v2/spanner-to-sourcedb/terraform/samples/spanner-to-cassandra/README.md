@@ -311,53 +311,22 @@ Source shard configuration file that is supplied to the dataflow is automaticall
 created by Terraform. A sample file that this uploaded to GCS looks like
 below - 
 
-#### Using Secrets Manager to specify password 
-
 ```json
-[
-    {
-    "logicalShardId": "shard1",
-    "host": "10.11.12.13",
-    "user": "root",
-    "secretManagerUri":"projects/123/secrets/rev-cmek-cred-shard1/versions/latest",
-    "port": "3306",
-    "dbName": "db1"
-    },
-    {
-    "logicalShardId": "shard2",
-    "host": "10.11.12.14",
-    "user": "root",
-    "secretManagerUri":"projects/123/secrets/rev-cmek-cred-shard2/versions/latest",
-    "port": "3306",
-    "dbName": "db2"
+  datastax-java-driver {
+      basic.contact-points = ["10.0.0.2:9042"]
+      basic.session-keyspace = "ecommerce"
+    basic.load-balancing-policy {
+      local-datacenter = "datacenter1"
     }
-]
+    advanced.auth-provider {
+	    class = PlainTextAuthProvider
+      username = "username"
+      password = "password"
+    }
+  }
 ```
 
-#### Specifying plaintext password
-
-```json
-[
-    {
-    "logicalShardId": "shard1",
-    "host": "10.11.12.13",
-    "user": "root",
-    "password":"<YOUR_PWD_HERE>",
-    "port": "3306",
-    "dbName": "db1"
-    },
-    {
-    "logicalShardId": "shard2",
-    "host": "10.11.12.14",
-    "user": "root",
-    "password":"<YOUR_PWD_HERE>",
-    "port": "3306",
-    "dbName": "db2"
-    }
-]
-```
-
-This file is generated from the configuration provided in the `var.shard_list`
+This file is generated from the configuration provided in the `var.shard_config`
 parameter.
 
 ### Adding access to Terraform service account
@@ -501,40 +470,18 @@ potentially speed up orchestration execution
 when orchestrating a large sharded migration. We strongly recommend against
 setting this value > 20. In most cases, the default value should suffice.
 
-### Correlating the `count.index` with the `shard_id`
 
-In the Terraform output, you should see resources being referred to by their
-index. This is how Terraform works internally when it has to create multiple
-resources of the same type.
-
-In order to correlate the `count.index` with the `shard_id` that is either
-user specified or auto-generated, `terraform.tf.state` can be used.
-
-For example, a snippet of XX looks like -
-
-```json
-{
-  "mode": "managed",
-  "type": "google_datastream_connection_profile",
-  "name": "source_Cassandra",
-  "provider": "provider[\"registry.terraform.io/hashicorp/google\"]",
-  "instances": [
-    {
-      "index_key": 0,
-      "schema_version": 0,
-      "attributes": {
-        "bigquery_profile": [],
-        "connection_profile_id": "smt-elegant-ape-source-Cassandra",
-        "create_without_validation": false,
-        "display_name": "smt-elegant-ape-source-Cassandra",
-        "effective_labels": {
-          "migration_id": "smt-elegant-ape"
-        }
-      }
-    }
-  ]
-}
+## Supporting Infra
+If you need suporting infra for testing purpose you go to folder supporting-infra and run
+```
+./apply.sh
 ```
 
-As you can see in this example, the `index_key` = `0`, correlates with the
-auto-generated `shard_id` = `smt-elegant-ape`.
+Above command will create following infra
+1. VPC and Subnet
+2. Spanner instance
+3. Cassandra VM
+4. Firewall rule
+
+### Setup Cassandra
+

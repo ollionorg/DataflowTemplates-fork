@@ -27,7 +27,6 @@ import java.text.ParseException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
@@ -48,208 +47,216 @@ import org.slf4j.LoggerFactory;
  */
 public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
 
-   private static final Logger LOG = LoggerFactory.getLogger(SpannerToCassandraLTBase.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SpannerToCassandraLTBase.class);
 
-   private static final String TEMPLATE_SPEC_PATH =
-       MoreObjects.firstNonNull(
-           TestProperties.specPath(), "gs://dataflow-templates/latest/flex/Spanner_to_SourceDb");
-   public SpannerResourceManager spannerResourceManager;
-   public SpannerResourceManager spannerMetadataResourceManager;
-   public CassandraResourceManager cassandraResourceManager;
-   public GcsResourceManager gcsResourceManager;
-   private static PubsubResourceManager pubsubResourceManager;
-   private SubscriptionName subscriptionName;
+  private static final String TEMPLATE_SPEC_PATH =
+      MoreObjects.firstNonNull(
+          TestProperties.specPath(), "gs://dataflow-templates/latest/flex/Spanner_to_SourceDb");
+  public SpannerResourceManager spannerResourceManager;
+  public SpannerResourceManager spannerMetadataResourceManager;
+  public CassandraResourceManager cassandraResourceManager;
+  public GcsResourceManager gcsResourceManager;
+  private static PubsubResourceManager pubsubResourceManager;
+  private SubscriptionName subscriptionName;
 
-   public void setupResourceManagers(
-       String spannerDdlResource, String sessionFileResource, String artifactBucket)
-       throws IOException {
-      spannerResourceManager = createSpannerDatabase(spannerDdlResource);
-      spannerMetadataResourceManager = createSpannerMetadataDatabase();
+  public void setupResourceManagers(
+      String spannerDdlResource, String sessionFileResource, String artifactBucket)
+      throws IOException {
+    spannerResourceManager = createSpannerDatabase(spannerDdlResource);
+    spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
-      gcsResourceManager =
-          GcsResourceManager.builder(artifactBucket, getClass().getSimpleName(), CREDENTIALS).build();
+    gcsResourceManager =
+        GcsResourceManager.builder(artifactBucket, getClass().getSimpleName(), CREDENTIALS).build();
 
-      gcsResourceManager.uploadArtifact(
-          "input/session.json", Resources.getResource(sessionFileResource).getPath());
+    gcsResourceManager.uploadArtifact(
+        "input/session.json", Resources.getResource(sessionFileResource).getPath());
 
-      pubsubResourceManager = setUpPubSubResourceManager();
-      subscriptionName =
-          createPubsubResources(
-              getClass().getSimpleName(),
-              pubsubResourceManager,
-              getGcsPath(artifactBucket, "dlq", gcsResourceManager)
-                  .replace("gs://" + artifactBucket, ""));
-   }
+    pubsubResourceManager = setUpPubSubResourceManager();
+    subscriptionName =
+        createPubsubResources(
+            getClass().getSimpleName(),
+            pubsubResourceManager,
+            getGcsPath(artifactBucket, "dlq", gcsResourceManager)
+                .replace("gs://" + artifactBucket, ""));
+  }
 
-   public void setupCassandraResourceManager() throws IOException {
-      cassandraResourceManager = CassandraResourceManager.builder(testName).build();
-      createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraResourceManager);
-   }
+  public void setupCassandraResourceManager() throws IOException {
+    cassandraResourceManager = CassandraResourceManager.builder(testName).build();
+    createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraResourceManager);
+  }
 
-   public void cleanupResourceManagers() {
-      ResourceManagerUtils.cleanResources(
-          spannerResourceManager,
-          spannerMetadataResourceManager,
-          gcsResourceManager,
-          pubsubResourceManager, cassandraResourceManager);
-   }
+  public void cleanupResourceManagers() {
+    ResourceManagerUtils.cleanResources(
+        spannerResourceManager,
+        spannerMetadataResourceManager,
+        gcsResourceManager,
+        pubsubResourceManager,
+        cassandraResourceManager);
+  }
 
-   public PubsubResourceManager setUpPubSubResourceManager() throws IOException {
-      return PubsubResourceManager.builder(testName, project, CREDENTIALS_PROVIDER)
-          .setMonitoringClient(monitoringClient)
-          .build();
-   }
+  public PubsubResourceManager setUpPubSubResourceManager() throws IOException {
+    return PubsubResourceManager.builder(testName, project, CREDENTIALS_PROVIDER)
+        .setMonitoringClient(monitoringClient)
+        .build();
+  }
 
-   public SubscriptionName createPubsubResources(
-       String identifierSuffix, PubsubResourceManager pubsubResourceManager, String gcsPrefix) {
-      String topicNameSuffix = "rr-load" + identifierSuffix;
-      String subscriptionNameSuffix = "rr-load-sub" + identifierSuffix;
-      TopicName topic = pubsubResourceManager.createTopic(topicNameSuffix);
-      SubscriptionName subscription =
-          pubsubResourceManager.createSubscription(topic, subscriptionNameSuffix);
-      String prefix = gcsPrefix;
-      if (prefix.startsWith("/")) {
-         prefix = prefix.substring(1);
+  public SubscriptionName createPubsubResources(
+      String identifierSuffix, PubsubResourceManager pubsubResourceManager, String gcsPrefix) {
+    String topicNameSuffix = "rr-load" + identifierSuffix;
+    String subscriptionNameSuffix = "rr-load-sub" + identifierSuffix;
+    TopicName topic = pubsubResourceManager.createTopic(topicNameSuffix);
+    SubscriptionName subscription =
+        pubsubResourceManager.createSubscription(topic, subscriptionNameSuffix);
+    String prefix = gcsPrefix;
+    if (prefix.startsWith("/")) {
+      prefix = prefix.substring(1);
+    }
+    prefix += "/retry/";
+    gcsResourceManager.createNotification(topic.toString(), prefix);
+    return subscription;
+  }
+
+  public SpannerResourceManager createSpannerDatabase(String spannerDdlResourceFile)
+      throws IOException {
+    SpannerResourceManager spannerResourceManager =
+        SpannerResourceManager.builder("rr-loadtest-" + testName, project, region)
+            .maybeUseStaticInstance()
+            .build();
+    String ddl =
+        String.join(
+            " ",
+            Resources.readLines(
+                Resources.getResource(spannerDdlResourceFile), StandardCharsets.UTF_8));
+    ddl = ddl.trim();
+    String[] ddls = ddl.split(";");
+    for (String d : ddls) {
+      if (!d.isBlank()) {
+        spannerResourceManager.executeDdlStatement(d);
       }
-      prefix += "/retry/";
-      gcsResourceManager.createNotification(topic.toString(), prefix);
-      return subscription;
-   }
+    }
+    return spannerResourceManager;
+  }
 
-   public SpannerResourceManager createSpannerDatabase(String spannerDdlResourceFile)
-       throws IOException {
-      SpannerResourceManager spannerResourceManager =
-          SpannerResourceManager.builder("rr-loadtest-" + testName, project, region)
-              .maybeUseStaticInstance()
-              .build();
-      String ddl =
-          String.join(
-              " ",
-              Resources.readLines(
-                  Resources.getResource(spannerDdlResourceFile), StandardCharsets.UTF_8));
-      ddl = ddl.trim();
-      String[] ddls = ddl.split(";");
-      for (String d : ddls) {
-         if (!d.isBlank()) {
-            spannerResourceManager.executeDdlStatement(d);
-         }
-      }
-      return spannerResourceManager;
-   }
+  public SpannerResourceManager createSpannerMetadataDatabase() throws IOException {
+    SpannerResourceManager spannerMetadataResourceManager =
+        SpannerResourceManager.builder("rr-meta-" + testName, project, region)
+            .maybeUseStaticInstance()
+            .build();
+    String dummy = "create table t1(id INT64 ) primary key(id)";
+    spannerMetadataResourceManager.executeDdlStatement(dummy);
+    return spannerMetadataResourceManager;
+  }
 
-   public SpannerResourceManager createSpannerMetadataDatabase() throws IOException {
-      SpannerResourceManager spannerMetadataResourceManager =
-          SpannerResourceManager.builder("rr-meta-" + testName, project, region)
-              .maybeUseStaticInstance()
-              .build();
-      String dummy = "create table t1(id INT64 ) primary key(id)";
-      spannerMetadataResourceManager.executeDdlStatement(dummy);
-      return spannerMetadataResourceManager;
-   }
+  public void createAndUploadCassandraConfigToGcs(
+      GcsResourceManager gcsResourceManager, CassandraResourceManager cassandraResourceManagers)
+      throws IOException {
+    String host = cassandraResourceManagers.getHost();
+    int port = cassandraResourceManagers.getPort();
+    String keyspaceName = cassandraResourceManagers.getKeyspaceName();
 
-   public void createAndUploadCassandraConfigToGcs(
-       GcsResourceManager gcsResourceManager,CassandraResourceManager cassandraResourceManagers)
-       throws IOException {
-      String host = cassandraResourceManagers.getHost();
-      int port = cassandraResourceManagers.getPort();
-      String keyspaceName = cassandraResourceManagers.getKeyspaceName();
+    String cassandraConfigContents =
+        new String(
+            Files.readAllBytes(
+                Paths.get("SpannerToCassandraSourceLT/cassandra-config-template.conf")));
+    cassandraConfigContents =
+        cassandraConfigContents
+            .replace("##host##", host)
+            .replace("##port##", Integer.toString(port))
+            .replace("##keyspace##", keyspaceName);
 
-      String cassandraConfigContents = new String(Files.readAllBytes(Paths.get("SpannerToCassandraSourceLT/cassandra-config-template.conf")));
-      cassandraConfigContents = cassandraConfigContents.replace("##host##", host).replace("##port##", Integer.toString(port)).replace("##keyspace##", keyspaceName);
+    LOG.info("Cassandra file contents: {}", cassandraConfigContents);
+    gcsResourceManager.createArtifact("input/cassandra-config.conf", cassandraConfigContents);
+  }
 
-      LOG.info("Cassandra file contents: {}", cassandraConfigContents);
-      gcsResourceManager.createArtifact("input/cassandra-config.conf", cassandraConfigContents);
-   }
+  public PipelineLauncher.LaunchInfo launchDataflowJob(
+      String artifactBucket, int numWorkers, int maxWorkers) throws IOException {
+    // default parameters
 
-   public PipelineLauncher.LaunchInfo launchDataflowJob(
-       String artifactBucket, int numWorkers, int maxWorkers) throws IOException {
-      // default parameters
+    Map<String, String> params =
+        new HashMap<>() {
+          {
+            put(
+                "sessionFilePath",
+                getGcsPath(artifactBucket, "input/session.json", gcsResourceManager));
+            put("instanceId", spannerResourceManager.getInstanceId());
+            put("databaseId", spannerResourceManager.getDatabaseId());
+            put("spannerProjectId", project);
+            put("metadataDatabase", spannerMetadataResourceManager.getDatabaseId());
+            put("metadataInstance", spannerMetadataResourceManager.getInstanceId());
+            put(
+                "sourceShardsFilePath",
+                getGcsPath(artifactBucket, "input/cassandra-config.conf", gcsResourceManager));
+            put("changeStreamName", "allstream");
+            put("dlqGcsPubSubSubscription", subscriptionName.toString());
+            put("deadLetterQueueDirectory", getGcsPath(artifactBucket, "dlq", gcsResourceManager));
+            put("maxShardConnections", "100");
+            put("sourceType", "cassandra");
+          }
+        };
 
-      Map<String, String> params =
-          new HashMap<>() {
-             {
-                put(
-                    "sessionFilePath",
-                    getGcsPath(artifactBucket, "input/session.json", gcsResourceManager));
-                put("instanceId", spannerResourceManager.getInstanceId());
-                put("databaseId", spannerResourceManager.getDatabaseId());
-                put("spannerProjectId", project);
-                put("metadataDatabase", spannerMetadataResourceManager.getDatabaseId());
-                put("metadataInstance", spannerMetadataResourceManager.getInstanceId());
-                put(
-                    "sourceShardsFilePath",
-                    getGcsPath(artifactBucket, "input/cassandra-config.conf", gcsResourceManager));
-                put("changeStreamName", "allstream");
-                put("dlqGcsPubSubSubscription", subscriptionName.toString());
-                put("deadLetterQueueDirectory", getGcsPath(artifactBucket, "dlq", gcsResourceManager));
-                put("maxShardConnections", "100");
-                put("sourceType","cassandra");
-             }
-          };
+    LaunchConfig.Builder options =
+        LaunchConfig.builder(getClass().getSimpleName(), TEMPLATE_SPEC_PATH);
+    options
+        .addEnvironment("maxWorkers", maxWorkers)
+        .addEnvironment("numWorkers", numWorkers)
+        .addEnvironment("additionalExperiments", Collections.singletonList("use_runner_v2"));
 
-      LaunchConfig.Builder options =
-          LaunchConfig.builder(getClass().getSimpleName(), TEMPLATE_SPEC_PATH);
-      options
-          .addEnvironment("maxWorkers", maxWorkers)
-          .addEnvironment("numWorkers", numWorkers)
-          .addEnvironment("additionalExperiments", Collections.singletonList("use_runner_v2"));
+    options.setParameters(params);
+    PipelineLauncher.LaunchInfo jobInfo = pipelineLauncher.launch(project, region, options.build());
+    return jobInfo;
+  }
 
-      options.setParameters(params);
-      PipelineLauncher.LaunchInfo jobInfo = pipelineLauncher.launch(project, region, options.build());
-      return jobInfo;
-   }
+  public String getGcsPath(
+      String bucket, String artifactId, GcsResourceManager gcsResourceManager) {
+    return ArtifactUtils.getFullGcsPath(
+        bucket, getClass().getSimpleName(), gcsResourceManager.runId(), artifactId);
+  }
 
-   public String getGcsPath(
-       String bucket, String artifactId, GcsResourceManager gcsResourceManager) {
-      return ArtifactUtils.getFullGcsPath(
-          bucket, getClass().getSimpleName(), gcsResourceManager.runId(), artifactId);
-   }
+  public Map<String, Double> getCustomCounters(
+      LaunchInfo launchInfo, int numShards, Map<String, Double> metrics) throws IOException {
+    Double successfulEvents =
+        pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "success_record_count");
+    metrics.put(
+        "Custom_Counter_SuccessRecordCount", successfulEvents != null ? successfulEvents : 0.0);
+    Double retryableErrors =
+        pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "retryable_record_count");
+    metrics.put(
+        "Custom_Counter_RetryableRecordCount", retryableErrors != null ? retryableErrors : 0.0);
 
-   public Map<String, Double> getCustomCounters(
-       LaunchInfo launchInfo, int numShards, Map<String, Double> metrics) throws IOException {
-      Double successfulEvents =
-          pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "success_record_count");
+    Double severeErrorCount =
+        pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "severe_error_count");
+    metrics.put(
+        "Custom_Counter_SevereErrorCount", severeErrorCount != null ? severeErrorCount : 0.0);
+    Double skippedRecordCount =
+        pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "skipped_record_count");
+    metrics.put(
+        "Custom_Counter_SkippedRecordCount", skippedRecordCount != null ? skippedRecordCount : 0.0);
+
+    for (int i = 1; i <= numShards; ++i) {
+      Double replicationLag =
+          pipelineLauncher.getMetric(
+              project,
+              region,
+              launchInfo.jobId(),
+              "replication_lag_in_seconds_Shard" + i + "_MEAN");
       metrics.put(
-          "Custom_Counter_SuccessRecordCount", successfulEvents != null ? successfulEvents : 0.0);
-      Double retryableErrors =
-          pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "retryable_record_count");
-      metrics.put(
-          "Custom_Counter_RetryableRecordCount", retryableErrors != null ? retryableErrors : 0.0);
+          "Custom_Counter_MeanReplicationLagShard" + i,
+          replicationLag != null ? replicationLag : 0.0);
+    }
+    return metrics;
+  }
 
-      Double severeErrorCount =
-          pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "severe_error_count");
-      metrics.put(
-          "Custom_Counter_SevereErrorCount", severeErrorCount != null ? severeErrorCount : 0.0);
-      Double skippedRecordCount =
-          pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "skipped_record_count");
-      metrics.put(
-          "Custom_Counter_SkippedRecordCount", skippedRecordCount != null ? skippedRecordCount : 0.0);
+  public void exportMetrics(PipelineLauncher.LaunchInfo jobInfo, int numShards)
+      throws ParseException, IOException, InterruptedException {
+    Map<String, Double> metrics = getMetrics(jobInfo);
+    getCustomCounters(jobInfo, numShards, metrics);
+    getResourceManagerMetrics(metrics);
 
-      for (int i = 1; i <= numShards; ++i) {
-         Double replicationLag =
-             pipelineLauncher.getMetric(
-                 project,
-                 region,
-                 launchInfo.jobId(),
-                 "replication_lag_in_seconds_Shard" + i + "_MEAN");
-         metrics.put(
-             "Custom_Counter_MeanReplicationLagShard" + i,
-             replicationLag != null ? replicationLag : 0.0);
-      }
-      return metrics;
-   }
+    // export results
+    exportMetricsToBigQuery(jobInfo, metrics);
+  }
 
-   public void exportMetrics(PipelineLauncher.LaunchInfo jobInfo, int numShards)
-       throws ParseException, IOException, InterruptedException {
-      Map<String, Double> metrics = getMetrics(jobInfo);
-      getCustomCounters(jobInfo, numShards, metrics);
-      getResourceManagerMetrics(metrics);
-
-      // export results
-      exportMetricsToBigQuery(jobInfo, metrics);
-   }
-
-   public void getResourceManagerMetrics(Map<String, Double> metrics) {
-      pubsubResourceManager.collectMetrics(metrics);
-   }
+  public void getResourceManagerMetrics(Map<String, Double> metrics) {
+    pubsubResourceManager.collectMetrics(metrics);
+  }
 }

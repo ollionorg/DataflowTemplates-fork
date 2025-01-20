@@ -482,6 +482,11 @@ Executing this command will set up the following infrastructure components:
 3. Cassandra VM
 4. Firewall rule
 
+If you wish to dismantle the infrastructure that was set up, execute the following command:
+```
+./destroy.sh
+```
+
 ### Setup Cassandra
 To prepare Cassandra for testing, follow these steps within the "cassandra-scripts" directory (note that the scripts are tailored for Ubuntu 22.04 and may require modifications for use on different distributions):
 1. Install java by executing

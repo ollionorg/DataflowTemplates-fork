@@ -1,8 +1,8 @@
 ## Sample Scenario: Spanner to Cassandra reverse replication
 
 > **_SCENARIO:_** This Terraform example illustrates launching a reverse replication
-> jobs to replicate spanner writes for a sharded Cassandra source, setting up all the required cloud infrastructure.
-> **Details of Cassandra shards are needed as input.**
+> jobs to replicate spanner writes for a Cassandra source, setting up all the required cloud infrastructure.
+> **Details of Cassandra configuration are needed as input.**
 
 ## Terraform permissions
 
@@ -111,7 +111,7 @@ It takes the following assumptions -
 1. Ensure that the Cassandra instance is correctly setup.  
      1. Check that the Cassandra credentials are correctly specified in the `tfvars` file. 
      2. Check that the Cassandra server is up. 
-     3. The Cassandra user configured in the `tfvars` file should have [INSERT](https://dev.Cassandra.com/doc/refman/8.0/en/privileges-provided.html#priv_insert), [UPDATE](https://dev.Cassandra.com/doc/refman/8.0/en/privileges-provided.html#priv_update) and [DELETE](https://dev.Cassandra.com/doc/refman/8.0/en/privileges-provided.html#priv_delete) privileges on the database. 
+     3. The Cassandra user configured in the `tfvars`. 
 2. Ensure that the Cassandra instance and Dataflow workers can establish connectivity with each other. Template automatically adds networking firewalls rules to enable this access. This can differ depending on the source configuration. Please validate the template rules and ensure that network connectivity can be established.
 3. The Cassandra instance with database containing reverse-replication compatible
    schema is created.
@@ -119,9 +119,10 @@ It takes the following assumptions -
 
 ## Cassandra Configuration
 
-1. Cassandra Intallation
+1. Cassandra Installation
 2. Cassandra Configuration Setup
-3. Cassandra 
+3. Cassandra Credential update
+4. Cassandra initial 
 
 > **_NOTE:_**
 [SMT](https://googlecloudplatform.github.io/spanner-migration-tool/quickstart.html)

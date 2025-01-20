@@ -15,6 +15,8 @@
  */
 package com.google.cloud.teleport.v2.templates.dbutils.processor;
 
+import static com.google.cloud.teleport.v2.templates.constants.Constants.SOURCE_CASSANDRA;
+
 import com.google.cloud.teleport.v2.spanner.exceptions.InvalidTransformationException;
 import com.google.cloud.teleport.v2.spanner.migrations.convertors.ChangeEventToMapConvertor;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
@@ -53,11 +55,13 @@ public class InputRecordProcessor {
       String shardId,
       String sourceDbTimezoneOffset,
       IDMLGenerator dmlGenerator,
-      ISpannerMigrationTransformer spannerToSourceTransformer)
+      ISpannerMigrationTransformer spannerToSourceTransformer,
+      String source)
       throws Exception {
 
     try {
-
+      LOG.info("Input Recodr is going to Process");
+      LOG.info("Processing for Spanner Record " + spannerRecord.toString());
       String tableName = spannerRecord.getTableName();
       String modType = spannerRecord.getModType().name();
       String keysJsonStr = spannerRecord.getMod().getKeysJson();
@@ -65,7 +69,7 @@ public class InputRecordProcessor {
       JSONObject newValuesJson = new JSONObject(newValueJsonStr);
       JSONObject keysJson = new JSONObject(keysJsonStr);
       Map<String, Object> customTransformationResponse = null;
-
+      LOG.info("Input Recodr is going to Process for " + tableName);
       if (spannerToSourceTransformer != null) {
         org.joda.time.Instant startTimestamp = org.joda.time.Instant.now();
         Map<String, Object> mapRequest =
@@ -95,6 +99,7 @@ public class InputRecordProcessor {
                   modType, tableName, newValuesJson, keysJson, sourceDbTimezoneOffset)
               .setSchema(schema)
               .setCustomTransformationResponse(customTransformationResponse)
+              .setCommitTimestamp(spannerRecord.getCommitTimestamp())
               .build();
 
       DMLGeneratorResponse dmlGeneratorResponse = dmlGenerator.getDMLStatement(dmlGeneratorRequest);
@@ -102,7 +107,13 @@ public class InputRecordProcessor {
         LOG.warn("DML statement is empty for table: " + tableName);
         return false;
       }
-      dao.write(dmlGeneratorResponse.getDmlStatement());
+      // TODO we need to handle it as proper Interface Level as of now we have handle Prepared
+      // Statement and Raw Statement Differently
+      if (source.equals(SOURCE_CASSANDRA)) {
+        dao.write(dmlGeneratorResponse);
+      } else {
+        dao.write(dmlGeneratorResponse.getDmlStatement());
+      }
 
       Counter numRecProcessedMetric =
           Metrics.counter(shardId, "records_written_to_source_" + shardId);

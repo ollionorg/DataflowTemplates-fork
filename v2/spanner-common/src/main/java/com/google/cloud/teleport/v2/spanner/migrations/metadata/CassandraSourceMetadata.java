@@ -241,4 +241,32 @@ public class CassandraSourceMetadata {
       return cassandraSourceMetadata;
     }
   }
+
+  @Override
+  public String toString() {
+    return "CassandraSourceMetadata{"
+        + "sourceTableMap="
+        + sourceTableMap
+        + ", nameAndColsMap="
+        + nameAndColsMap
+        + '}';
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    CassandraSourceMetadata that = (CassandraSourceMetadata) o;
+    return Objects.equals(sourceTableMap, that.sourceTableMap)
+        && Objects.equals(nameAndColsMap, that.nameAndColsMap);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(sourceTableMap, nameAndColsMap);
+  }
 }

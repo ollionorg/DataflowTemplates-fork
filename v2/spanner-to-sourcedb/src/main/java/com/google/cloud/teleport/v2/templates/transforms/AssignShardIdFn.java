@@ -177,6 +177,7 @@ public class AssignShardIdFn
    */
   @ProcessElement
   public void processElement(ProcessContext c) throws Exception {
+    LOG.info("Going to Process Element for Assign Shard ID");
     TrimmedShardedDataChangeRecord record = new TrimmedShardedDataChangeRecord(c.element());
     String qualifiedShard = "";
     String tableName = record.getTableName();

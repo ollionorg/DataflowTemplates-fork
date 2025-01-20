@@ -132,17 +132,6 @@ It takes the following assumptions -
 3. The Cassandra instance with database containing reverse-replication compatible
    schema is created.
 
-## Cassandra Configuration
-
-1. Cassandra Installation
-2. Cassandra Configuration Setup
-3. Cassandra Credential update
-4. Cassandra initial 
-
-> **_NOTE:_**
-[SMT](https://googlecloudplatform.github.io/spanner-migration-tool/quickstart.html)
-> can be used to generate the session file.
-
 ## Description
 
 This sample contains the following files -

@@ -83,15 +83,6 @@ resource "google_storage_bucket" "reverse_replication_bucket" {
   }
 }
 
-# upload local session file to the created GCS bucket
-resource "google_storage_bucket_object" "session_file_object" {
-  depends_on   = [google_project_service.enabled_apis]
-  name         = "session.json"
-  source       = "session.json"
-  content_type = "application/json"
-  bucket       = google_storage_bucket.reverse_replication_bucket.id
-}
-
 # Pub/Sub topic for reverse replication DLQ
 resource "google_pubsub_topic" "dlq_pubsub_topic" {
   depends_on = [google_project_service.enabled_apis]

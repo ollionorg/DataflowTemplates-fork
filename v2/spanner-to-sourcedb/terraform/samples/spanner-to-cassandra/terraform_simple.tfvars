@@ -5,7 +5,7 @@ dataflow_template_bucket_location = "gs://<YOUR_DATAFLOW_BUCKET_PATH>" # Replace
 common_params = {
   project = "<YOUR_PROJECT_ID>" # Replace with your GCP project ID
   region  = "<YOUR_REGION" # Replace with your desired GCP region
-  target_tags = ["<YOUR_TARGET_TAGS"] # Target tags for the firewall rule
+  target_tags = ["<YOUR_TARGET_TAGS"] # Target tags for the firewall rule (e.g. cassandra vm tags)
 }
 
 # Dataflow parameters
@@ -13,7 +13,6 @@ dataflow_params = {
   template_params = {
     instance_id             = "<YOUR_SPANNER_INSTANCE_ID>" # Spanner instance ID
     database_id             = "<YOUR_CASSANDRA_DATABASE_ID" # Spanner database ID
-    local_session_file_path = "session.json"
     source_type             = "<YOUR_SOURCE_TYPE>" # Source type of database. Should be cassandra
   }
   runner_params = {

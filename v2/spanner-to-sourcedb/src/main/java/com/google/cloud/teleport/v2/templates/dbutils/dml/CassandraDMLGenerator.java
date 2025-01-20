@@ -16,7 +16,6 @@
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
 
 import com.google.cloud.teleport.v2.spanner.migrations.schema.ColumnPK;
-import com.google.cloud.teleport.v2.spanner.migrations.schema.NameAndCols;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceColumnDefinition;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceTable;
@@ -88,26 +87,18 @@ public class CassandraDMLGenerator implements IDMLGenerator {
       LOG.warn("Schema is invalid or incomplete for table: {}", spannerTableName);
       return new DMLGeneratorResponse("");
     }
-
-    NameAndCols tableMapping = schema.getSpannerToID().get(spannerTableName);
-    if (tableMapping == null) {
-      LOG.warn(
-          "Spanner table {} not found in session file. Dropping the record.", spannerTableName);
-      return new DMLGeneratorResponse("");
-    }
-
-    String spannerTableId = tableMapping.getName();
-    SpannerTable spannerTable = schema.getSpSchema().get(spannerTableId);
+    SpannerTable spannerTable = schema.getSpSchema().get(spannerTableName);
     if (spannerTable == null) {
-      LOG.warn(
-          "Spanner table {} not found in session file. Dropping the record.", spannerTableName);
+      LOG.warn("Spanner table {} not found. Dropping the record.", spannerTableName);
       return new DMLGeneratorResponse("");
     }
 
-    SourceTable sourceTable = schema.getSrcSchema().get(spannerTableId);
+    SourceTable sourceTable = schema.getSrcSchema().get(spannerTableName);
     if (sourceTable == null) {
       LOG.warn(
-          "Source table {} not found for Spanner table ID: {}", spannerTableName, spannerTableId);
+          "Source table {} not found for Spanner table Name: {}",
+          spannerTableName,
+          spannerTableName);
       return new DMLGeneratorResponse("");
     }
 
@@ -175,15 +166,15 @@ public class CassandraDMLGenerator implements IDMLGenerator {
             dmlGeneratorRequest.getNewValuesJson(),
             dmlGeneratorRequest.getKeyValuesJson(),
             dmlGeneratorRequest.getSourceDbTimezoneOffset());
-    List<Map.Entry<String, PreparedStatementValueObject<?>>> allEntries =
+    List<Map.Entry<String, PreparedStatementValueObject<?>>> allColumnNamesAndValues =
         Stream.concat(pkColumnNameValues.entrySet().stream(), columnNameValues.entrySet().stream())
             .collect(Collectors.toList());
     switch (modType) {
       case "INSERT":
       case "UPDATE":
-        return getUpsertStatementCQL(sourceTable.getName(), timestamp, allEntries);
+        return getUpsertStatementCQL(sourceTable.getName(), timestamp, allColumnNamesAndValues);
       case "DELETE":
-        return getDeleteStatementCQL(sourceTable.getName(), timestamp, allEntries);
+        return getDeleteStatementCQL(sourceTable.getName(), timestamp, allColumnNamesAndValues);
       default:
         LOG.error("Unsupported modType: {} for table {}", modType, spannerTable.getName());
         return new DMLGeneratorResponse("");
@@ -196,8 +187,8 @@ public class CassandraDMLGenerator implements IDMLGenerator {
    *
    * @param tableName the name of the table to which the upsert statement applies.
    * @param timestamp the timestamp (in java.sql.Timestamp) to use for the operation.
-   * @param allEntries a map of column names and their corresponding prepared statement value
-   *     objects for non-primary key columns.
+   * @param allColumnNamesAndValues a map of column names and their corresponding prepared statement
+   *     value objects for non-primary key columns.
    * @return a {@link DMLGeneratorResponse} containing the generated CQL statement and a list of
    *     values to be used with the prepared statement.
    *     <p>This method: 1. Iterates through the primary key and column values, appending column
@@ -211,20 +202,21 @@ public class CassandraDMLGenerator implements IDMLGenerator {
   private static DMLGeneratorResponse getUpsertStatementCQL(
       String tableName,
       java.sql.Timestamp timestamp,
-      List<Map.Entry<String, PreparedStatementValueObject<?>>> allEntries) {
+      List<Map.Entry<String, PreparedStatementValueObject<?>>> allColumnNamesAndValues) {
 
     String escapedTableName = "\"" + tableName.replace("\"", "\"\"") + "\"";
     String allColumns =
-        allEntries.stream()
+        allColumnNamesAndValues.stream()
             .map(entry -> "\"" + entry.getKey().replace("\"", "\"\"") + "\"")
             .collect(Collectors.joining(", "));
-    String placeholders = allEntries.stream().map(entry -> "?").collect(Collectors.joining(", "));
+    String placeholders =
+        allColumnNamesAndValues.stream().map(entry -> "?").collect(Collectors.joining(", "));
 
     List<PreparedStatementValueObject<?>> values =
-        allEntries.stream().map(Map.Entry::getValue).collect(Collectors.toList());
+        allColumnNamesAndValues.stream().map(Map.Entry::getValue).collect(Collectors.toList());
 
-    PreparedStatementValueObject<java.sql.Timestamp> timestampObj =
-        PreparedStatementValueObject.create("USING_TIMESTAMP", timestamp);
+    PreparedStatementValueObject<Long> timestampObj =
+        PreparedStatementValueObject.create("USING_TIMESTAMP", timestamp.getTime());
     values.add(timestampObj);
 
     String preparedStatement =
@@ -240,8 +232,6 @@ public class CassandraDMLGenerator implements IDMLGenerator {
    * primary key values, and timestamp.
    *
    * @param tableName the name of the table from which records will be deleted.
-   * @param pkColumnNameValues a map containing the primary key column names and their corresponding
-   *     prepared statement value objects.
    * @param timestamp the timestamp (in java.sql.Timestamp) to use for the delete operation.
    * @return a {@link DMLGeneratorResponse} containing the generated CQL delete statement and a list
    *     of values to bind to the prepared statement.
@@ -256,25 +246,25 @@ public class CassandraDMLGenerator implements IDMLGenerator {
   private static DMLGeneratorResponse getDeleteStatementCQL(
       String tableName,
       java.sql.Timestamp timestamp,
-      List<Map.Entry<String, PreparedStatementValueObject<?>>> allEntries) {
+      List<Map.Entry<String, PreparedStatementValueObject<?>>> allColumnNamesAndValues) {
 
     String escapedTableName = "\"" + tableName.replace("\"", "\"\"") + "\"";
 
     String deleteConditions =
-        allEntries.stream()
+        allColumnNamesAndValues.stream()
             .map(entry -> "\"" + entry.getKey().replace("\"", "\"\"") + "\" = ?")
             .collect(Collectors.joining(" AND "));
 
     List<PreparedStatementValueObject<?>> values =
-        allEntries.stream().map(Map.Entry::getValue).collect(Collectors.toList());
+        allColumnNamesAndValues.stream().map(Map.Entry::getValue).collect(Collectors.toList());
 
     String preparedStatement =
         String.format(
             "DELETE FROM %s USING TIMESTAMP ? WHERE %s", escapedTableName, deleteConditions);
 
     if (timestamp != null) {
-      PreparedStatementValueObject<java.sql.Timestamp> timestampObj =
-          PreparedStatementValueObject.create("USING_TIMESTAMP", timestamp);
+      PreparedStatementValueObject<Long> timestampObj =
+          PreparedStatementValueObject.create("USING_TIMESTAMP", timestamp.getTime());
       values.add(0, timestampObj);
     }
 

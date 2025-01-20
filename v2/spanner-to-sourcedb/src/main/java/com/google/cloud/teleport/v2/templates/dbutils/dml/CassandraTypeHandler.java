@@ -295,8 +295,8 @@ public class CassandraTypeHandler {
   }
 
   /**
-   * Safely executes a handler method, catching exceptions and rethrowing them as runtime
-   * exceptions.
+   * Safely executes a handler method, catching exceptions and rethrowing them as
+   * IllegalArgumentException exceptions.
    *
    * <p>This method provides exception safety by wrapping the execution of a supplier function.
    *
@@ -309,6 +309,7 @@ public class CassandraTypeHandler {
     try {
       return supplier.get();
     } catch (Exception e) {
+      LOG.error(e.getMessage());
       throw new IllegalArgumentException("Error handling type: " + e.getMessage(), e);
     }
   }
@@ -681,13 +682,12 @@ public class CassandraTypeHandler {
    *     text")
    * @param columnValue the value of the column to be cast
    * @return the column value cast to the expected type
-   * @throws ClassCastException if the value cannot be cast to the expected type
    * @throws IllegalArgumentException if the Cassandra type is unsupported or the value is invalid
    */
   public static Object castToExpectedType(String cassandraType, Object columnValue) {
     try {
       return parseAndCastToCassandraType(cassandraType, columnValue).value();
-    } catch (ClassCastException | IllegalArgumentException e) {
+    } catch (IllegalArgumentException e) {
       LOG.error("Error converting value for column: {}, type: {}", cassandraType, e.getMessage());
       throw new IllegalArgumentException(
           "Error converting value for cassandraType: " + cassandraType);

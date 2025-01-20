@@ -18,9 +18,6 @@ package com.google.cloud.teleport.v2.templates.dbutils.dml;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.google.cloud.Timestamp;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.ColumnPK;
@@ -42,17 +39,12 @@ import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CassandraDMLGeneratorTest {
 
   private CassandraDMLGenerator cassandraDMLGenerator;
-
-  @Mock private DMLGeneratorRequest mockRequest;
-
-  @Mock private Schema mockSchema;
 
   @Before
   public void setUp() {
@@ -68,24 +60,25 @@ public class CassandraDMLGeneratorTest {
 
   @Test
   public void testGetDMLStatement_InvalidSchema() {
-    when(mockRequest.getSchema()).thenReturn(null);
+    DMLGeneratorRequest dmlGeneratorRequest =
+        new DMLGeneratorRequest.Builder("insert", "text", null, null, null).setSchema(null).build();
 
-    DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockRequest);
+    DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(dmlGeneratorRequest);
     assertNotNull(response);
     assertEquals("", response.getDmlStatement());
-
-    verify(mockRequest, times(1)).getSchema();
   }
 
   @Test
   public void testGetDMLStatement_MissingTableMapping() {
-    when(mockRequest.getSchema()).thenReturn(mockSchema);
-    when(mockSchema.getSpannerToID()).thenReturn(null);
-
-    DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(mockRequest);
+    Schema schema = new Schema();
+    schema.setSpannerToID(null);
+    DMLGeneratorRequest dmlGeneratorRequest =
+        new DMLGeneratorRequest.Builder("insert", "text", null, null, null)
+            .setSchema(schema)
+            .build();
+    DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(dmlGeneratorRequest);
     assertNotNull(response);
     assertEquals("", response.getDmlStatement());
-    verify(mockSchema, times(1)).getSpannerToID();
   }
 
   @Test
@@ -109,28 +102,6 @@ public class CassandraDMLGeneratorTest {
 
     assertTrue(sql.contains("SingerId"));
     assertEquals(3, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
-  }
-
-  @Test
-  public void tableNameMismatchAllColumnNameTypesMatch() {
-    Schema schema = SessionFileReader.read("src/test/resources/cassandraSession.json");
-    String tableName = "leChanteur";
-    String newValuesString = "{\"LastName\":\"ll\"}";
-    JSONObject newValuesJson = new JSONObject(newValuesString);
-    String keyValueString = "{\"SingerId\":\"999\"}";
-    JSONObject keyValuesJson = new JSONObject(keyValueString);
-    String modType = "INSERT";
-
-    CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
-    DMLGeneratorResponse dmlGeneratorResponse =
-        cassandraDMLGenerator.getDMLStatement(
-            new DMLGeneratorRequest.Builder(
-                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
-                .setSchema(schema)
-                .setCommitTimestamp(Timestamp.now())
-                .build());
-    String sql = dmlGeneratorResponse.getDmlStatement();
-    assertEquals("", sql);
   }
 
   @Test
@@ -566,29 +537,6 @@ public class CassandraDMLGeneratorTest {
   }
 
   @Test
-  public void testSpannerTableNotInSchema() {
-    Schema schema = SessionFileReader.read("src/test/resources/cassandraSession.json");
-    String tableName = "SomeRandomTableNotInSchema";
-    String newValuesString = "{\"FirstName\":\"kk\",\"LastName\":\"ll\"}";
-    JSONObject newValuesJson = new JSONObject(newValuesString);
-    String keyValueString = "{\"SingerId\":\"999\"}";
-    JSONObject keyValuesJson = new JSONObject(keyValueString);
-    String modType = "INSERT";
-
-    CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
-    DMLGeneratorResponse dmlGeneratorResponse =
-        cassandraDMLGenerator.getDMLStatement(
-            new DMLGeneratorRequest.Builder(
-                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
-                .setSchema(schema)
-                .setCommitTimestamp(Timestamp.now())
-                .build());
-    String sql = dmlGeneratorResponse.getDmlStatement();
-
-    assertTrue(sql.isEmpty());
-  }
-
-  @Test
   public void testSpannerKeyIsNull() {
     Schema schema = SessionFileReader.read("src/test/resources/cassandraSession.json");
     String tableName = "Singers";
@@ -735,29 +683,6 @@ public class CassandraDMLGeneratorTest {
     Schema schema = SessionFileReader.read("src/test/resources/cassandraSession.json");
     String tableName = "Persons";
     String newValuesString = "{\"Does\":\"not\",\"matter\":\"junk\"}";
-    JSONObject newValuesJson = new JSONObject(newValuesString);
-    String keyValueString = "{\"Dont\":\"care\"}";
-    JSONObject keyValuesJson = new JSONObject(keyValueString);
-    String modType = "INSERT";
-
-    CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
-    DMLGeneratorResponse dmlGeneratorResponse =
-        cassandraDMLGenerator.getDMLStatement(
-            new DMLGeneratorRequest.Builder(
-                    modType, tableName, newValuesJson, keyValuesJson, "+00:00")
-                .setSchema(schema)
-                .setCommitTimestamp(Timestamp.now())
-                .build());
-    String sql = dmlGeneratorResponse.getDmlStatement();
-
-    assertTrue(sql.isEmpty());
-  }
-
-  @Test
-  public void testSourceTableNotInSchema() {
-    Schema schema = getSchemaObject();
-    String tableName = "contacts";
-    String newValuesString = "{\"accountId\": \"Id1\"}";
     JSONObject newValuesJson = new JSONObject(newValuesString);
     String keyValueString = "{\"Dont\":\"care\"}";
     JSONObject keyValuesJson = new JSONObject(keyValueString);

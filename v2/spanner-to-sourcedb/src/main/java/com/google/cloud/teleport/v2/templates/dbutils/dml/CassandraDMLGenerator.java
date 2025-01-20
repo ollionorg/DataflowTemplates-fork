@@ -16,7 +16,6 @@
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
 
 import com.google.cloud.teleport.v2.spanner.migrations.schema.ColumnPK;
-import com.google.cloud.teleport.v2.spanner.migrations.schema.NameAndCols;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceColumnDefinition;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceTable;
@@ -88,20 +87,18 @@ public class CassandraDMLGenerator implements IDMLGenerator {
       LOG.warn("Schema is invalid or incomplete for table: {}", spannerTableName);
       return new DMLGeneratorResponse("");
     }
-
-    NameAndCols tableMapping = schema.getSpannerToID().get(spannerTableName);
-    SpannerTable spannerTable = schema.getSpSchema().get(tableMapping.getName());
+    SpannerTable spannerTable = schema.getSpSchema().get(spannerTableName);
     if (spannerTable == null) {
       LOG.warn("Spanner table {} not found. Dropping the record.", spannerTableName);
       return new DMLGeneratorResponse("");
     }
 
-    SourceTable sourceTable = schema.getSrcSchema().get(tableMapping.getName());
+    SourceTable sourceTable = schema.getSrcSchema().get(spannerTableName);
     if (sourceTable == null) {
       LOG.warn(
           "Source table {} not found for Spanner table Name: {}",
           spannerTableName,
-          tableMapping.getName());
+          spannerTableName);
       return new DMLGeneratorResponse("");
     }
 

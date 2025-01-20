@@ -4,6 +4,22 @@
 > jobs to replicate spanner writes for a Cassandra source, setting up all the required cloud infrastructure.
 > **Details of Cassandra configuration are needed as input.**
 
+## Prerequisite
+you'll need to create a dataflow template. In the root directory of the repo use following command to do this:
+```
+export BUCKET_NAME=<YOUR_BUCKET_NAME>
+export PROJECT=<YOUR_PROJECT_ID>
+export REGION=<YOUR_REGION>
+
+mvn clean package -PtemplatesStage \
+  -DskipTests -DprojectId="$PROJECT" \
+  -DbucketName="$BUCKET_NAME" \
+  -DstagePrefix="templates" \
+  -DtemplateName="Spanner_to_SourceDb" \
+  -pl v2/spanner-to-sourcedb -am
+
+```
+
 ## Terraform permissions
 
 In order to create the resources in this sample,

@@ -1,3 +1,8 @@
+variable "dataflow_template_bucket_location" {
+  description = "Location of the Dataflow template bucket"
+  type = string
+}
+
 variable "common_params" {
   description = "Parameters that are common to multiple resources"
   type = object({

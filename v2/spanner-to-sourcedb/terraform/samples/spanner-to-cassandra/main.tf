@@ -8,7 +8,6 @@ resource "null_resource" "replace_keys" {
   }
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
-    # command = "sed \"s~##host##~${var.shard_config.host}~g; s~##port##~${var.shard_config.port}~g; s~##keyspace##~${var.shard_config.keyspace}~g; s~##dataCenter##~${var.shard_config.dataCenter}~g; s~##username##~${var.shard_config.username}~g; s~##password##~${var.shard_config.password}~g\" ${var.cassandra_template_config_file} > cassandra-config.conf"
     command = "sed \"s~##host##~${var.shard_config.host}~g; s~##port##~${var.shard_config.port}~g; s~##keyspace##~${var.shard_config.keyspace}~g; s~##dataCenter##~${var.shard_config.dataCenter}~g; s~##username##~${var.shard_config.username}~g; s~##password##~${var.shard_config.password}~g\" ${var.cassandra_template_config_file} > cassandra-config.conf"
   }
 }  
@@ -18,8 +17,7 @@ resource "google_storage_bucket_object" "shard_config" {
   name       = "cassandra-config.conf"
   bucket     = google_storage_bucket.reverse_replication_bucket.id
   source     = "./cassandra-config.conf"
-  depends_on = [google_project_service.enabled_apis, null_resource.replace_keys]
-  # depends_on = [google_project_service.enabled_apis]  
+  depends_on = [google_project_service.enabled_apis, null_resource.replace_keys] 
 } 
 
 locals {
@@ -62,7 +60,7 @@ resource "google_compute_firewall" "allow_dataflow_vms_communication" {
 
 resource "google_compute_firewall" "allow_google_apis" {
   name    = "allow-google-apis-traffics"
-  network = "reverse-replication"
+  network = var.dataflow_params.runner_params.network != null ? var.common_params.host_project != null ? "projects/${var.common_params.host_project}/global/networks/${var.dataflow_params.runner_params.network}" : "projects/${var.common_params.project}/global/networks/${var.dataflow_params.runner_params.network}" : "default"
   
   allow {
     protocol = "tcp"
@@ -93,16 +91,6 @@ resource "google_storage_bucket_object" "session_file_object" {
   content_type = "application/json"
   bucket       = google_storage_bucket.reverse_replication_bucket.id
 }
-
-# Auto-generate the source shards file from the Terraform configuration and
-# upload it to GCS.
-# resource "google_storage_bucket_object" "source_shards_file_object" {
-#   depends_on   = [google_project_service.enabled_apis]
-#   name         = "source_shards.json"
-#   content_type = "application/json"
-#   bucket       = google_storage_bucket.reverse_replication_bucket.id
-#   content      = jsonencode(var.shard_list)
-# }
 
 # Pub/Sub topic for reverse replication DLQ
 resource "google_pubsub_topic" "dlq_pubsub_topic" {
@@ -197,8 +185,7 @@ resource "google_dataflow_flex_template_job" "reverse_replication_job" {
     google_project_service.enabled_apis, google_project_iam_member.reverse_replication_roles, google_spanner_database.reverse_replication_metadata_database, null_resource.create_spanner_change_stream, google_pubsub_subscription.dlq_pubsub_subscription
   ] # Launch the template once the stream is created.
   provider                = google-beta
-  # container_spec_gcs_path = "gs://dataflow-templates-${var.common_params.region}/latest/flex/Spanner_to_SourceDb"
-  container_spec_gcs_path = "gs://dataflow-templates-spanner-to-cassandra/templates/flex/Spanner_to_SourceDb"
+  container_spec_gcs_path = var.dataflow_template_bucket_location
   # Parameters from Dataflow Template
   parameters = {
     changeStreamName         = var.dataflow_params.template_params.change_stream_name != null ? var.dataflow_params.template_params.change_stream_name : local.change_stream
@@ -211,7 +198,7 @@ resource "google_dataflow_flex_template_job" "reverse_replication_job" {
     endTimestamp             = var.dataflow_params.template_params.end_timestamp
     shadowTablePrefix        = var.dataflow_params.template_params.shadow_table_prefix
     sourceShardsFilePath     = "gs://${google_storage_bucket_object.shard_config.bucket}/${google_storage_bucket_object.shard_config.name}"
-    sessionFilePath          = "gs://${google_storage_bucket_object.session_file_object.bucket}/${google_storage_bucket_object.session_file_object.name}"
+    # sessionFilePath          = "gs://${google_storage_bucket_object.session_file_object.bucket}/${google_storage_bucket_object.session_file_object.name}"
     filtrationMode           = var.dataflow_params.template_params.filtration_mode
     shardingCustomJarPath    = var.dataflow_params.template_params.sharding_custom_jar_path
     shardingCustomClassName  = var.dataflow_params.template_params.sharding_custom_class_name

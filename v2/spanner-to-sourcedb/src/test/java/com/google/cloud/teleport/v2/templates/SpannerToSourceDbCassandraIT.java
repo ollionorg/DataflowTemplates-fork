@@ -83,13 +83,13 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
         spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
         cassandraResourceManager = CassandraResourceManager.builder(testName).build();
+        createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraResourceManager);
 
         createCassandraSchema(cassandraResourceManager, CASSANDRA_SCHEMA_FILE_RESOURCE);
 
         gcsResourceManager =
             GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
                 .build();
-        createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraResourceManager);
         gcsResourceManager.uploadArtifact(
             "input/session.json", Resources.getResource(SESSION_FILE_RESOURCE).getPath());
         pubsubResourceManager = setUpPubSubResourceManager();

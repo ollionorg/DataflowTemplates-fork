@@ -21,10 +21,10 @@ import com.google.cloud.teleport.v2.spanner.migrations.transformation.CustomTran
 import com.google.common.io.Resources;
 import com.google.pubsub.v1.SubscriptionName;
 import com.google.pubsub.v1.TopicName;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -95,14 +95,23 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
   public void createAndUploadCassandraConfigToGcs(
       GcsResourceManager gcsResourceManager, CassandraResourceManager cassandraResourceManagers)
       throws IOException {
+
     String host = cassandraResourceManagers.getHost();
     int port = cassandraResourceManagers.getPort();
     String keyspaceName = cassandraResourceManagers.getKeyspaceName();
 
-    String cassandraConfigContents =
-        new String(
-            Files.readAllBytes(
-                Paths.get("SpannerToCassandraSourceIT/cassandra-config-template.conf")));
+    String cassandraConfigContents;
+    try (InputStream inputStream =
+        Thread.currentThread()
+            .getContextClassLoader()
+            .getResourceAsStream("SpannerToCassandraSourceIT/cassandra-config-template.conf")) {
+      if (inputStream == null) {
+        throw new FileNotFoundException(
+            "Resource file not found: SpannerToCassandraSourceIT/cassandra-config-template.conf");
+      }
+      cassandraConfigContents = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+    }
+
     cassandraConfigContents =
         cassandraConfigContents
             .replace("##host##", host)
@@ -110,6 +119,7 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
             .replace("##keyspace##", keyspaceName);
 
     LOG.info("Cassandra file contents: {}", cassandraConfigContents);
+
     gcsResourceManager.createArtifact("input/cassandra-config.conf", cassandraConfigContents);
   }
 

@@ -34,15 +34,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.shaded.com.google.common.io.Resources;
 
 @Category(TemplateLoadTest.class)
 @TemplateLoadTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
 public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
-  private static final Logger LOG = LoggerFactory.getLogger(SpannerToCassandraSourceLT.class);
 
   private String generatorSchemaPath;
   private final String artifactBucket = TestProperties.artifactBucket();

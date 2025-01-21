@@ -53,16 +53,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.junit.runners.model.MultipleFailureException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SpannerToSourceDbCassandraIT.class)
 @RunWith(JUnit4.class)
 public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbITBase {
-
-  private static final Logger LOG =
-      LoggerFactory.getLogger(SpannerToCassandraSourceDbDatatypeIT.class);
 
   private static final String SPANNER_DDL_RESOURCE =
       "SpannerToCassandraSourceDbDatatypeIT/spanner-schema.sql";

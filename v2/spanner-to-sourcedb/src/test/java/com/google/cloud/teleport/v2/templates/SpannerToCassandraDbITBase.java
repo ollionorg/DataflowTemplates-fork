@@ -92,7 +92,7 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
       keyspaceName = keyspaceName.substring(0, 48);
     }
     CassandraResourceManager cassandraResourceManager =
-        CassandraResourceManager.builder(testName).useStaticContainer().build();
+        CassandraResourceManager.builder(testName).setKeyspaceName(keyspaceName).build();
     String sql =
         String.format(
             "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy', 'replication_factor':1}",

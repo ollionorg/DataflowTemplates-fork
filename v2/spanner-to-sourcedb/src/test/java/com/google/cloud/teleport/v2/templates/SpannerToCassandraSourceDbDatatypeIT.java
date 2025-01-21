@@ -55,7 +55,7 @@ import org.junit.runners.JUnit4;
 import org.junit.runners.model.MultipleFailureException;
 
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
-@TemplateIntegrationTest(SpannerToSourceDbCassandraIT.class)
+@TemplateIntegrationTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
 public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbITBase {
 

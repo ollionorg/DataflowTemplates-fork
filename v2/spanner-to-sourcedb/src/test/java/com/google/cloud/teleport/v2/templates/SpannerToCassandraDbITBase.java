@@ -99,7 +99,9 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
     String host = cassandraResourceManagers.getHost();
     int port = cassandraResourceManagers.getPort();
     String keyspaceName = cassandraResourceManagers.getKeyspaceName();
-
+    LOG.info("Cassandra keyspaceName :: {}", keyspaceName);
+    LOG.info("Cassandra host :: {}", host);
+    LOG.info("Cassandra port :: {}", port);
     String cassandraConfigContents;
     try (InputStream inputStream =
         Thread.currentThread()

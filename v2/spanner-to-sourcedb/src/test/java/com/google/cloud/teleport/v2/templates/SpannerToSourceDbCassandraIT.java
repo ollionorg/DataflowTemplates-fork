@@ -82,7 +82,7 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
         spannerResourceManager = createSpannerDatabase(SPANNER_DDL_RESOURCE);
         spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
-        cassandraResourceManager = CassandraResourceManager.builder(testName).build();
+        cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
         gcsResourceManager =
             GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
                 .build();

@@ -25,12 +25,15 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.utils.PipelineUtils;
+import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.gcp.TemplateTestBase;
 import org.apache.beam.it.gcp.artifacts.utils.ArtifactUtils;
 import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
@@ -74,6 +77,28 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
 
   public PubsubResourceManager setUpPubSubResourceManager() throws IOException {
     return PubsubResourceManager.builder(testName, PROJECT, credentialsProvider).build();
+  }
+
+  public CassandraResourceManager generateKeyspaceAndBuildCassandraResource() {
+    String keyspaceName =
+        ResourceManagerUtils.generateResourceId(
+                testName,
+                Pattern.compile("[/\\\\. \"\u0000$]"),
+                "-",
+                27,
+                DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSSSSS"))
+            .replace('-', '_');
+    if (keyspaceName.length() > 48) {
+      keyspaceName = keyspaceName.substring(0, 48);
+    }
+    CassandraResourceManager cassandraResourceManager =
+        CassandraResourceManager.builder(testName).useStaticContainer().build();
+    String sql =
+        String.format(
+            "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy', 'replication_factor':1}",
+            keyspaceName);
+    cassandraResourceManager.executeStatement(sql);
+    return cassandraResourceManager;
   }
 
   public SubscriptionName createPubsubResources(

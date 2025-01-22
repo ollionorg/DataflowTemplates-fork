@@ -98,7 +98,7 @@ public class CassandraSharedResourceManager
                 .build()
             : cassandraClient;
 
-    if (usingStaticDatabase) {
+    if (!usingStaticDatabase) {
       // Keyspace request may timeout on a few environments, if Cassandra is warming up
       Failsafe.with(buildRetryPolicy())
           .run(

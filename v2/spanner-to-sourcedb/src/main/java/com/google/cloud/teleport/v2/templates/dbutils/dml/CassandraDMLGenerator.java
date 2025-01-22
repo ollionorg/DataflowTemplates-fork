@@ -80,7 +80,8 @@ public class CassandraDMLGenerator implements IDMLGenerator {
 
     String spannerTableName = dmlGeneratorRequest.getSpannerTableName();
     Schema schema = dmlGeneratorRequest.getSchema();
-
+    LOG.warn("dmlGeneratorRequest {} ", dmlGeneratorRequest);
+    LOG.warn("schema {}", schema);
     if (schema == null
         || schema.getSpannerToID() == null
         || schema.getSpSchema() == null

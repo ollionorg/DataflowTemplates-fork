@@ -251,8 +251,11 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
             Resources.readLines(
                 Resources.getResource(cassandraSchemaFile), StandardCharsets.UTF_8));
     ddl = ddl.trim();
+    LOG.info("DDL {}", ddl);
     String[] ddls = ddl.split(";");
+    LOG.info("DDLs statement {}", ddls);
     for (String d : ddls) {
+      LOG.info("DDL statement {}", d);
       if (!d.isBlank()) {
         cassandraResourceManager.executeStatement(d);
       }

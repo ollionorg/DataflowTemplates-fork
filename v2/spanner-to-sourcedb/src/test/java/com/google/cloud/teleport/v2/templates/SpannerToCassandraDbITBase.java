@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
-import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.utils.PipelineUtils;
 import org.apache.beam.it.common.utils.ResourceManagerUtils;
@@ -79,7 +78,7 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
     return PubsubResourceManager.builder(testName, PROJECT, credentialsProvider).build();
   }
 
-  public CassandraResourceManager generateKeyspaceAndBuildCassandraResource() {
+  public CassandraSharedResourceManager generateKeyspaceAndBuildCassandraResource() {
     String keyspaceName =
         ResourceManagerUtils.generateResourceId(
                 testName,
@@ -91,14 +90,10 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
     if (keyspaceName.length() > 48) {
       keyspaceName = keyspaceName.substring(0, 48);
     }
-    CassandraResourceManager cassandraResourceManager =
-        CassandraResourceManager.builder(testName).setKeyspaceName(keyspaceName).build();
-    String sql =
-        String.format(
-            "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy', 'replication_factor':1}",
-            keyspaceName);
-    cassandraResourceManager.executeStatement(sql);
-    return cassandraResourceManager;
+    return CassandraSharedResourceManager.builder(testName)
+        .setKeyspaceName(keyspaceName)
+        .sePreGeneratedKeyspaceName(true)
+        .build();
   }
 
   public SubscriptionName createPubsubResources(
@@ -118,7 +113,8 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
   }
 
   public void createAndUploadCassandraConfigToGcs(
-      GcsResourceManager gcsResourceManager, CassandraResourceManager cassandraResourceManagers)
+      GcsResourceManager gcsResourceManager,
+      CassandraSharedResourceManager cassandraResourceManagers)
       throws IOException {
 
     String host = cassandraResourceManagers.getHost();
@@ -238,7 +234,7 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
   }
 
   protected void createCassandraSchema(
-      CassandraResourceManager cassandraResourceManager, String cassandraSchemaFile)
+      CassandraSharedResourceManager cassandraResourceManager, String cassandraSchemaFile)
       throws IOException {
 
     Map<String, String> columns = new HashMap<>();

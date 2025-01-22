@@ -83,7 +83,7 @@ public class CassandraSharedResourceManager
   CassandraSharedResourceManager(
       @Nullable CqlSession cassandraClient, CassandraContainer<?> container, Builder builder) {
     super(container, builder);
-
+    // we are trying to handle userDefined KeyspaceName name without usingStatic Container
     this.usingStaticDatabase = builder.keyspaceName != null && !builder.preGeneratedKeyspaceName;
     this.keyspaceName =
         usingStaticDatabase || builder.preGeneratedKeyspaceName

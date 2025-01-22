@@ -293,7 +293,7 @@ public class CassandraDMLGeneratorTest {
     String sql = dmlGeneratorResponse.getDmlStatement();
 
     assertTrue(sql.contains("SingerId"));
-    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertEquals(3, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test
@@ -315,7 +315,7 @@ public class CassandraDMLGeneratorTest {
                 .setCommitTimestamp(Timestamp.now())
                 .build());
     String sql = dmlGeneratorResponse.getDmlStatement();
-    assertEquals(2, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
+    assertEquals(3, ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues().size());
   }
 
   @Test

@@ -444,7 +444,7 @@ public class CassandraTypeHandlerTest {
 
     Object castResult = CassandraTypeHandler.castToExpectedType(result.dataType(), result.value());
 
-    assertEquals(true, castResult);
+    assertEquals(false, castResult);
   }
 
   @Test

@@ -35,8 +35,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # MAVEN_OPTS: -Dorg.slf4j.simpleLogger.log.org.apache.maven.plugins.shade=error
-  MAVEN_OPTS: -Dorg.slf4j.simpleLogger.log.org.apache.maven.plugins.shade=error -Djava.net.preferIPv4Stack=true
+  MAVEN_OPTS: -Dorg.slf4j.simpleLogger.log.org.apache.maven.plugins.shade=error
+  # MAVEN_OPTS: -Dorg.slf4j.simpleLogger.log.org.apache.maven.plugins.shade=error -Djava.net.preferIPv4Stack=true
 
 permissions: read-all
 

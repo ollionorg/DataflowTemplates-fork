@@ -69,6 +69,7 @@ jobs:
     name: Build
     timeout-minutes: 60
     runs-on: [self-hosted, it]
+    sudo: true
     steps:
       - name: Checkout Code
         uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0

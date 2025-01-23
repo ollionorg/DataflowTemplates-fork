@@ -73,6 +73,12 @@
         <dependency>
             <groupId>org.apache.beam</groupId>
             <artifactId>beam-sdks-java-io-google-cloud-platform</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.cloud.datastore</groupId>
+                    <artifactId>datastore-v1-proto-client</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.beam</groupId>

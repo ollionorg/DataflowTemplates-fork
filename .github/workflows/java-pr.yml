@@ -76,9 +76,9 @@ jobs:
         id: setup-env
         uses: ./.github/actions/setup-env
       - name: Run Build
-        run: ./cicd/run-build
+        # run: ./cicd/run-build
         # run: mvn -B clean install -f pom.xml -e -Dmdep.analyze.skip -Djib.skip -DskipShade -Dspotless.check.skip -Dmaven.test.skip -T3 --settings=.mvn/settings.xml -pl v2/spanner-to-sourcedb -am
-        # run: sudo -S mvn -B clean install -f pom.xml -e -Dmdep.analyze.skip -Djib.skip -DskipShade -Dspotless.check.skip -Dmaven.test.skip -T3 --settings=.mvn/settings.xml -pl v2/spanner-to-sourcedb -am < /home/ollion/cred.txt 
+        run: sudo -S mvn -B clean install -f pom.xml -e -Dmdep.analyze.skip -Djib.skip -DskipShade -Dspotless.check.skip -Dmaven.test.skip -T3 --settings=.mvn/settings.xml -pl v2/spanner-to-sourcedb -am < /home/ollion/cred.txt 
       - name: Cleanup Java Environment
         uses: ./.github/actions/cleanup-java-env
   java_unit_tests:

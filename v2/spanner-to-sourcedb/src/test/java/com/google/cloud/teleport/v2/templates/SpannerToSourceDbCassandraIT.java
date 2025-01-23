@@ -220,7 +220,6 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
 
     Row row = rows.iterator().next();
     LOG.info("Cassandra Row to Assert: {}", row.toString());
-
     assertThat(row.getInt("id")).isEqualTo(1);
     assertThat(row.getString("full_name")).isEqualTo("A");
     assertThat(row.getString("from")).isEqualTo("B");

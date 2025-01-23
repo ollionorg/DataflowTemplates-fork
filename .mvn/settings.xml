@@ -14,7 +14,7 @@
             </activation>
             <!-- Also update repo values in plugins/core-plugin/s.m.j.c.g.c.t/plugin/DockerfileGenerator.java-->
             <repositories>
-                <repository>
+<!--                 <repository>
                     <id>central</id>
                     <name>Maven Central remote repository</name>
                     <url>artifactregistry://us-maven.pkg.dev/artifact-foundry-prod/ah-3p-staging-maven</url>
@@ -25,7 +25,7 @@
                     <snapshots>
                         <enabled>true</enabled>
                     </snapshots>
-                </repository>
+                </repository> -->
                 <repository>
                   <id>maven-central</id>
                   <url>https://repo.maven.apache.org/maven2/</url>

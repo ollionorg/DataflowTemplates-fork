@@ -54,11 +54,11 @@
         </dependency>
         <!-- Beam. Try to minimize Beam dependencies, since this is about testing
         pipelines, not writing them. -->
-<!--        <dependency>-->
-<!--            &lt;!&ndash; Needed by DataflowPipelineOptions which extends BigQueryOptions &ndash;&gt;-->
-<!--            <groupId>org.apache.beam</groupId>-->
-<!--            <artifactId>beam-sdks-java-io-google-cloud-platform</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <!-- Needed by DataflowPipelineOptions which extends BigQueryOptions -->
+            <groupId>org.apache.beam</groupId>
+            <artifactId>beam-sdks-java-io-google-cloud-platform</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-dataflow</artifactId>

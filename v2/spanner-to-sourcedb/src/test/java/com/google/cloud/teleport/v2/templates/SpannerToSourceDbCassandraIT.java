@@ -45,11 +45,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
 public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
+
+  private static final Logger LOG = LoggerFactory.getLogger(SpannerToSourceDbCassandraIT.class);
 
   private static final String SPANNER_DDL_RESOURCE =
       "SpannerToCassandraSourceIT/spanner-schema.sql";
@@ -148,18 +152,23 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
 
   private void writeRowInSpanner() {
     Mutation m1 =
-        Mutation.newInsertOrUpdateBuilder("Users")
+        Mutation.newInsertOrUpdateBuilder("users")
             .set("id")
             .to(1)
             .set("full_name")
-            .to("FF")
+            .to("A")
             .set("from")
-            .to("AA")
+            .to("B")
             .build();
     spannerResourceManager.write(m1);
 
     Mutation m2 =
-        Mutation.newInsertOrUpdateBuilder("Users2").set("id").to(2).set("name").to("B").build();
+        Mutation.newInsertOrUpdateBuilder("users2")
+            .set("id")
+            .to(2)
+            .set("full_name")
+            .to("BB")
+            .build();
     spannerResourceManager.write(m2);
 
     // Write a single record to Spanner for the given logical shard
@@ -181,7 +190,7 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
                   Mutation m3 =
                       Mutation.newInsertOrUpdateBuilder("users")
                           .set("id")
-                          .to(1)
+                          .to(3)
                           .set("full_name")
                           .to("GG")
                           .set("from")
@@ -200,7 +209,9 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
     assertThatResult(result).meetsConditions();
     Iterable<Row> rows;
     try {
+      LOG.info("Reading from Cassandra table: {}", TABLE);
       rows = cassandraResourceManager.readTable(TABLE);
+      LOG.info("Cassandra Rows: {}", rows.toString());
     } catch (Exception e) {
       throw new RuntimeException("Failed to read from Cassandra table: " + TABLE, e);
     }
@@ -208,8 +219,10 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
     assertThat(rows).hasSize(1);
 
     Row row = rows.iterator().next();
+    LOG.info("Cassandra Row to Assert: {}", row.toString());
+
     assertThat(row.getInt("id")).isEqualTo(1);
-    assertThat(row.getString("full_name")).isEqualTo("GG");
-    assertThat(row.getString("from")).isEqualTo("BB");
+    assertThat(row.getString("full_name")).isEqualTo("A");
+    assertThat(row.getString("from")).isEqualTo("B");
   }
 }

@@ -212,39 +212,9 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
     return jobInfo;
   }
 
-  private String toCqlStatement(
-      String tableName, Map<String, String> columns, String primaryKeyColumn) {
-    StringBuilder cql = new StringBuilder("CREATE TABLE IF NOT EXISTS ");
-    cql.append(tableName).append(" (");
-
-    columns.forEach(
-        (columnName, columnType) -> {
-          cql.append(columnName).append(" ").append(columnType.toLowerCase());
-          if (columnName.equals(primaryKeyColumn)) {
-            cql.append(" PRIMARY KEY");
-          }
-          cql.append(", ");
-        });
-
-    if (cql.length() > 0) {
-      cql.setLength(cql.length() - 2);
-    }
-
-    cql.append(");");
-    return cql.toString();
-  }
-
   protected void createCassandraSchema(
       CassandraSharedResourceManager cassandraResourceManager, String cassandraSchemaFile)
       throws IOException {
-
-    Map<String, String> columns = new HashMap<>();
-    columns.put("id", "int");
-    columns.put("name", "text");
-    String idColumn = "id";
-    String createTableSql = toCqlStatement("test", columns, idColumn);
-    cassandraResourceManager.executeStatement(createTableSql);
-
     String ddl =
         String.join(
             " ",

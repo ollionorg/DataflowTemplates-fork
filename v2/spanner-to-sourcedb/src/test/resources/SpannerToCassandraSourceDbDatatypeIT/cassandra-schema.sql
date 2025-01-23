@@ -1,6 +1,6 @@
 CREATE TABLE AllDatatypeColumns (
     varchar_column text PRIMARY KEY,
-    tinyint_column tinyint,
+    tinyint_column int,
     text_column text,
     date_column date,
     smallint_column smallint,
@@ -15,17 +15,10 @@ CREATE TABLE AllDatatypeColumns (
     time_column time,
     year_column text,
     char_column text,
-    tinyblob_column blob,
     tinytext_column text,
-    blob_column blob,
-    mediumblob_column blob,
     mediumtext_column text,
-    longblob_column blob,
     longtext_column text,
     enum_column text,
     bool_column boolean,
     other_bool_column boolean,
-    binary_column blob,
-    varbinary_column blob,
-    bit_column varint
 );

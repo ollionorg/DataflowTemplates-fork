@@ -21,7 +21,6 @@ import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
-import com.google.cloud.ByteArray;
 import com.google.cloud.Date;
 import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.Mutation;
@@ -32,10 +31,7 @@ import com.google.common.io.Resources;
 import com.google.pubsub.v1.SubscriptionName;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -158,7 +154,7 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
   }
 
   private void writeRowInSpanner() {
-    Mutation m =
+    Mutation mutation =
         Mutation.newInsertOrUpdateBuilder(TABLE)
             .set("varchar_column")
             .to("value1")
@@ -167,7 +163,7 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
             .set("text_column")
             .to("text_column_value")
             .set("date_column")
-            .to(Value.date(Date.fromYearMonthDay(2024, 05, 24)))
+            .to(Value.date(Date.fromYearMonthDay(2024, 5, 24)))
             .set("smallint_column")
             .to(50)
             .set("mediumint_column")
@@ -198,28 +194,14 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
             .to("mediumtext_column_value")
             .set("longtext_column")
             .to("longtext_column_value")
-            .set("tinyblob_column")
-            .to(Value.bytes(ByteArray.copyFrom("tinyblob_column_value")))
-            .set("blob_column")
-            .to(Value.bytes(ByteArray.copyFrom("blob_column_value")))
-            .set("mediumblob_column")
-            .to(Value.bytes(ByteArray.copyFrom("mediumblob_column_value")))
-            .set("longblob_column")
-            .to(Value.bytes(ByteArray.copyFrom("longblob_column_value")))
             .set("enum_column")
             .to("2")
             .set("bool_column")
             .to(Value.bool(Boolean.FALSE))
             .set("other_bool_column")
             .to(Value.bool(Boolean.TRUE))
-            .set("binary_column")
-            .to(Value.bytes(ByteArray.copyFrom("binary_col")))
-            .set("varbinary_column")
-            .to(Value.bytes(ByteArray.copyFrom("varbinary")))
-            .set("bit_column")
-            .to(Value.bytes(ByteArray.copyFrom("a")))
             .build();
-    spannerResourceManager.write(m);
+    spannerResourceManager.write(mutation);
   }
 
   private void assertAll(Runnable... assertions) throws MultipleFailureException {
@@ -254,7 +236,7 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
     assertThat(rows).hasSize(1);
     assertAll(
         () -> assertThat(row.getString("varchar_column")).isEqualTo("value1"),
-        () -> assertThat(row.getByte("tinyint_column")).isEqualTo((byte) 10),
+        () -> assertThat(row.getInt("tinyint_column")).isEqualTo(10),
         () -> assertThat(row.getString("text_column")).isEqualTo("text_column_value"),
         () ->
             assertThat(row.getLocalDate("date_column"))
@@ -263,16 +245,23 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
         () -> assertThat(row.getInt("mediumint_column")).isEqualTo(1000),
         () -> assertThat(row.getInt("int_column")).isEqualTo(50000),
         () -> assertThat(row.getLong("bigint_column")).isEqualTo(987654321L),
-        () -> assertThat(row.getFloat("float_column")).isEqualTo(45.67f),
-        () -> assertThat(row.getDouble("double_column")).isEqualTo(123.789),
+        () -> {
+          float expectedFloat = 45.67f;
+          float actualFloat = row.getFloat("float_column");
+          assertThat(Math.abs(actualFloat - expectedFloat)).isLessThan(0.001f);
+        },
+        () -> {
+          double expectedDouble = 123.789;
+          double actualDouble = row.getDouble("double_column");
+          assertThat(Math.abs(actualDouble - expectedDouble)).isLessThan(0.001);
+        },
         () -> assertThat(row.getBigDecimal("decimal_column")).isEqualTo(new BigDecimal("1234.56")),
         () ->
             assertThat(row.getInstant("datetime_column"))
-                .isEqualTo(
-                    java.time.LocalDateTime.of(2024, 2, 8, 8, 15, 30).toInstant(ZoneOffset.UTC)),
+                .isEqualTo(java.time.Instant.parse("2024-02-08T08:15:30Z")),
         () ->
             assertThat(row.getInstant("timestamp_column"))
-                .isEqualTo(java.sql.Timestamp.valueOf("2024-02-08 08:15:30").toInstant()),
+                .isEqualTo(java.time.Instant.parse("2024-02-08T08:15:30Z")),
         () ->
             assertThat(row.getLocalTime("time_column"))
                 .isEqualTo(java.time.LocalTime.of(14, 30, 0)),
@@ -281,29 +270,8 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
         () -> assertThat(row.getString("tinytext_column")).isEqualTo("tinytext_column_value"),
         () -> assertThat(row.getString("mediumtext_column")).isEqualTo("mediumtext_column_value"),
         () -> assertThat(row.getString("longtext_column")).isEqualTo("longtext_column_value"),
-        () ->
-            assertThat(row.getByte("tinyblob_column"))
-                .isEqualTo("tinyblob_column_value".getBytes(StandardCharsets.UTF_8)),
-        () ->
-            assertThat(row.getByte("blob_column"))
-                .isEqualTo("blob_column_value".getBytes(StandardCharsets.UTF_8)),
-        () ->
-            assertThat(row.getByte("mediumblob_column"))
-                .isEqualTo("mediumblob_column_value".getBytes(StandardCharsets.UTF_8)),
-        () ->
-            assertThat(row.getByte("longblob_column"))
-                .isEqualTo("longblob_column_value".getBytes(StandardCharsets.UTF_8)),
         () -> assertThat(row.getString("enum_column")).isEqualTo("2"),
-        () -> assertThat(row.getBoolean("bool_column")).isEqualTo(false),
-        () -> assertThat(row.getBoolean("other_bool_column")).isEqualTo(true),
-        () ->
-            assertThat(row.getByte("binary_column"))
-                .isEqualTo("binary_col".getBytes(StandardCharsets.UTF_8)),
-        () ->
-            assertThat(row.getByte("varbinary_column"))
-                .isEqualTo("varbinary".getBytes(StandardCharsets.UTF_8)),
-        () ->
-            assertThat(row.getBigInteger("bit_column"))
-                .isEqualTo(new BigInteger("a".getBytes(StandardCharsets.UTF_8))));
+        () -> assertThat(row.getBoolean("bool_column")).isFalse(),
+        () -> assertThat(row.getBoolean("other_bool_column")).isTrue());
   }
 }

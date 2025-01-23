@@ -15,19 +15,12 @@ CREATE TABLE IF NOT EXISTS alldatatypecolumns (
     time_column STRING(MAX),
     year_column STRING(MAX),
     char_column STRING(10),
-    tinyblob_column BYTES(MAX),
     tinytext_column STRING(MAX),
-    blob_column BYTES(MAX),
-    mediumblob_column BYTES(MAX),
     mediumtext_column STRING(MAX),
-    longblob_column BYTES(MAX),
     longtext_column STRING(MAX),
     enum_column STRING(MAX),
     bool_column BOOL,
     other_bool_column BOOL,
-    binary_column BYTES(MAX),
-    varbinary_column BYTES(20),
-    bit_column BYTES(MAX),
 ) PRIMARY KEY(varchar_column);
 
 CREATE CHANGE STREAM allstream

@@ -179,11 +179,13 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
             (TransactionRunner.TransactionCallable<Void>)
                 transaction -> {
                   Mutation m3 =
-                      Mutation.newInsertOrUpdateBuilder("Users")
+                      Mutation.newInsertOrUpdateBuilder("users")
                           .set("id")
-                          .to(2)
+                          .to(1)
                           .set("full_name")
                           .to("GG")
+                          .set("from")
+                          .to("BB")
                           .build();
                   transaction.buffer(m3);
                   return null;
@@ -207,7 +209,7 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
 
     Row row = rows.iterator().next();
     assertThat(row.getInt("id")).isEqualTo(1);
-    assertThat(row.getString("name")).isEqualTo("FF");
-    assertThat(row.getString("from")).isEqualTo("AA");
+    assertThat(row.getString("full_name")).isEqualTo("GG");
+    assertThat(row.getString("from")).isEqualTo("BB");
   }
 }

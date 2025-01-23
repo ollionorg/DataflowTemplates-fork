@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS users2 (
     id INT64 NOT NULL,
-    name STRING(25),
+    full_name STRING(25),
     ) PRIMARY KEY(id);
 
 CREATE CHANGE STREAM allstream

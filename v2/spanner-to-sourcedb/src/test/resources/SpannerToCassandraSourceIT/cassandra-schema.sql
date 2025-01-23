@@ -1,5 +1,5 @@
 CREATE TABLE users (
     id int PRIMARY KEY,
-    name text,
+    full_name text,
     "from" text
 );

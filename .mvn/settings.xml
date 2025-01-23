@@ -26,6 +26,10 @@
                         <enabled>true</enabled>
                     </snapshots>
                 </repository>
+                <repository>
+                  <id>maven-central</id>
+                  <url>https://repo.maven.apache.org/maven2/</url>
+                </repository>      
             </repositories>
             <properties>
                 <airlockJavaRepo>ah-3p-staging-maven</airlockJavaRepo>

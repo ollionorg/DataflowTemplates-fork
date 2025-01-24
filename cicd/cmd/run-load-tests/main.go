@@ -69,12 +69,12 @@ func main() {
 		flags.ExportProject(),
 		flags.ExportDataset(),
 		flags.ExportTable(),
-		flags.StaticOracleHost(),
-		flags.StaticOracleSysPassword(),
-		flags.CloudProxyHost(),
-		flags.CloudProxyMySqlPort(),
-		flags.CloudProxyPostgresPort(),
-		flags.CloudProxyPassword())
+// 		flags.StaticOracleHost(),
+// 		flags.StaticOracleSysPassword(),
+// 		flags.CloudProxyHost(),
+// 		flags.CloudProxyMySqlPort(),
+// 		flags.CloudProxyPostgresPort(),
+// 		flags.CloudProxyPassword())
 	if err != nil {
 		log.Fatalf("%v\n", err)
 	}

@@ -15,6 +15,7 @@
  */
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -34,7 +35,9 @@ import com.google.cloud.teleport.v2.templates.models.DMLGeneratorRequest;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,11 +45,12 @@ import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.model.MultipleFailureException;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CassandraDMLGeneratorTest {
-
+  private final List<Throwable> assertionErrors = new ArrayList<>();
   private CassandraDMLGenerator cassandraDMLGenerator;
 
   @Before
@@ -82,6 +86,112 @@ public class CassandraDMLGeneratorTest {
     DMLGeneratorResponse response = cassandraDMLGenerator.getDMLStatement(dmlGeneratorRequest);
     assertNotNull(response);
     assertEquals("", response.getDmlStatement());
+  }
+
+  private void assertAll(Runnable... assertions) throws MultipleFailureException {
+    for (Runnable assertion : assertions) {
+      try {
+        assertion.run();
+      } catch (AssertionError e) {
+        assertionErrors.add(e);
+      }
+    }
+    if (!assertionErrors.isEmpty()) {
+      throw new MultipleFailureException(assertionErrors);
+    }
+  }
+
+  @Test
+  public void testAssertITDMLStatement() throws MultipleFailureException {
+    Schema schema = SessionFileReader.read("src/test/resources/cassandra-it-session.json");
+    DMLGeneratorRequest dmlGeneratorRequest =
+        new DMLGeneratorRequest.Builder(
+                "INSERT", // modType
+                "alldatatypecolumns",
+                new JSONObject(
+                    """
+                    {
+                        "mediumint_column": "1000",
+                        "bigint_column": "987654321",
+                        "time_column": "14:30:00",
+                        "tinytext_column": "tinytext_column_value",
+                        "datetime_column": "2024-02-08T08:15:30Z",
+                        "enum_column": "2",
+                        "longtext_column": "longtext_column_value",
+                        "mediumtext_column": "mediumtext_column_value",
+                        "year_column": "2022",
+                        "text_column": "text_column_value",
+                        "tinyint_column": "10",
+                        "timestamp_column": "2024-02-08T08:15:30Z",
+                        "decimal_column": "1234.56",
+                        "bool_column": false,
+                        "char_column": "char_col",
+                        "date_column": "2024-05-24",
+                        "double_column": 123.789,
+                        "int_column": "50000",
+                        "float_column": 45.67,
+                        "other_bool_column": true,
+                        "smallint_column": "50"
+                    }
+                    """),
+                new JSONObject(
+                    """
+                    {
+                        "varchar_column": "value1"
+                    }
+                    """),
+                "+00:00")
+            .setCommitTimestamp(Timestamp.parseTimestamp("2025-01-24T04:10:17.440047000Z"))
+            .setSchema(schema)
+            .build();
+    CassandraDMLGenerator cassandraDMLGenerator = new CassandraDMLGenerator();
+    DMLGeneratorResponse dmlGeneratorResponse =
+        cassandraDMLGenerator.getDMLStatement(dmlGeneratorRequest);
+    List<PreparedStatementValueObject<?>> values =
+        ((PreparedStatementGeneratedResponse) dmlGeneratorResponse).getValues();
+    List<Object> parsedResults = new ArrayList<>();
+    for (PreparedStatementValueObject<?> value : values) {
+      Object result = CassandraTypeHandler.castToExpectedType(value.dataType(), value.value());
+      parsedResults.add(result);
+    }
+
+    assertAll(
+        // Assert parsedResults
+        () -> assertThat(parsedResults.get(0)).isEqualTo("value1"),
+        () -> assertThat(parsedResults.get(11)).isEqualTo(10),
+        () -> assertThat(parsedResults.get(10)).isEqualTo("text_column_value"),
+        () -> assertThat(parsedResults.get(16)).isEqualTo(java.time.LocalDate.of(2024, 5, 24)),
+        () -> assertThat(parsedResults.get(21)).isEqualTo((short) 50),
+        () -> assertThat(parsedResults.get(1)).isEqualTo(1000),
+        () -> assertThat(parsedResults.get(18)).isEqualTo(50000),
+        () -> assertThat(parsedResults.get(2)).isEqualTo(987654321L),
+        () -> {
+          float expectedFloat = 45.67f;
+          float actualFloat = (float) parsedResults.get(19);
+          assertThat(Math.abs(actualFloat - expectedFloat)).isLessThan(0.001f);
+        },
+        () -> {
+          double expectedDouble = 123.789;
+          double actualDouble = (double) parsedResults.get(17);
+          assertThat(Math.abs(actualDouble - expectedDouble)).isLessThan(0.001);
+        },
+        () -> assertThat(parsedResults.get(13)).isEqualTo(new BigDecimal("1234.56")),
+        () ->
+            assertThat(parsedResults.get(5))
+                .isEqualTo(java.time.Instant.parse("2024-02-08T08:15:30Z")),
+        () ->
+            assertThat(parsedResults.get(12))
+                .isEqualTo(java.time.Instant.parse("2024-02-08T08:15:30Z")),
+        () -> assertThat(parsedResults.get(3)).isEqualTo(java.time.LocalTime.of(20, 0, 0)),
+        () -> assertThat(parsedResults.get(9)).isEqualTo("2022"),
+        () -> assertThat(parsedResults.get(15)).isEqualTo("char_col"),
+        () -> assertThat(parsedResults.get(4)).isEqualTo("tinytext_column_value"),
+        () -> assertThat(parsedResults.get(8)).isEqualTo("mediumtext_column_value"),
+        () -> assertThat(parsedResults.get(7)).isEqualTo("longtext_column_value"),
+        () -> assertThat(parsedResults.get(6)).isEqualTo("2"),
+        () -> assertThat(parsedResults.get(14)).isEqualTo(false),
+        () -> assertThat(parsedResults.get(20)).isEqualTo(true),
+        () -> assertThat(parsedResults.get(22)).isEqualTo(1737691817440L));
   }
 
   @Test

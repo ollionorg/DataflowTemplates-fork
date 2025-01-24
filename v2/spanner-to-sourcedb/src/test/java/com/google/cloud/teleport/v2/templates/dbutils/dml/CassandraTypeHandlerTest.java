@@ -911,7 +911,7 @@ public class CassandraTypeHandlerTest {
 
     Object castResult = CassandraTypeHandler.castToExpectedType(result.dataType(), result.value());
 
-    assertEquals(5.5, castResult);
+    assertEquals(5.5f, castResult);
   }
 
   @Test
@@ -1036,7 +1036,7 @@ public class CassandraTypeHandlerTest {
         new BigDecimal("123.456"),
         castToExpectedType("decimal", new BigDecimal("123.456").toString()));
     assertEquals(123.456, castToExpectedType("double", "123.456"));
-    assertEquals(123.45f, ((Double) castToExpectedType("float", "123.45")).floatValue(), 0.00001);
+    assertEquals(123.45f, castToExpectedType("float", "123.45"));
     assertEquals(InetAddress.getByName("127.0.0.1"), castToExpectedType("inet", "127.0.0.1"));
     assertEquals(123, castToExpectedType("int", "123"));
     assertEquals((short) 123, castToExpectedType("smallint", "123"));

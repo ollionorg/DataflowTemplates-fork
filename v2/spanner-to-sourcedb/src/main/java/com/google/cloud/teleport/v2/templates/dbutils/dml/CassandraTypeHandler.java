@@ -353,6 +353,9 @@ public class CassandraTypeHandler {
   private static PreparedStatementValueObject<?> parseAndCastToCassandraType(
       String columnType, Object colValue) {
 
+    if (columnType.startsWith("frozen<")) {
+      return parseAndCastToCassandraType(extractInnerType(columnType), colValue);
+    }
     // Handle collection types
     if (columnType.startsWith("list<")) {
       return safeHandle(

@@ -19,10 +19,10 @@ import com.google.common.base.MoreObjects;
 import com.google.common.io.Resources;
 import com.google.pubsub.v1.SubscriptionName;
 import com.google.pubsub.v1.TopicName;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -171,14 +171,25 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
       GcsResourceManager gcsResourceManager,
       CassandraSharedResourceManager cassandraResourceManagers)
       throws IOException {
+
     String host = cassandraResourceManagers.getHost();
     int port = cassandraResourceManagers.getPort();
     String keyspaceName = cassandraResourceManagers.getKeyspaceName();
+    LOG.info("Cassandra keyspaceName :: {}", keyspaceName);
+    LOG.info("Cassandra host :: {}", host);
+    LOG.info("Cassandra port :: {}", port);
+    String cassandraConfigContents;
+    try (InputStream inputStream =
+        Thread.currentThread()
+            .getContextClassLoader()
+            .getResourceAsStream("SpannerToCassandraSourceLT/cassandra-config-template.conf")) {
+      if (inputStream == null) {
+        throw new FileNotFoundException(
+            "Resource file not found: SpannerToCassandraSourceLT/cassandra-config-template.conf");
+      }
+      cassandraConfigContents = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+    }
 
-    String cassandraConfigContents =
-        new String(
-            Files.readAllBytes(
-                Paths.get("SpannerToCassandraSourceLT/cassandra-config-template.conf")));
     cassandraConfigContents =
         cassandraConfigContents
             .replace("##host##", host)
@@ -186,6 +197,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
             .replace("##keyspace##", keyspaceName);
 
     LOG.info("Cassandra file contents: {}", cassandraConfigContents);
+
     gcsResourceManager.createArtifact("input/cassandra-config.conf", cassandraConfigContents);
   }
 

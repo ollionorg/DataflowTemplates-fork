@@ -75,6 +75,7 @@ func main() {
 // 		flags.CloudProxyMySqlPort(),
 // 		flags.CloudProxyPostgresPort(),
 // 		flags.CloudProxyPassword())
+    )
 	if err != nil {
 		log.Fatalf("%v\n", err)
 	}

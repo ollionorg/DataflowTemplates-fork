@@ -23,7 +23,6 @@ import com.google.cloud.teleport.metadata.TemplateLoadTest;
 import java.io.IOException;
 import java.text.ParseException;
 import java.time.Duration;
-import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.TestProperties;
@@ -118,7 +117,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     exportMetrics(jobInfo, numShards);
   }
 
-  private void createCassandraSchema(CassandraResourceManager cassandraResourceManager) {
+  private void createCassandraSchema(CassandraSharedResourceManager cassandraResourceManager) {
     String keyspace = cassandraResourceManager.getKeyspaceName();
     String createTableStatement =
         String.format(

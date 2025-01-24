@@ -133,7 +133,7 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
   }
 
   @Test
-  public void spannerToSourceDbBasic() throws InterruptedException, IOException {
+  public void spannerToCasandraSourceDbBasic() throws InterruptedException, IOException {
     assertThatPipeline(jobInfo).isRunning();
     writeRowInSpanner();
     assertRowInCassandraDB();

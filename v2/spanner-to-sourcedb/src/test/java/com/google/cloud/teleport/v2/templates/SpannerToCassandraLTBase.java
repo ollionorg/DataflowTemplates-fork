@@ -24,10 +24,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.ParseException;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.beam.it.cassandra.CassandraResourceManager;
+import java.util.regex.Pattern;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
 import org.apache.beam.it.common.PipelineLauncher.LaunchInfo;
@@ -54,7 +55,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
           TestProperties.specPath(), "gs://dataflow-templates/latest/flex/Spanner_to_SourceDb");
   public SpannerResourceManager spannerResourceManager;
   public SpannerResourceManager spannerMetadataResourceManager;
-  public CassandraResourceManager cassandraResourceManager;
+  public CassandraSharedResourceManager cassandraResourceManager;
   public GcsResourceManager gcsResourceManager;
   private static PubsubResourceManager pubsubResourceManager;
   private SubscriptionName subscriptionName;
@@ -81,8 +82,27 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
   }
 
   public void setupCassandraResourceManager() throws IOException {
-    cassandraResourceManager = CassandraResourceManager.builder(testName).build();
+    cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
+
     createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraResourceManager);
+  }
+
+  private CassandraSharedResourceManager generateKeyspaceAndBuildCassandraResource() {
+    String keyspaceName =
+        ResourceManagerUtils.generateResourceId(
+                testName,
+                Pattern.compile("[/\\\\. \"\u0000$]"),
+                "-",
+                27,
+                DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSSSSS"))
+            .replace('-', '_');
+    if (keyspaceName.length() > 48) {
+      keyspaceName = keyspaceName.substring(0, 48);
+    }
+    return CassandraSharedResourceManager.builder(testName)
+        .setKeyspaceName(keyspaceName)
+        .sePreGeneratedKeyspaceName(true)
+        .build();
   }
 
   public void cleanupResourceManagers() {
@@ -148,7 +168,8 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
   }
 
   public void createAndUploadCassandraConfigToGcs(
-      GcsResourceManager gcsResourceManager, CassandraResourceManager cassandraResourceManagers)
+      GcsResourceManager gcsResourceManager,
+      CassandraSharedResourceManager cassandraResourceManagers)
       throws IOException {
     String host = cassandraResourceManagers.getHost();
     int port = cassandraResourceManagers.getPort();

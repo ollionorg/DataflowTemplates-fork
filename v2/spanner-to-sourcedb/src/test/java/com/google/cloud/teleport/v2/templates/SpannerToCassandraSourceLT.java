@@ -50,8 +50,8 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   private final String dataGeneratorSchemaResource =
       "SpannerToCassandraSourceLT/datagenerator-schema.json";
   private final String table = "Person";
-  private final int maxWorkers = 3; //50;
-  private final int numWorkers = 2; //20;
+  private final int maxWorkers = 3; // 50;
+  private final int numWorkers = 2; // 20;
   private PipelineLauncher.LaunchInfo jobInfo;
   private PipelineLauncher.LaunchInfo readerJobInfo;
   private final int numShards = 1;
@@ -84,25 +84,25 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     // Start data generator
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-            .setQPS("100") //1000
-            .setMessagesLimit(String.valueOf(20)) //300000
+            .setQPS("100") // 1000
+            .setMessagesLimit(String.valueOf(20)) // 300000
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
             .setSpannerTableName(table)
-            .setNumWorkers("2") //50
-            .setMaxNumWorkers("3") //100
+            .setNumWorkers("2") // 50
+            .setMaxNumWorkers("3") // 100
             .setSinkType("SPANNER")
             .setProjectId(project)
             .setBatchSizeBytes("0")
             .build();
 
-    dataGenerator.execute(Duration.ofMinutes(10)); //90
+    dataGenerator.execute(Duration.ofMinutes(10)); // 90
     assertThatPipeline(jobInfo).isRunning();
 
     CassandraRowsCheck check =
         CassandraRowsCheck.builder(cassandraResourceManager, table)
-            .setMinRows(20) //300000
-            .setMaxRows(20) //300000
+            .setMinRows(20) // 300000
+            .setMaxRows(20) // 300000
             .build();
 
     PipelineOperator.Result result =

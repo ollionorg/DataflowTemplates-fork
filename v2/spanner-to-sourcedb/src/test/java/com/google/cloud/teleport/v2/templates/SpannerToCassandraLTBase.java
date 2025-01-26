@@ -105,8 +105,9 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
       keyspaceName = keyspaceName.substring(0, 48);
     }
 
+    System.out.println("Cassandra keyspaceName :: " + keyspaceName);
     return CassandraResourceManager.builder("rr-spdr-csdr-loadtest-" + testName)
-        .setKeyspaceName(keyspaceName)
+//        .setKeyspaceName(keyspaceName)
         .build();
     //    return CassandraSharedResourceManager.builder("rr-spdr-csdr-loadtest-" + testName)
     //        .setKeyspaceName(keyspaceName)

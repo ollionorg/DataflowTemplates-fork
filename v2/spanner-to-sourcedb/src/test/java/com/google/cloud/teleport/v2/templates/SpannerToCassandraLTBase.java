@@ -68,8 +68,8 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     spannerResourceManager = createSpannerDatabase(spannerDdlResource);
     spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
-    LOG.info("Test Name: {}", testName);
-    LOG.info("Class Name: {}", getClass().getSimpleName());
+    System.out.println("Test Name: " + testName);
+    System.out.println("Class Name: " + getClass().getSimpleName());
 
     gcsResourceManager =
         GcsResourceManager.builder(artifactBucket, getClass().getSimpleName(), CREDENTIALS).build();
@@ -106,9 +106,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     }
 
     System.out.println("Cassandra keyspaceName :: " + keyspaceName);
-    return CassandraResourceManager.builder("rr-spdr-csdr-loadtest-" + testName)
-        //        .setKeyspaceName(keyspaceName)
-        .build();
+    return CassandraResourceManager.builder(testName).setKeyspaceName(keyspaceName).build();
     //    return CassandraSharedResourceManager.builder("rr-spdr-csdr-loadtest-" + testName)
     //        .setKeyspaceName(keyspaceName)
     //        .sePreGeneratedKeyspaceName(true)
@@ -184,9 +182,10 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     String host = cassandraResourceManagers.getHost();
     int port = cassandraResourceManagers.getPort();
     String keyspaceName = cassandraResourceManagers.getKeyspaceName();
-    LOG.info("Cassandra keyspaceName :: {}", keyspaceName);
-    LOG.info("Cassandra host :: {}", host);
-    LOG.info("Cassandra port :: {}", port);
+    System.out.println("Cassandra keyspaceName :: " + keyspaceName);
+    System.out.println("Cassandra host :: " + host);
+    System.out.println("Cassandra port :: " + port);
+
     String cassandraConfigContents;
     try (InputStream inputStream =
         Thread.currentThread()
@@ -205,7 +204,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
             .replace("##port##", Integer.toString(port))
             .replace("##keyspace##", keyspaceName);
 
-    LOG.info("Cassandra file contents: {}", cassandraConfigContents);
+    System.out.println("Cassandra file contents: " + cassandraConfigContents);
 
     gcsResourceManager.createArtifact("input/cassandra-config.conf", cassandraConfigContents);
   }

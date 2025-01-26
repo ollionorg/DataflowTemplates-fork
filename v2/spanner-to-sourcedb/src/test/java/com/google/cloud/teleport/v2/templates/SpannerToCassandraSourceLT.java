@@ -83,8 +83,9 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   public void reverseReplicationCassandra1KTpsLoadTest()
       throws IOException, ParseException, InterruptedException {
     // Start data generator
-    LOG.info("SpannerInstanceID: {}", spannerResourceManager.getInstanceId());
-    LOG.info("SpannerDatabaseID: {}", spannerResourceManager.getDatabaseId());
+    System.out.println("SpannerInstanceID :: " + spannerResourceManager.getInstanceId());
+    System.out.println("SpannerDatabaseID :: " + spannerResourceManager.getDatabaseId());
+
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
             .setQPS("100") // 1000
@@ -114,14 +115,14 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
         pipelineOperator.waitForCondition(
             createConfig(jobInfo, Duration.ofMinutes(10), Duration.ofSeconds(30)), check);
 
-    LOG.info("Job wait: {}", result);
+    System.out.println("Job wait: " + result);
     // Assert Conditions
     assertThatResult(result).meetsConditions();
 
     PipelineOperator.Result result1 =
         pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(20)));
 
-    LOG.info("Job finished: {}", result1);
+    System.out.println("Job finished: " + result1);
     assertThatResult(result1).isLaunchFinished();
 
     exportMetrics(jobInfo, numShards);
@@ -129,9 +130,17 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
 
   private void createCassandraSchema(CassandraResourceManager cassandraResourceManager) {
     String keyspace = cassandraResourceManager.getKeyspaceName();
+    System.out.println("Creating keyspace: " + keyspace);
+    cassandraResourceManager.executeStatement(
+        String.format(
+            "CREATE KEYSPACE IF NOT EXISTS %s WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };",
+            keyspace));
+    System.out.println("Keyspace Created");
+
     String createTableStatement =
         String.format(
-            "CREATE TABLE IF NOT EXISTS %s.%s ("
+            "USE %s; "
+                + "CREATE TABLE IF NOT EXISTS %s.%s ("
                 + "id uuid PRIMARY KEY, "
                 + "first_name1 text, "
                 + "last_name1 text, "
@@ -139,10 +148,10 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
                 + "last_name2 text, "
                 + "first_name3 text, "
                 + "last_name3 text);",
-            keyspace, table);
+            keyspace, keyspace, table);
 
-    LOG.info("Creating table: {}", createTableStatement);
+    System.out.println("Creating table: " + createTableStatement);
     cassandraResourceManager.executeStatement(createTableStatement);
-    LOG.info("Table Created");
+    System.out.println("Table Created");
   }
 }

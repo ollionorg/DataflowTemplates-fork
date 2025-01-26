@@ -66,6 +66,9 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     spannerResourceManager = createSpannerDatabase(spannerDdlResource);
     spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
+    LOG.info("Test Name: {}", testName);
+    LOG.info("Class Name: {}", getClass().getSimpleName());
+
     gcsResourceManager =
         GcsResourceManager.builder(artifactBucket, getClass().getSimpleName(), CREDENTIALS).build();
 
@@ -139,7 +142,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
   public SpannerResourceManager createSpannerDatabase(String spannerDdlResourceFile)
       throws IOException {
     SpannerResourceManager spannerResourceManager =
-        SpannerResourceManager.builder("rr-loadtest-" + testName, project, region)
+        SpannerResourceManager.builder("rr-spnr-csdr-loadtest-" + testName, project, region)
             .maybeUseStaticInstance()
             .build();
     String ddl =
@@ -159,7 +162,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
 
   public SpannerResourceManager createSpannerMetadataDatabase() throws IOException {
     SpannerResourceManager spannerMetadataResourceManager =
-        SpannerResourceManager.builder("rr-meta-" + testName, project, region)
+        SpannerResourceManager.builder("rr-meta-spnr-csdr" + testName, project, region)
             .maybeUseStaticInstance()
             .build();
     String dummy = "create table t1(id INT64 ) primary key(id)";

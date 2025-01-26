@@ -79,9 +79,11 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   }
 
   @Test
-  public void reverseReplication1KTpsLoadTest()
+  public void reverseReplicationCassandra1KTpsLoadTest()
       throws IOException, ParseException, InterruptedException {
     // Start data generator
+    LOG.info("SpannerInstanceID: {}", spannerResourceManager.getInstanceId());
+    LOG.info("SpannerDatabaseID: {}", spannerResourceManager.getDatabaseId());
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
             .setQPS("100") // 1000

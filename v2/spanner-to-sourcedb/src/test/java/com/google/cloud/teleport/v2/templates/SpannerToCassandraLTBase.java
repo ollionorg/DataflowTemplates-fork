@@ -102,7 +102,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     if (keyspaceName.length() > 48) {
       keyspaceName = keyspaceName.substring(0, 48);
     }
-    return CassandraSharedResourceManager.builder(testName)
+    return CassandraSharedResourceManager.builder("rr-spdr-csdr-loadtest-" + testName)
         .setKeyspaceName(keyspaceName)
         .sePreGeneratedKeyspaceName(true)
         .build();
@@ -162,10 +162,10 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
 
   public SpannerResourceManager createSpannerMetadataDatabase() throws IOException {
     SpannerResourceManager spannerMetadataResourceManager =
-        SpannerResourceManager.builder("rr-meta-spnr-csdr" + testName, project, region)
+        SpannerResourceManager.builder("rr-meta-spnr-csdr-" + testName, project, region)
             .maybeUseStaticInstance()
             .build();
-    String dummy = "create table t1(id INT64 ) primary key(id)";
+    String dummy = "create table spnr_csdr_t1(id INT64 ) primary key(id)";
     spannerMetadataResourceManager.executeDdlStatement(dummy);
     return spannerMetadataResourceManager;
   }

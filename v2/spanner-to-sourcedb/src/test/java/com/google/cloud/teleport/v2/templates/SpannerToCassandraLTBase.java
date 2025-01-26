@@ -107,7 +107,6 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
 
     return CassandraResourceManager.builder("rr-spdr-csdr-loadtest-" + testName)
         .setKeyspaceName(keyspaceName)
-        .useStaticContainer()
         .build();
     //    return CassandraSharedResourceManager.builder("rr-spdr-csdr-loadtest-" + testName)
     //        .setKeyspaceName(keyspaceName)

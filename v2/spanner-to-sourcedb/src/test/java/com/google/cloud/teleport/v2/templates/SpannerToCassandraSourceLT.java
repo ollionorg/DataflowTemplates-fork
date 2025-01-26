@@ -101,8 +101,9 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     dataGenerator.execute(Duration.ofMinutes(10)); // 90
     assertThatPipeline(jobInfo).isRunning();
 
+    String tablename = cassandraResourceManager.getKeyspaceName() + ".person";
     CassandraRowsCheck check =
-        CassandraRowsCheck.builder(cassandraResourceManager, table)
+        CassandraRowsCheck.builder(cassandraResourceManager, tablename)
             .setMinRows(20) // 300000
             .setMaxRows(20) // 300000
             .build();

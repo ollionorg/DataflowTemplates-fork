@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
 import org.apache.beam.it.common.PipelineLauncher.LaunchInfo;
@@ -56,6 +57,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
   public SpannerResourceManager spannerResourceManager;
   public SpannerResourceManager spannerMetadataResourceManager;
   public CassandraSharedResourceManager cassandraResourceManager;
+  public CassandraResourceManager cassandraResourceManagerNew;
   public GcsResourceManager gcsResourceManager;
   private static PubsubResourceManager pubsubResourceManager;
   private SubscriptionName subscriptionName;
@@ -85,12 +87,12 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
   }
 
   public void setupCassandraResourceManager() throws IOException {
-    cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
+    cassandraResourceManagerNew = generateKeyspaceAndBuildCassandraResource();
 
-    createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraResourceManager);
+    createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraResourceManagerNew);
   }
 
-  private CassandraSharedResourceManager generateKeyspaceAndBuildCassandraResource() {
+  private CassandraResourceManager generateKeyspaceAndBuildCassandraResource() {
     String keyspaceName =
         ResourceManagerUtils.generateResourceId(
                 testName,
@@ -102,10 +104,15 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     if (keyspaceName.length() > 48) {
       keyspaceName = keyspaceName.substring(0, 48);
     }
-    return CassandraSharedResourceManager.builder("rr-spdr-csdr-loadtest-" + testName)
+
+    return CassandraResourceManager.builder("rr-spdr-csdr-loadtest-" + testName)
         .setKeyspaceName(keyspaceName)
-        .sePreGeneratedKeyspaceName(true)
+        .useStaticContainer()
         .build();
+    //    return CassandraSharedResourceManager.builder("rr-spdr-csdr-loadtest-" + testName)
+    //        .setKeyspaceName(keyspaceName)
+    //        .sePreGeneratedKeyspaceName(true)
+    //        .build();
   }
 
   public void cleanupResourceManagers() {
@@ -171,8 +178,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
   }
 
   public void createAndUploadCassandraConfigToGcs(
-      GcsResourceManager gcsResourceManager,
-      CassandraSharedResourceManager cassandraResourceManagers)
+      GcsResourceManager gcsResourceManager, CassandraResourceManager cassandraResourceManagers)
       throws IOException {
 
     String host = cassandraResourceManagers.getHost();

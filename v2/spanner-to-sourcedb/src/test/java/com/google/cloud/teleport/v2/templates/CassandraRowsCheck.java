@@ -19,7 +19,6 @@ import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.auto.value.AutoValue;
 import javax.annotation.Nullable;
-import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.conditions.ConditionCheck;
 
 @AutoValue
@@ -90,7 +89,7 @@ public abstract class CassandraRowsCheck extends ConditionCheck {
   @AutoValue.Builder
   public abstract static class Builder {
 
-    public abstract Builder setResourceManager(CassandraResourceManager resourceManager);
+    public abstract Builder setResourceManager(CassandraSharedResourceManager resourceManager);
 
     public abstract Builder setTableName(String tableName);
 

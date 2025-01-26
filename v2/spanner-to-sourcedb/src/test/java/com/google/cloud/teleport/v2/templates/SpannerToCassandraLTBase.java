@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
-import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
 import org.apache.beam.it.common.PipelineLauncher.LaunchInfo;
@@ -56,26 +55,31 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
           TestProperties.specPath(), "gs://dataflow-templates/latest/flex/Spanner_to_SourceDb");
   public SpannerResourceManager spannerResourceManager;
   public SpannerResourceManager spannerMetadataResourceManager;
-  //  public CassandraSharedResourceManager cassandraResourceManager;
-  public CassandraResourceManager cassandraResourceManagerNew;
+  public CassandraSharedResourceManager cassandraSharedResourceManager;
   public GcsResourceManager gcsResourceManager;
   private static PubsubResourceManager pubsubResourceManager;
   private SubscriptionName subscriptionName;
 
   public void setupResourceManagers(
-      String spannerDdlResource, String sessionFileResource, String artifactBucket)
+      String spannerDdlResource,
+      String cassandraDdlResource,
+      String sessionFileResource,
+      String artifactBucket)
       throws IOException {
     spannerResourceManager = createSpannerDatabase(spannerDdlResource);
     spannerMetadataResourceManager = createSpannerMetadataDatabase();
+    cassandraSharedResourceManager = generateKeyspaceAndBuildCassandraResource();
 
     System.out.println("Test Name: " + testName);
     System.out.println("Class Name: " + getClass().getSimpleName());
-
     gcsResourceManager =
         GcsResourceManager.builder(artifactBucket, getClass().getSimpleName(), CREDENTIALS).build();
 
     gcsResourceManager.uploadArtifact(
         "input/session.json", Resources.getResource(sessionFileResource).getPath());
+
+    createCassandraSchema(cassandraSharedResourceManager, cassandraDdlResource);
+    createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraSharedResourceManager);
 
     pubsubResourceManager = setUpPubSubResourceManager();
     subscriptionName =
@@ -86,13 +90,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
                 .replace("gs://" + artifactBucket, ""));
   }
 
-  public void setupCassandraResourceManager() throws IOException {
-    cassandraResourceManagerNew = generateKeyspaceAndBuildCassandraResource();
-
-    createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraResourceManagerNew);
-  }
-
-  private CassandraResourceManager generateKeyspaceAndBuildCassandraResource() {
+  public CassandraSharedResourceManager generateKeyspaceAndBuildCassandraResource() {
     String keyspaceName =
         ResourceManagerUtils.generateResourceId(
                 testName,
@@ -106,11 +104,10 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     }
 
     System.out.println("Cassandra keyspaceName :: " + keyspaceName);
-    return CassandraResourceManager.builder(testName).setKeyspaceName(keyspaceName).build();
-    //    return CassandraSharedResourceManager.builder("rr-spdr-csdr-loadtest-" + testName)
-    //        .setKeyspaceName(keyspaceName)
-    //        .sePreGeneratedKeyspaceName(true)
-    //        .build();
+    return CassandraSharedResourceManager.builder(testName)
+        .setKeyspaceName(keyspaceName)
+        .sePreGeneratedKeyspaceName(true)
+        .build();
   }
 
   public void cleanupResourceManagers() {
@@ -119,7 +116,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
         spannerMetadataResourceManager,
         gcsResourceManager,
         pubsubResourceManager,
-        cassandraResourceManagerNew);
+        cassandraSharedResourceManager);
   }
 
   public PubsubResourceManager setUpPubSubResourceManager() throws IOException {
@@ -147,7 +144,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
   public SpannerResourceManager createSpannerDatabase(String spannerDdlResourceFile)
       throws IOException {
     SpannerResourceManager spannerResourceManager =
-        SpannerResourceManager.builder("rr-spnr-csdr-loadtest-" + testName, project, region)
+        SpannerResourceManager.builder("rr-lt-main" + testName, project, region)
             .maybeUseStaticInstance()
             .build();
     String ddl =
@@ -167,7 +164,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
 
   public SpannerResourceManager createSpannerMetadataDatabase() throws IOException {
     SpannerResourceManager spannerMetadataResourceManager =
-        SpannerResourceManager.builder("rr-meta-spnr-csdr-" + testName, project, region)
+        SpannerResourceManager.builder("rr-meta-lt-" + testName, project, region)
             .maybeUseStaticInstance()
             .build();
     String dummy = "create table spnr_csdr_t1(id INT64 ) primary key(id)";
@@ -176,7 +173,8 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
   }
 
   public void createAndUploadCassandraConfigToGcs(
-      GcsResourceManager gcsResourceManager, CassandraResourceManager cassandraResourceManagers)
+      GcsResourceManager gcsResourceManager,
+      CassandraSharedResourceManager cassandraResourceManagers)
       throws IOException {
 
     String host = cassandraResourceManagers.getHost();
@@ -207,6 +205,26 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     System.out.println("Cassandra file contents: " + cassandraConfigContents);
 
     gcsResourceManager.createArtifact("input/cassandra-config.conf", cassandraConfigContents);
+  }
+
+  public void createCassandraSchema(
+      CassandraSharedResourceManager cassandraResourceManager, String cassandraDdlResourceFile)
+      throws IOException {
+    String ddl =
+        String.join(
+            " ",
+            Resources.readLines(
+                Resources.getResource(cassandraDdlResourceFile), StandardCharsets.UTF_8));
+
+    ddl = ddl.trim();
+    System.out.println("Cassandra DDL: " + ddl);
+    String[] ddls = ddl.split(";");
+    for (String d : ddls) {
+      System.out.println("DDL Statement: " + d);
+      if (!d.isBlank()) {
+        cassandraResourceManager.executeStatement(d);
+      }
+    }
   }
 
   public PipelineLauncher.LaunchInfo launchDataflowJob(

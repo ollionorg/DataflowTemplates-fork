@@ -23,7 +23,6 @@ import com.google.cloud.teleport.metadata.TemplateLoadTest;
 import java.io.IOException;
 import java.text.ParseException;
 import java.time.Duration;
-import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.TestProperties;
@@ -48,6 +47,8 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   private final String artifactBucket = TestProperties.artifactBucket();
   private final String spannerDdlResource = "SpannerToCassandraSourceLT/spanner-schema.sql";
   private final String sessionFileResource = "SpannerToCassandraSourceLT/session.json";
+  private static final String cassandraDdlResource =
+      "SpannerToCassandraSourceLT/cassandra-schema.sql";
   private final String dataGeneratorSchemaResource =
       "SpannerToCassandraSourceLT/datagenerator-schema.json";
   private final String table = "person";
@@ -59,8 +60,8 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
 
   @Before
   public void setup() throws IOException {
-    setupResourceManagers(spannerDdlResource, sessionFileResource, artifactBucket);
-    setupCassandraResourceManager();
+    setupResourceManagers(
+        spannerDdlResource, cassandraDdlResource, sessionFileResource, artifactBucket);
     generatorSchemaPath =
         getFullGcsPath(
             artifactBucket,
@@ -69,8 +70,6 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
                     "input/schema.json",
                     Resources.getResource(dataGeneratorSchemaResource).getPath())
                 .name());
-
-    createCassandraSchema(cassandraResourceManagerNew);
     jobInfo = launchDataflowJob(artifactBucket, numWorkers, maxWorkers);
   }
 
@@ -100,17 +99,16 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
             .setBatchSizeBytes("0")
             .build();
 
-    dataGenerator.execute(Duration.ofMinutes(10)); // 90
+    dataGenerator.execute(Duration.ofMinutes(5)); // 90
     assertThatPipeline(jobInfo).isRunning();
 
-    String tablename = cassandraResourceManagerNew.getKeyspaceName() + ".person";
-
     CassandraRowsCheck check =
-        CassandraRowsCheck.builder(cassandraResourceManagerNew, tablename)
+        CassandraRowsCheck.builder(cassandraSharedResourceManager, table)
             .setMinRows(20) // 300000
             .setMaxRows(20) // 300000
             .build();
 
+    System.out.println("Waiting for Job");
     PipelineOperator.Result result =
         pipelineOperator.waitForCondition(
             createConfig(jobInfo, Duration.ofMinutes(10), Duration.ofSeconds(30)), check);
@@ -126,32 +124,5 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     assertThatResult(result1).isLaunchFinished();
 
     exportMetrics(jobInfo, numShards);
-  }
-
-  private void createCassandraSchema(CassandraResourceManager cassandraResourceManager) {
-    String keyspace = cassandraResourceManager.getKeyspaceName();
-    System.out.println("Creating keyspace: " + keyspace);
-    cassandraResourceManager.executeStatement(
-        String.format(
-            "CREATE KEYSPACE IF NOT EXISTS %s WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };",
-            keyspace));
-    System.out.println("Keyspace Created");
-
-    String createTableStatement =
-        String.format(
-            "USE %s; "
-                + "CREATE TABLE IF NOT EXISTS %s.%s ("
-                + "id uuid PRIMARY KEY, "
-                + "first_name1 text, "
-                + "last_name1 text, "
-                + "first_name2 text, "
-                + "last_name2 text, "
-                + "first_name3 text, "
-                + "last_name3 text);",
-            keyspace, keyspace, table);
-
-    System.out.println("Creating table: " + createTableStatement);
-    cassandraResourceManager.executeStatement(createTableStatement);
-    System.out.println("Table Created");
   }
 }

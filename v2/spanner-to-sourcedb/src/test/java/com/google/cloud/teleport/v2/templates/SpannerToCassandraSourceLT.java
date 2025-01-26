@@ -49,7 +49,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   private final String sessionFileResource = "SpannerToCassandraSourceLT/session.json";
   private final String dataGeneratorSchemaResource =
       "SpannerToCassandraSourceLT/datagenerator-schema.json";
-  private final String table = "Person";
+  private final String table = "person";
   private final int maxWorkers = 3; // 50;
   private final int numWorkers = 2; // 20;
   private PipelineLauncher.LaunchInfo jobInfo;
@@ -127,7 +127,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     String createTableStatement =
         String.format(
             "CREATE TABLE IF NOT EXISTS %s.%s ("
-                + "ID uuid PRIMARY KEY, "
+                + "id uuid PRIMARY KEY, "
                 + "first_name1 text, "
                 + "last_name1 text, "
                 + "first_name2 text, "
@@ -135,6 +135,9 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
                 + "first_name3 text, "
                 + "last_name3 text);",
             keyspace, table);
+
+    LOG.info("Creating table: {}", createTableStatement);
     cassandraResourceManager.executeStatement(createTableStatement);
+    LOG.info("Table Created");
   }
 }

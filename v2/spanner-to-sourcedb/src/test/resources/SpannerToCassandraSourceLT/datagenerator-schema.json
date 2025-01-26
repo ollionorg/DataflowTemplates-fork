@@ -1,5 +1,5 @@
 {
-  "ID": "{{uuid()}}",
+  "id": "{{uuid()}}",
   "first_name1": "{{alphaNumeric(460,500)}}",
   "last_name1": "{{alphaNumeric(460,500)}}",
   "first_name2": "{{alphaNumeric(460,500)}}",

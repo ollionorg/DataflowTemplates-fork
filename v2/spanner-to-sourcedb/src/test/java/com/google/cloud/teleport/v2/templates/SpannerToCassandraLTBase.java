@@ -56,7 +56,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
           TestProperties.specPath(), "gs://dataflow-templates/latest/flex/Spanner_to_SourceDb");
   public SpannerResourceManager spannerResourceManager;
   public SpannerResourceManager spannerMetadataResourceManager;
-  public CassandraSharedResourceManager cassandraResourceManager;
+  //  public CassandraSharedResourceManager cassandraResourceManager;
   public CassandraResourceManager cassandraResourceManagerNew;
   public GcsResourceManager gcsResourceManager;
   private static PubsubResourceManager pubsubResourceManager;
@@ -121,7 +121,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
         spannerMetadataResourceManager,
         gcsResourceManager,
         pubsubResourceManager,
-        cassandraResourceManager);
+        cassandraResourceManagerNew);
   }
 
   public PubsubResourceManager setUpPubSubResourceManager() throws IOException {

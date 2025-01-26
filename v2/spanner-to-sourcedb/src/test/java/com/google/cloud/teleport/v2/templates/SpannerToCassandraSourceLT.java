@@ -23,6 +23,7 @@ import com.google.cloud.teleport.metadata.TemplateLoadTest;
 import java.io.IOException;
 import java.text.ParseException;
 import java.time.Duration;
+import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.TestProperties;
@@ -69,7 +70,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
                     Resources.getResource(dataGeneratorSchemaResource).getPath())
                 .name());
 
-    createCassandraSchema(cassandraResourceManager);
+    createCassandraSchema(cassandraResourceManagerNew);
     jobInfo = launchDataflowJob(artifactBucket, numWorkers, maxWorkers);
   }
 
@@ -101,9 +102,10 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     dataGenerator.execute(Duration.ofMinutes(10)); // 90
     assertThatPipeline(jobInfo).isRunning();
 
-    String tablename = cassandraResourceManager.getKeyspaceName() + ".person";
+    String tablename = cassandraResourceManagerNew.getKeyspaceName() + ".person";
+
     CassandraRowsCheck check =
-        CassandraRowsCheck.builder(cassandraResourceManager, tablename)
+        CassandraRowsCheck.builder(cassandraResourceManagerNew, tablename)
             .setMinRows(20) // 300000
             .setMaxRows(20) // 300000
             .build();
@@ -125,7 +127,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     exportMetrics(jobInfo, numShards);
   }
 
-  private void createCassandraSchema(CassandraSharedResourceManager cassandraResourceManager) {
+  private void createCassandraSchema(CassandraResourceManager cassandraResourceManager) {
     String keyspace = cassandraResourceManager.getKeyspaceName();
     String createTableStatement =
         String.format(

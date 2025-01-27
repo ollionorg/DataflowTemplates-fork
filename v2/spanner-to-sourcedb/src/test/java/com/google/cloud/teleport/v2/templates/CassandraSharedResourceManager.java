@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * created when the first collection is created if one has not been created already.
  *
  * <p>The database name is formed using testId. The database name will be "{testId}-{ISO8601 time,
- * microsecond precision}", with additional formatting.
+ * microsecond precision}", with additional formatting and handling restriction of keyspace Name.
  *
  * <p>The class is thread-safe.
  */

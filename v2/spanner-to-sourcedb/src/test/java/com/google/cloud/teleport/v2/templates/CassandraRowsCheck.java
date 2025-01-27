@@ -46,7 +46,7 @@ public abstract class CassandraRowsCheck extends ConditionCheck {
 
   private long getRowCount(String tableName) {
     String query = String.format("SELECT COUNT(*) FROM %s", tableName);
-    ResultSet resultSet = resourceManager().executeStatement(query);
+    ResultSet resultSet = resourceManager().getCassandraResourceManager().executeStatement(query);
     Row row = resultSet.one();
     if (row != null) {
       return row.getLong(0);

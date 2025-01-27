@@ -118,8 +118,18 @@ public class CassandraTypeHandler {
    * @throws IllegalArgumentException If the value is neither a valid number string, byte array, nor
    *     a valid {@link ByteBuffer} for varint representation.
    */
-  private static BigInteger handleCassandraVarintType(String value) {
-    return new BigInteger(value);
+  private static BigInteger handleCassandraVarintType(Object value) {
+    if (value instanceof String) {
+      return new BigInteger((String) value);
+    } else if (value instanceof byte[]) {
+      return new BigInteger((byte[]) value);
+    } else {
+      try {
+        return new BigInteger(value.toString());
+      } catch (Exception e) {
+        throw new IllegalArgumentException("Illegal Input for Big Integer conversion");
+      }
+    }
   }
 
   /**
@@ -447,7 +457,7 @@ public class CassandraTypeHandler {
 
       case "varint":
         return PreparedStatementValueObject.create(
-            columnType, safeHandle(() -> handleCassandraVarintType(colValue.toString())));
+            columnType, safeHandle(() -> handleCassandraVarintType(colValue)));
 
       case "duration":
         return PreparedStatementValueObject.create(

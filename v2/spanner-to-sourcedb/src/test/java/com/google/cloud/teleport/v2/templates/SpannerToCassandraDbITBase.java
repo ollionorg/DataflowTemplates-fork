@@ -117,7 +117,7 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
       CassandraSharedResourceManager cassandraResourceManagers)
       throws IOException {
 
-    String host = cassandraResourceManagers.getHost();
+    String host = cassandraResourceManagers.getCassandraResourceManager().getHost();
     int port = cassandraResourceManagers.getPort();
     String keyspaceName = cassandraResourceManagers.getKeyspaceName();
     LOG.info("Cassandra keyspaceName :: {}", keyspaceName);
@@ -213,7 +213,7 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
   }
 
   protected void createCassandraSchema(
-      CassandraSharedResourceManager cassandraResourceManager, String cassandraSchemaFile)
+      CassandraSharedResourceManager cassandraSharedResourceManager, String cassandraSchemaFile)
       throws IOException {
     String ddl =
         String.join(
@@ -227,7 +227,7 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
     for (String d : ddls) {
       LOG.info("DDL statement {}", d);
       if (!d.isBlank()) {
-        cassandraResourceManager.executeStatement(d);
+        cassandraSharedResourceManager.getCassandraResourceManager().executeStatement(d);
       }
     }
   }

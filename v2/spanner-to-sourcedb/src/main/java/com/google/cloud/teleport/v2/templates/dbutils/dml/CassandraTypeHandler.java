@@ -353,6 +353,10 @@ public class CassandraTypeHandler {
   private static PreparedStatementValueObject<?> parseAndCastToCassandraType(
       String columnType, Object colValue) {
 
+    if (columnType.startsWith("frozen<")) {
+      return parseAndCastToCassandraType(extractInnerType(columnType), colValue);
+    }
+
     // Handle collection types
     if (columnType.startsWith("list<")) {
       return safeHandle(
@@ -523,9 +527,13 @@ public class CassandraTypeHandler {
    * @throws IllegalArgumentException if the column type is invalid or the value cannot be parsed.
    */
   private static Object parseFloatingPoint(String columnType, Object colValue) {
-    return columnType.equals("double")
-        ? Double.parseDouble((String) colValue)
-        : Float.parseFloat((String) colValue);
+    if (columnType.equals("double")) {
+      return Double.parseDouble((String) colValue);
+    } else if (columnType.equals("float")) {
+      return Float.parseFloat((String) colValue);
+    }
+    throw new IllegalArgumentException(
+        String.format("Unable to parse %s : value %s", columnType, colValue));
   }
 
   private static LocalDate parseDate(Object colValue) {

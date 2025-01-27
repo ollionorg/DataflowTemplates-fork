@@ -181,6 +181,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     int port = 9042;
     //        cassandraResourceManagers.getPort();
     String keyspaceName = cassandraResourceManagers.getKeyspaceName();
+
     System.out.println("Cassandra keyspaceName :: " + keyspaceName);
     System.out.println("Cassandra host :: " + host);
     System.out.println("Cassandra port :: " + port);

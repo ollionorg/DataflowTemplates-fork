@@ -119,17 +119,10 @@ public class CassandraTypeHandler {
    *     a valid {@link ByteBuffer} for varint representation.
    */
   private static BigInteger handleCassandraVarintType(Object value) {
-    if (value instanceof String) {
-      return new BigInteger((String) value);
-    } else if (value instanceof byte[]) {
+    if (value instanceof byte[]) {
       return new BigInteger((byte[]) value);
-    } else {
-      try {
-        return new BigInteger(value.toString());
-      } catch (Exception e) {
-        throw new IllegalArgumentException("Illegal Input for Big Integer conversion");
-      }
     }
+    return new BigInteger(value.toString());
   }
 
   /**

@@ -66,7 +66,7 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
   private static PipelineLauncher.LaunchInfo jobInfo;
   public static SpannerResourceManager spannerResourceManager;
   private static SpannerResourceManager spannerMetadataResourceManager;
-  public static CassandraSharedResourceManager cassandraResourceManager;
+  public static CassandraSharedResourceManager cassandraSharedResourceManager;
   private static GcsResourceManager gcsResourceManager;
   private static PubsubResourceManager pubsubResourceManager;
   private SubscriptionName subscriptionName;
@@ -85,12 +85,12 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
         spannerResourceManager = createSpannerDatabase(SPANNER_DDL_RESOURCE);
         spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
-        cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
+        cassandraSharedResourceManager = generateKeyspaceAndBuildCassandraResource();
         gcsResourceManager =
             GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
                 .build();
-        createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraResourceManager);
-        createCassandraSchema(cassandraResourceManager, CASSANDRA_SCHEMA_FILE_RESOURCE);
+        createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraSharedResourceManager);
+        createCassandraSchema(cassandraSharedResourceManager, CASSANDRA_SCHEMA_FILE_RESOURCE);
         gcsResourceManager.uploadArtifact(
             "input/session.json", Resources.getResource(SESSION_FILE_RESOURCE).getPath());
         pubsubResourceManager = setUpPubSubResourceManager();
@@ -126,10 +126,10 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
     }
     ResourceManagerUtils.cleanResources(
         spannerResourceManager,
-        cassandraResourceManager,
         spannerMetadataResourceManager,
         gcsResourceManager,
         pubsubResourceManager);
+    cassandraSharedResourceManager.cleanupAll();
   }
 
   @Test
@@ -141,7 +141,8 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
 
   private long getRowCount() {
     String query = String.format("SELECT COUNT(*) FROM %s", TABLE);
-    ResultSet resultSet = cassandraResourceManager.executeStatement(query);
+    ResultSet resultSet =
+        cassandraSharedResourceManager.getCassandraResourceManager().executeStatement(query);
     Row row = resultSet.one();
     if (row != null) {
       return row.getLong(0);
@@ -210,7 +211,7 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
     Iterable<Row> rows;
     try {
       LOG.info("Reading from Cassandra table: {}", TABLE);
-      rows = cassandraResourceManager.readTable(TABLE);
+      rows = cassandraSharedResourceManager.getCassandraResourceManager().readTable(TABLE);
       LOG.info("Cassandra Rows: {}", rows.toString());
     } catch (Exception e) {
       throw new RuntimeException("Failed to read from Cassandra table: " + TABLE, e);

@@ -115,8 +115,8 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
         spannerResourceManager,
         spannerMetadataResourceManager,
         gcsResourceManager,
-        pubsubResourceManager,
-        cassandraSharedResourceManager);
+        pubsubResourceManager);
+    cassandraSharedResourceManager.cleanupAll();
   }
 
   public PubsubResourceManager setUpPubSubResourceManager() throws IOException {
@@ -177,7 +177,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
       CassandraSharedResourceManager cassandraResourceManagers)
       throws IOException {
 
-    String host = cassandraResourceManagers.getHost();
+    String host = cassandraResourceManagers.getCassandraResourceManager().getHost();
     int port = cassandraResourceManagers.getPort();
     String keyspaceName = cassandraResourceManagers.getKeyspaceName();
 
@@ -209,7 +209,8 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
   }
 
   public void createCassandraSchema(
-      CassandraSharedResourceManager cassandraResourceManager, String cassandraDdlResourceFile)
+      CassandraSharedResourceManager cassandraSharedResourceManager,
+      String cassandraDdlResourceFile)
       throws IOException {
     String ddl =
         String.join(
@@ -223,7 +224,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     for (String d : ddls) {
       System.out.println("DDL Statement: " + d);
       if (!d.isBlank()) {
-        cassandraResourceManager.executeStatement(d);
+        cassandraSharedResourceManager.getCassandraResourceManager().executeStatement(d);
       }
     }
   }

@@ -418,6 +418,8 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
         () ->
             assertThat(row.getInstant("timestamp_column"))
                 .isEqualTo(java.time.Instant.parse("2025-01-27T10:30:00.000Z")),
-        () -> assertThat(row.getLong("varint_column")).isEqualTo(7076111819049546854L));
+        () ->
+            assertThat(row.getBigInteger("varint_column"))
+                .isEqualTo(java.math.BigInteger.valueOf(7076111819049546854L)));
   }
 }

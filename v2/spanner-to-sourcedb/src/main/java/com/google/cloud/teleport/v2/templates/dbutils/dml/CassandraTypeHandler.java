@@ -331,7 +331,14 @@ public class CassandraTypeHandler {
           return null;
         }
         String hexEncodedString = valuesJson.optString(columnName);
-        return convertBinaryEncodedStringToByteArray(hexEncodedString);
+        return safeHandle(
+            () -> {
+              try {
+                return convertBinaryEncodedStringToByteArray(hexEncodedString);
+              } catch (IllegalArgumentException e) {
+                return parseBlobType(hexEncodedString);
+              }
+            });
       } else {
         return valuesJson.isNull(columnName) ? null : valuesJson.opt(columnName);
       }

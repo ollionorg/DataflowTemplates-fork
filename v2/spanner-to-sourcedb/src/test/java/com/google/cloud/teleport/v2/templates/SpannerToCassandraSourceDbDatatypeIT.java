@@ -351,8 +351,12 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
 
         // Maps
         () ->
-            assertThat(row.getMap("map_date_to_text_column", String.class, String.class))
-                .isEqualTo(Map.of("2025-01-27", "event1", "2025-02-01", "event2")),
+            assertThat(
+                    row.getMap("map_date_to_text_column", java.time.LocalDate.class, String.class))
+                .isEqualTo(
+                    Map.of(
+                        java.time.LocalDate.parse("2025-01-27"), "event1",
+                        java.time.LocalDate.parse("2025-02-01"), "event2")),
         () ->
             assertThat(row.getMap("map_text_to_int_column", String.class, Integer.class))
                 .isEqualTo(Map.of("key1", 10, "key2", 20)),
@@ -375,8 +379,12 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
 
         // Sets
         () ->
-            assertThat(row.getSet("set_date_column", String.class))
-                .isEqualTo(new HashSet<>(Arrays.asList("2025-01-27", "2025-02-01"))),
+            assertThat(row.getSet("set_date_column", java.time.LocalDate.class))
+                .isEqualTo(
+                    new HashSet<>(
+                        Arrays.asList(
+                            java.time.LocalDate.parse("2025-01-27"),
+                            java.time.LocalDate.parse("2025-02-01")))),
         () ->
             assertThat(row.getSet("set_text_column", String.class))
                 .isEqualTo(new HashSet<>(Arrays.asList("apple", "orange", "banana"))),

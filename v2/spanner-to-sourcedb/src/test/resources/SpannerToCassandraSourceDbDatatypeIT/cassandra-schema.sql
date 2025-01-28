@@ -1,6 +1,6 @@
 CREATE TABLE AllDatatypeColumns (
     varchar_column text PRIMARY KEY,
-    tinyint_column int,
+    tinyint_column tinyint,
     text_column text,
     date_column date,
     smallint_column smallint,

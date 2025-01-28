@@ -154,6 +154,31 @@ public class CassandraSharedResourceManager
                   cassandraClient.execute(
                       SimpleStatement.newInstance(statement).setKeyspace(this.keyspaceName)));
     } catch (Exception e) {
+      System.out.println(e.getMessage());
+      System.out.println(e.fillInStackTrace());
+      System.out.println(e);
+      throw new IllegalArgumentException("Error reading collection.", e);
+    }
+  }
+
+  /**
+   * Execute the given statement on the managed keyspace without returning ResultSet.
+   *
+   * @param statement The statement to execute.
+   */
+  public synchronized void execute(String statement) {
+    LOG.info("execute statement: {}", statement);
+
+    try {
+      Failsafe.with(buildRetryPolicy())
+          .run(
+              () ->
+                  cassandraClient.execute(
+                      SimpleStatement.newInstance(statement).setKeyspace(this.keyspaceName)));
+    } catch (Exception e) {
+      System.out.println(e.getMessage());
+      System.out.println(e.fillInStackTrace());
+      System.out.println(e);
       throw new IllegalArgumentException("Error reading collection.", e);
     }
   }

@@ -227,7 +227,7 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
     for (String d : ddls) {
       System.out.println("DDL statement {}" + d);
       if (!d.isBlank()) {
-        cassandraResourceManager.executeStatement(d);
+        cassandraResourceManager.execute(d);
       }
     }
   }

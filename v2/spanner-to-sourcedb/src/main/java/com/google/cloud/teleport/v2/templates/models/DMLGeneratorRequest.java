@@ -99,7 +99,6 @@ public class DMLGeneratorRequest {
     return customTransformationResponse;
   }
 
-
   public static class Builder {
     private final String modType;
     private final String spannerTableName;

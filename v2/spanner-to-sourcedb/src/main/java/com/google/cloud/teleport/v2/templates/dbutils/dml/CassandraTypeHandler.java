@@ -121,6 +121,11 @@ public class CassandraTypeHandler {
   private static BigInteger handleCassandraVarintType(Object value) {
     if (value instanceof byte[]) {
       return new BigInteger((byte[]) value);
+    } else if (value instanceof ByteBuffer) {
+      ByteBuffer byteBuffer = (ByteBuffer) value;
+      byte[] byteArray = new byte[byteBuffer.remaining()];
+      byteBuffer.get(byteArray);
+      return new BigInteger(byteArray);
     }
     return new BigInteger(value.toString());
   }
@@ -172,10 +177,11 @@ public class CassandraTypeHandler {
       byteArray = (byte[]) colValue;
     } else if (colValue instanceof String) {
       byteArray = java.util.Base64.getDecoder().decode((String) colValue);
+    } else if (colValue instanceof ByteBuffer) {
+      return (ByteBuffer) colValue;
     } else {
       throw new IllegalArgumentException("Unsupported type for column");
     }
-
     return ByteBuffer.wrap(byteArray);
   }
 

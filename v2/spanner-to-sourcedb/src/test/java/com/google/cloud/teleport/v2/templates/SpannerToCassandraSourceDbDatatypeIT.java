@@ -21,6 +21,7 @@ import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.google.cloud.ByteArray;
 import com.google.cloud.Date;
 import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.Mutation;
@@ -163,7 +164,7 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
             .set("text_column")
             .to("text_column_value")
             .set("date_column")
-            .to(Value.date(Date.fromYearMonthDay(2024, 5, 24)))
+            .to(Value.date(Date.fromJavaUtilDate(java.sql.Date.valueOf("2024-05-24"))))
             .set("smallint_column")
             .to(50)
             .set("mediumint_column")
@@ -171,7 +172,7 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
             .set("int_column")
             .to(50000)
             .set("bigint_column")
-            .to(987654321)
+            .to(987654321L)
             .set("float_column")
             .to(45.67)
             .set("double_column")
@@ -200,7 +201,75 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
             .to(Value.bool(Boolean.FALSE))
             .set("other_bool_column")
             .to(Value.bool(Boolean.TRUE))
+            .set("bytes_column")
+            .to(Value.bytes(ByteArray.copyFrom(new byte[] {0x01, 0x02, 0x03, 0x04})))
+            .set("varint_column")
+            .to(
+                Value.bytes(
+                    ByteArray.copyFrom("12345678901234567890".getBytes()))) // Varint as bytes
+            // List Columns
+            .set("list_text_column")
+            .to(Value.json("[\"apple\", \"banana\", \"cherry\"]")) // List of text
+            .set("list_int_column")
+            .to(Value.json("[1, 2, 3, 4]")) // List of integers
+            .set("frozen_list_bigint_column")
+            .to(
+                Value.json(
+                    "[10000000000, 20000000000, 30000000000]")) // Frozen list of big integers
+
+            // Set Columns
+            .set("set_text_column")
+            .to(Value.json("[\"carrot\", \"lettuce\", \"spinach\"]")) // Set of text
+            .set("set_date_column")
+            .to(Value.json("[\"2024-05-01\", \"2024-06-01\"]")) // Set of dates
+            .set("frozen_set_bool_column")
+            .to(Value.json("[true, false]")) // Frozen set of booleans
+
+            // Map Columns
+            .set("map_text_to_int_column")
+            .to(Value.json("{\"key1\": 1, \"key2\": 2, \"key3\": 3}")) // Map of text to int
+            .set("map_date_to_text_column")
+            .to(
+                Value.json(
+                    "{\"2024-05-01\": \"Value1\", \"2024-06-01\": \"Value2\"}")) // Map of date to
+            // text
+            .set("frozen_map_int_to_bool_column")
+            .to(Value.json("{\"1\": true, \"2\": false}")) // Frozen map of int to bool
+
+            // Combinations of Collections
+            .set("map_text_to_list_column")
+            .to(
+                Value.json(
+                    "{\"key1\": [\"item1\", \"item2\"], \"key2\": [\"item3\", \"item4\"]}")) // Map
+            .set("map_text_to_set_column")
+            .to(
+                Value.json(
+                    "{\"key1\": [1, 2], \"key2\": [3, 4]}")) // Map of text to set of integers
+            .set("set_of_maps_column")
+            .to(Value.json("[{\"key1\": 1}, {\"key2\": 2}]")) // Set of maps (text -> int)
+            .set("list_of_sets_column")
+            .to(
+                Value.json(
+                    "[[\"apple\", \"banana\"], [\"cherry\", \"date\"]]")) // List of sets of text
+
+            // Frozen Combinations
+            .set("frozen_map_text_to_list_column")
+            .to(
+                Value.json(
+                    "{\"key1\": [\"item1\", \"item2\"]}")) // Frozen map of text to list of text
+            .set("frozen_map_text_to_set_column")
+            .to(
+                Value.json(
+                    "{\"key1\": [\"item1\", \"item2\"]}")) // Frozen map of text to set of text
+            .set("frozen_set_of_maps_column")
+            .to(Value.json("[{\"key1\": 1}, {\"key2\": 2}]")) // Frozen set of maps (text -> int)
+            .set("frozen_list_of_sets_column")
+            .to(
+                Value.json(
+                    "[[\"item1\", \"item2\"], [\"item3\", \"item4\"]]")) // Frozen list of sets of
+            // text
             .build();
+
     spannerResourceManager.write(mutation);
   }
 

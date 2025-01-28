@@ -21,4 +21,35 @@ CREATE TABLE AllDatatypeColumns (
     enum_column text,
     bool_column boolean,
     other_bool_column boolean,
+    bytes_column BLOB,
+
+    -- List Columns
+    list_text_column list<text>,
+    list_int_column list<int>,
+    frozen_list_bigint_column frozen<list<bigint>>,
+
+    -- Set Columns
+    set_text_column set<text>,
+    set_date_column set<date>,
+    frozen_set_bool_column frozen<set<boolean>>,
+
+    -- Map Columns
+    map_text_to_int_column map<text, int>,
+    map_date_to_text_column map<date, text>,
+    frozen_map_int_to_bool_column frozen<map<int, boolean>>,
+
+    -- Combinations of Collections
+    map_text_to_list_column map<text, list<text>>,
+    map_text_to_set_column map<text, set<int>>,
+    set_of_maps_column set<map<text, int>>,
+    list_of_sets_column list<set<text>>,
+
+    -- Frozen Combinations
+    frozen_map_text_to_list_column frozen<map<text, list<text>>>,
+    frozen_map_text_to_set_column frozen<map<text, set<int>>>,
+    frozen_set_of_maps_column frozen<set<map<text, int>>>,
+    frozen_list_of_sets_column frozen<list<set<text>>>,
+
+    -- Varint Column
+    varint_column varint
 );

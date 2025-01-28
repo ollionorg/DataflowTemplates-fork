@@ -568,6 +568,7 @@ public class SpannerToSourceDb {
                 spannerTableNameColsMap,
                 cassandraSourceMetadata.getNameAndColsMap());
       } catch (Exception e) {
+        LOG.error(e.getMessage(), e);
         throw new IllegalArgumentException(e);
       }
     }

@@ -121,6 +121,11 @@ public class CassandraTypeHandler {
   private static BigInteger handleCassandraVarintType(Object value) {
     if (value instanceof byte[]) {
       return new BigInteger((byte[]) value);
+    } else if (value instanceof ByteBuffer) {
+      ByteBuffer byteBuffer = (ByteBuffer) value;
+      byte[] byteArray = new byte[byteBuffer.remaining()];
+      byteBuffer.get(byteArray);
+      return new BigInteger(byteArray);
     }
     return new BigInteger(value.toString());
   }
@@ -172,10 +177,11 @@ public class CassandraTypeHandler {
       byteArray = (byte[]) colValue;
     } else if (colValue instanceof String) {
       byteArray = java.util.Base64.getDecoder().decode((String) colValue);
+    } else if (colValue instanceof ByteBuffer) {
+      return (ByteBuffer) colValue;
     } else {
       throw new IllegalArgumentException("Unsupported type for column");
     }
-
     return ByteBuffer.wrap(byteArray);
   }
 
@@ -224,7 +230,7 @@ public class CassandraTypeHandler {
   private static Instant handleCassandraTimestampType(String timestampValue) {
     if (timestampValue == null || timestampValue.isEmpty()) {
       throw new IllegalArgumentException(
-          "Timestamp value for " + timestampValue + " is null or empty.");
+              "Timestamp value for " + timestampValue + " is null or empty.");
     }
     return convertToCassandraTimestamp(timestampValue);
   }
@@ -248,18 +254,18 @@ public class CassandraTypeHandler {
     }
 
     List<DateTimeFormatter> formatters =
-        Arrays.asList(
-            DateTimeFormatter.ISO_INSTANT,
-            DateTimeFormatter.ISO_DATE_TIME,
-            DateTimeFormatter.ISO_LOCAL_DATE,
-            DateTimeFormatter.ISO_TIME,
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
-            DateTimeFormatter.ofPattern("MM/dd/yyyy"),
-            DateTimeFormatter.ofPattern("yyyy/MM/dd"),
-            DateTimeFormatter.ofPattern("dd-MM-yyyy"),
-            DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-            DateTimeFormatter.ofPattern("MM-dd-yyyy"),
-            DateTimeFormatter.ofPattern("dd MMM yyyy"));
+            Arrays.asList(
+                    DateTimeFormatter.ISO_INSTANT,
+                    DateTimeFormatter.ISO_DATE_TIME,
+                    DateTimeFormatter.ISO_LOCAL_DATE,
+                    DateTimeFormatter.ISO_TIME,
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+                    DateTimeFormatter.ofPattern("MM/dd/yyyy"),
+                    DateTimeFormatter.ofPattern("yyyy/MM/dd"),
+                    DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                    DateTimeFormatter.ofPattern("MM-dd-yyyy"),
+                    DateTimeFormatter.ofPattern("dd MMM yyyy"));
 
     for (DateTimeFormatter formatter : formatters) {
       try {
@@ -275,9 +281,9 @@ public class CassandraTypeHandler {
 
         if (temporal.isSupported(ChronoField.SECOND_OF_DAY)) {
           return LocalTime.from(temporal)
-              .atDate(LocalDate.now(ZoneOffset.UTC))
-              .atZone(ZoneOffset.UTC)
-              .toInstant();
+                  .atDate(LocalDate.now(ZoneOffset.UTC))
+                  .atZone(ZoneOffset.UTC)
+                  .toInstant();
         }
       } catch (DateTimeParseException ex) {
         LOG.debug("Formatter failed: {}, Exception: {}", formatter, ex.getMessage());
@@ -322,7 +328,7 @@ public class CassandraTypeHandler {
    * @throws IllegalArgumentException If an error occurs during the processing of the value.
    */
   private static Object handleSpannerColumnType(
-      String spannerType, String columnName, JSONObject valuesJson) {
+          String spannerType, String columnName, JSONObject valuesJson) {
     try {
       if (spannerType.contains("string")) {
         return valuesJson.optString(columnName);
@@ -331,13 +337,20 @@ public class CassandraTypeHandler {
           return null;
         }
         String hexEncodedString = valuesJson.optString(columnName);
-        return convertBinaryEncodedStringToByteArray(hexEncodedString);
+        return safeHandle(
+                () -> {
+                  try {
+                    return convertBinaryEncodedStringToByteArray(hexEncodedString);
+                  } catch (IllegalArgumentException e) {
+                    return parseBlobType(hexEncodedString);
+                  }
+                });
       } else {
         return valuesJson.isNull(columnName) ? null : valuesJson.opt(columnName);
       }
     } catch (Exception e) {
       throw new IllegalArgumentException(
-          "Exception Caught During parsing for Spanner column type: " + spannerType);
+              "Exception Caught During parsing for Spanner column type: " + spannerType);
     }
   }
 
@@ -354,7 +367,7 @@ public class CassandraTypeHandler {
    * @throws IllegalArgumentException If the column value cannot be converted to the specified type.
    */
   private static PreparedStatementValueObject<?> parseAndCastToCassandraType(
-      String columnType, Object colValue) {
+          String columnType, Object colValue) {
 
     if (columnType.startsWith("frozen<")) {
       return parseAndCastToCassandraType(extractInnerType(columnType), colValue);
@@ -363,34 +376,34 @@ public class CassandraTypeHandler {
     // Handle collection types
     if (columnType.startsWith("list<")) {
       return safeHandle(
-          () -> {
-            JSONArray parsedJSONArray =
-                colValue instanceof JSONArray
-                    ? (JSONArray) colValue
-                    : new JSONArray((String) colValue);
-            return PreparedStatementValueObject.create(
-                columnType, parseCassandraList(columnType, parsedJSONArray));
-          });
+              () -> {
+                JSONArray parsedJSONArray =
+                        colValue instanceof JSONArray
+                                ? (JSONArray) colValue
+                                : new JSONArray((String) colValue);
+                return PreparedStatementValueObject.create(
+                        columnType, parseCassandraList(columnType, parsedJSONArray));
+              });
     } else if (columnType.startsWith("set<")) {
       return safeHandle(
-          () -> {
-            JSONArray parsedJSONArray =
-                colValue instanceof JSONArray
-                    ? (JSONArray) colValue
-                    : new JSONArray((String) colValue);
-            return PreparedStatementValueObject.create(
-                columnType, parseCassandraSet(columnType, parsedJSONArray));
-          });
+              () -> {
+                JSONArray parsedJSONArray =
+                        colValue instanceof JSONArray
+                                ? (JSONArray) colValue
+                                : new JSONArray((String) colValue);
+                return PreparedStatementValueObject.create(
+                        columnType, parseCassandraSet(columnType, parsedJSONArray));
+              });
     } else if (columnType.startsWith("map<")) {
       return safeHandle(
-          () -> {
-            JSONObject parsedJSON =
-                colValue instanceof JSONObject
-                    ? (JSONObject) colValue
-                    : new JSONObject((String) colValue);
-            return PreparedStatementValueObject.create(
-                columnType, parseCassandraMap(columnType, parsedJSON));
-          });
+              () -> {
+                JSONObject parsedJSON =
+                        colValue instanceof JSONObject
+                                ? (JSONObject) colValue
+                                : new JSONObject((String) colValue);
+                return PreparedStatementValueObject.create(
+                        columnType, parseCassandraMap(columnType, parsedJSON));
+              });
     }
 
     // Handle primitive and standard types
@@ -405,60 +418,60 @@ public class CassandraTypeHandler {
       case "smallint":
       case "tinyint":
         return safeHandle(
-            () ->
-                PreparedStatementValueObject.create(
-                    columnType, parseNumericType(columnType, colValue.toString())));
+                () ->
+                        PreparedStatementValueObject.create(
+                                columnType, parseNumericType(columnType, colValue.toString())));
 
       case "boolean":
         return PreparedStatementValueObject.create(
-            columnType, safeHandle(() -> parseBoolean(colValue.toString())));
+                columnType, safeHandle(() -> parseBoolean(colValue.toString())));
 
       case "decimal":
         return PreparedStatementValueObject.create(
-            columnType, safeHandle(() -> parseDecimal(colValue.toString())));
+                columnType, safeHandle(() -> parseDecimal(colValue.toString())));
 
       case "double":
       case "float":
         return PreparedStatementValueObject.create(
-            columnType, safeHandle(() -> parseFloatingPoint(columnType, colValue.toString())));
+                columnType, safeHandle(() -> parseFloatingPoint(columnType, colValue.toString())));
 
       case "inet":
         return PreparedStatementValueObject.create(
-            columnType, safeHandle(() -> handleCassandraInetAddressType(colValue.toString())));
+                columnType, safeHandle(() -> handleCassandraInetAddressType(colValue.toString())));
 
       case "time":
         return PreparedStatementValueObject.create(
-            columnType,
-            safeHandle(
-                () ->
-                    handleCassandraTimestampType(colValue.toString())
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalTime()));
+                columnType,
+                safeHandle(
+                        () ->
+                                handleCassandraTimestampType(colValue.toString())
+                                        .atZone(ZoneId.systemDefault())
+                                        .toLocalTime()));
       case "timestamp":
       case "datetime":
         return PreparedStatementValueObject.create(
-            columnType, safeHandle(() -> handleCassandraTimestampType(colValue.toString())));
+                columnType, safeHandle(() -> handleCassandraTimestampType(colValue.toString())));
 
       case "date":
         return PreparedStatementValueObject.create(
-            columnType, safeHandle(() -> parseDate(colValue.toString())));
+                columnType, safeHandle(() -> parseDate(colValue.toString())));
 
       case "timeuuid":
       case "uuid":
         return PreparedStatementValueObject.create(
-            columnType, safeHandle(() -> handleCassandraUuidType(colValue.toString())));
+                columnType, safeHandle(() -> handleCassandraUuidType(colValue.toString())));
 
       case "varint":
         return PreparedStatementValueObject.create(
-            columnType, safeHandle(() -> handleCassandraVarintType(colValue)));
+                columnType, safeHandle(() -> handleCassandraVarintType(colValue)));
 
       case "duration":
         return PreparedStatementValueObject.create(
-            columnType, safeHandle(() -> handleCassandraDurationType(colValue.toString())));
+                columnType, safeHandle(() -> handleCassandraDurationType(colValue.toString())));
 
       case "blob":
         return safeHandle(
-            () -> PreparedStatementValueObject.create(columnType, parseBlobType(colValue)));
+                () -> PreparedStatementValueObject.create(columnType, parseBlobType(colValue)));
 
       default:
         return PreparedStatementValueObject.create(columnType, colValue);
@@ -477,20 +490,20 @@ public class CassandraTypeHandler {
    */
   private static Object parseNumericType(String columnType, Object colValue) {
     return safeHandle(
-        () -> {
-          switch (columnType) {
-            case "bigint":
-              return Long.parseLong((String) colValue);
-            case "int":
-              return Integer.parseInt((String) colValue);
-            case "smallint":
-              return Short.parseShort((String) colValue);
-            case "tinyint":
-              return Byte.parseByte((String) colValue);
-          }
-          throw new IllegalArgumentException(
-              "Unsupported type for " + columnType + ": " + colValue.getClass());
-        });
+            () -> {
+              switch (columnType) {
+                case "bigint":
+                  return Long.parseLong((String) colValue);
+                case "int":
+                  return Integer.parseInt((String) colValue);
+                case "smallint":
+                  return Short.parseShort((String) colValue);
+                case "tinyint":
+                  return Byte.parseByte((String) colValue);
+              }
+              throw new IllegalArgumentException(
+                      "Unsupported type for " + columnType + ": " + colValue.getClass());
+            });
   }
 
   /**
@@ -538,8 +551,8 @@ public class CassandraTypeHandler {
 
   private static LocalDate parseDate(Object colValue) {
     return handleCassandraTimestampType((String) colValue)
-        .atZone(ZoneId.systemDefault())
-        .toLocalDate();
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate();
   }
 
   /**
@@ -582,7 +595,7 @@ public class CassandraTypeHandler {
    */
   private static String[] extractKeyValueTypes(String columnType) {
     String innerTypes =
-        columnType.substring(columnType.indexOf('<') + 1, columnType.lastIndexOf('>'));
+            columnType.substring(columnType.indexOf('<') + 1, columnType.lastIndexOf('>'));
     return innerTypes.split(",", 2);
   }
 
@@ -655,10 +668,10 @@ public class CassandraTypeHandler {
    * @return A {@link PreparedStatementValueObject} containing the parsed column value.
    */
   public static PreparedStatementValueObject<?> getColumnValueByType(
-      SpannerColumnDefinition spannerColDef,
-      SourceColumnDefinition sourceColDef,
-      JSONObject valuesJson,
-      String sourceDbTimezoneOffset) {
+          SpannerColumnDefinition spannerColDef,
+          SourceColumnDefinition sourceColDef,
+          JSONObject valuesJson,
+          String sourceDbTimezoneOffset) {
 
     if (spannerColDef == null || sourceColDef == null) {
       throw new IllegalArgumentException("Column definitions cannot be null.");
@@ -696,7 +709,7 @@ public class CassandraTypeHandler {
     } catch (IllegalArgumentException e) {
       LOG.error("Error converting value for column: {}, type: {}", cassandraType, e.getMessage());
       throw new IllegalArgumentException(
-          "Error converting value for cassandraType: " + cassandraType);
+              "Error converting value for cassandraType: " + cassandraType);
     }
   }
 }

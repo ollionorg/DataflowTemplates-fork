@@ -161,7 +161,6 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
     Map<String, String> params =
         new HashMap<>() {
           {
-            put("sessionFilePath", getGcsPath("input/session.json", gcsResourceManager));
             put("instanceId", spannerResourceManager.getInstanceId());
             put("databaseId", spannerResourceManager.getDatabaseId());
             put("spannerProjectId", PROJECT);

@@ -769,7 +769,7 @@ public class CassandraTypeHandlerTest {
     String columnName = "test_column";
 
     JSONObject valuesJson = new JSONObject();
-    valuesJson.put(columnName, new BigDecimal("5.5"));
+    valuesJson.put(columnName, 5.5f);
 
     SpannerColumnDefinition spannerColDef = new SpannerColumnDefinition(columnName, spannerType);
     SourceColumnDefinition sourceColDef = new SourceColumnDefinition(columnName, sourceColType);
@@ -779,7 +779,29 @@ public class CassandraTypeHandlerTest {
     assertTrue(result instanceof PreparedStatementValueObject);
 
     Object actualValue = ((PreparedStatementValueObject<?>) result).value();
-    assertEquals(new BigDecimal(5.5), actualValue);
+    assertEquals(5.5f, actualValue);
+  }
+
+  @Test
+  public void testGetColumnValueByTypeForFloatIllegalArgumentException() {
+    SpannerColumnType spannerType = new SpannerColumnType("date", false);
+    SourceColumnType sourceColType = new SourceColumnType("float", null, null);
+    String columnName = "test_column";
+
+    JSONObject valuesJson = new JSONObject();
+    valuesJson.put(columnName, "2024-12-12");
+
+    SpannerColumnDefinition spannerColDef = new SpannerColumnDefinition(columnName, spannerType);
+    SourceColumnDefinition sourceColDef = new SourceColumnDefinition(columnName, sourceColType);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          PreparedStatementValueObject<?> preparedStatementValueObject =
+              getColumnValueByType(spannerColDef, sourceColDef, valuesJson, null);
+          castToExpectedType(
+              preparedStatementValueObject.dataType(), preparedStatementValueObject.value());
+        });
   }
 
   @Test
@@ -1075,6 +1097,18 @@ public class CassandraTypeHandlerTest {
   }
 
   @Test
+  public void testCastToExpectedTypeForJSONObjectStringifyToMFrozenMap() {
+    String cassandraType = "frozen<map<int, text>>";
+    String columnValue = "{\"1\": \"One\", \"2\": \"Two\"}";
+    Object castResult = castToExpectedType(cassandraType, columnValue);
+    assertTrue(castResult instanceof Map);
+    assertTrue(((Map<?, ?>) castResult).containsKey(1));
+    assertTrue(((Map<?, ?>) castResult).containsKey(2));
+    assertEquals("One", ((Map<?, ?>) castResult).get(1));
+    assertEquals("Two", ((Map<?, ?>) castResult).get(2));
+  }
+
+  @Test
   public void testCastToExpectedTypeForExceptionScenario() {
     String cassandraType = "int";
     String columnValue = "InvalidInt";
@@ -1179,6 +1213,21 @@ public class CassandraTypeHandlerTest {
     Object result = CassandraTypeHandler.castToExpectedType("varint", validString);
     BigInteger expected = new BigInteger(validString);
     assertEquals(expected, result);
+  }
+
+  @Test
+  public void testHandleCassandraVarintType_ForBytesArray() {
+    byte[] byteArray = new byte[] {0, 0, 0, 0, 0, 0, 0, 10};
+    BigInteger expected = new BigInteger(byteArray);
+    Object result = CassandraTypeHandler.castToExpectedType("varint", byteArray);
+    assertEquals(expected, result);
+  }
+
+  @Test
+  public void testHandleCassandraVarintType_ForInteger() {
+    Long inputValue = 123456789L;
+    Object result = CassandraTypeHandler.castToExpectedType("varint", inputValue);
+    assertEquals(BigInteger.valueOf(inputValue), result);
   }
 
   @Test

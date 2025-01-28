@@ -118,8 +118,11 @@ public class CassandraTypeHandler {
    * @throws IllegalArgumentException If the value is neither a valid number string, byte array, nor
    *     a valid {@link ByteBuffer} for varint representation.
    */
-  private static BigInteger handleCassandraVarintType(String value) {
-    return new BigInteger(value);
+  private static BigInteger handleCassandraVarintType(Object value) {
+    if (value instanceof byte[]) {
+      return new BigInteger((byte[]) value);
+    }
+    return new BigInteger(value.toString());
   }
 
   /**
@@ -356,6 +359,7 @@ public class CassandraTypeHandler {
     if (columnType.startsWith("frozen<")) {
       return parseAndCastToCassandraType(extractInnerType(columnType), colValue);
     }
+
     // Handle collection types
     if (columnType.startsWith("list<")) {
       return safeHandle(
@@ -446,7 +450,7 @@ public class CassandraTypeHandler {
 
       case "varint":
         return PreparedStatementValueObject.create(
-            columnType, safeHandle(() -> handleCassandraVarintType(colValue.toString())));
+            columnType, safeHandle(() -> handleCassandraVarintType(colValue)));
 
       case "duration":
         return PreparedStatementValueObject.create(
@@ -528,11 +532,8 @@ public class CassandraTypeHandler {
   private static Object parseFloatingPoint(String columnType, Object colValue) {
     if (columnType.equals("double")) {
       return Double.parseDouble((String) colValue);
-    } else if (columnType.equals("float")) {
-      return Float.parseFloat((String) colValue);
     }
-    throw new IllegalArgumentException(
-        String.format("Unable to parse %s : value %s", columnType, colValue));
+    return Float.parseFloat((String) colValue);
   }
 
   private static LocalDate parseDate(Object colValue) {

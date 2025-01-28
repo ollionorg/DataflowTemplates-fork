@@ -121,9 +121,9 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
     String host = cassandraResourceManagers.getHost();
     int port = cassandraResourceManagers.getPort();
     String keyspaceName = cassandraResourceManagers.getKeyspaceName();
-    LOG.info("Cassandra keyspaceName :: {}", keyspaceName);
-    LOG.info("Cassandra host :: {}", host);
-    LOG.info("Cassandra port :: {}", port);
+    System.out.println("Cassandra keyspaceName :: {}" + keyspaceName);
+    System.out.println("Cassandra host :: {}" + host);
+    System.out.println("Cassandra port :: {}" + port);
     String cassandraConfigContents;
     try (InputStream inputStream =
         Thread.currentThread()
@@ -142,8 +142,7 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
             .replace("##port##", Integer.toString(port))
             .replace("##keyspace##", keyspaceName);
 
-    LOG.info("Cassandra file contents: {}", cassandraConfigContents);
-
+    System.out.println("Cassandra file contents: {}" + cassandraConfigContents);
     gcsResourceManager.createArtifact("input/cassandra-config.conf", cassandraConfigContents);
   }
 

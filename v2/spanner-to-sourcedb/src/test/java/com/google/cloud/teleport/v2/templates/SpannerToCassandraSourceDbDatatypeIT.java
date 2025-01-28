@@ -412,7 +412,9 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
         () ->
             assertThat(row.getString("text_column"))
                 .isEqualTo("This is some sample text data for the text column."),
-        () -> assertThat(row.getString("time_column")).isEqualTo("12:30:00.000000000"),
+        () ->
+            assertThat(row.getLocalTime("time_column"))
+                .isEqualTo(java.time.LocalTime.parse("12:30:00.000000000")),
         () ->
             assertThat(row.getInstant("timestamp_column"))
                 .isEqualTo(java.time.Instant.parse("2025-01-27T10:30:00.000Z")),

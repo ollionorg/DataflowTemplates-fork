@@ -32,6 +32,7 @@ import com.google.common.io.Resources;
 import com.google.pubsub.v1.SubscriptionName;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,6 +46,8 @@ import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
@@ -286,9 +289,17 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
         () -> assertThat(row.getString("varchar_column")).isEqualTo("SampleVarchar"),
         () -> assertThat(row.getLong("bigint_column")).isEqualTo(9223372036854775807L),
         () -> assertThat(row.getBoolean("bool_column")).isTrue(),
-        () ->
-            assertThat(row.getByte("bytes_column"))
-                .isEqualTo("5347567362473867643239796247513d".getBytes()),
+        () -> {
+          String hexString = "5347567362473867643239796247513d";
+          byte[] byteArray;
+          try {
+            byteArray = Hex.decodeHex(hexString);
+          } catch (DecoderException e) {
+            byteArray = new byte[0];
+          }
+          ByteBuffer expectedBuffer = ByteBuffer.wrap(byteArray);
+          assertThat(row.getByteBuffer("bytes_column")).isEqualTo(expectedBuffer);
+        },
         () -> assertThat(row.getString("char_column")).isEqualTo("CHAR_DATA"),
         () ->
             assertThat(row.getLocalDate("date_column"))

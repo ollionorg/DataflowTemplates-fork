@@ -27,6 +27,6 @@ CREATE TABLE `AllDatatypeColumns` (
     `other_bool_column` tinyint(1),
     `binary_column` binary(10),
     `varbinary_column` varbinary(20),
-    `bit_column` bit(7),
+    `bit_column` bit(7),                   
     PRIMARY KEY (`varchar_column`)
 );

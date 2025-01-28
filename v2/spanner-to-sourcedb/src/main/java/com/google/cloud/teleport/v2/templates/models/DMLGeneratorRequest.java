@@ -99,30 +99,6 @@ public class DMLGeneratorRequest {
     return customTransformationResponse;
   }
 
-  @Override
-  public String toString() {
-    return "DMLGeneratorRequest{"
-        + "modType='"
-        + modType
-        + '\''
-        + ", spannerTableName='"
-        + spannerTableName
-        + '\''
-        + ", schema="
-        + schema
-        + ", newValuesJson="
-        + newValuesJson
-        + ", keyValuesJson="
-        + keyValuesJson
-        + ", sourceDbTimezoneOffset='"
-        + sourceDbTimezoneOffset
-        + '\''
-        + ", customTransformationResponse="
-        + customTransformationResponse
-        + ", commitTimestamp="
-        + commitTimestamp
-        + '}';
-  }
 
   public static class Builder {
     private final String modType;

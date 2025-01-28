@@ -547,7 +547,7 @@ public class SpannerToSourceDb {
             "Logical shard id was not found, hence setting it to : " + Constants.DEFAULT_SHARD_ID);
       }
     }
-    LOG.info("Parsing Schema Object for: " + options.getSourceType());
+
     if (options.getSourceType().equals(CASSANDRA_SOURCE_TYPE)) {
       Map<String, SpannerTable> spannerTableMap =
           SpannerSchema.convertDDLTableToSpannerTable(ddl.allTables());
@@ -568,12 +568,9 @@ public class SpannerToSourceDb {
                 spannerTableNameColsMap,
                 cassandraSourceMetadata.getNameAndColsMap());
       } catch (Exception e) {
-        LOG.error(e.getMessage(), e);
         throw new IllegalArgumentException(e);
       }
     }
-
-    LOG.info("Schema Object: " + schema);
 
     boolean isRegularMode = "regular".equals(options.getRunMode());
     PCollectionTuple reconsumedElements = null;

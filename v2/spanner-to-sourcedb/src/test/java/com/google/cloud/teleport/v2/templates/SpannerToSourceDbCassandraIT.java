@@ -26,7 +26,6 @@ import com.google.cloud.spanner.Options;
 import com.google.cloud.spanner.TransactionRunner;
 import com.google.cloud.teleport.metadata.SkipDirectRunnerTest;
 import com.google.cloud.teleport.metadata.TemplateIntegrationTest;
-import com.google.common.io.Resources;
 import com.google.pubsub.v1.SubscriptionName;
 import java.io.IOException;
 import java.time.Duration;
@@ -57,7 +56,6 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
 
   private static final String SPANNER_DDL_RESOURCE =
       "SpannerToCassandraSourceIT/spanner-schema.sql";
-  private static final String SESSION_FILE_RESOURCE = "SpannerToCassandraSourceIT/session.json";
   private static final String CASSANDRA_SCHEMA_FILE_RESOURCE =
       "SpannerToCassandraSourceIT/cassandra-schema.sql";
 
@@ -91,8 +89,6 @@ public class SpannerToSourceDbCassandraIT extends SpannerToCassandraDbITBase {
                 .build();
         createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraResourceManager);
         createCassandraSchema(cassandraResourceManager, CASSANDRA_SCHEMA_FILE_RESOURCE);
-        gcsResourceManager.uploadArtifact(
-            "input/session.json", Resources.getResource(SESSION_FILE_RESOURCE).getPath());
         pubsubResourceManager = setUpPubSubResourceManager();
         subscriptionName =
             createPubsubResources(

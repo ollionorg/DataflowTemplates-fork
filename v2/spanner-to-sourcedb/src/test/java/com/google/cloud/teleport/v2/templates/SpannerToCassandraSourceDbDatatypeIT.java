@@ -28,7 +28,6 @@ import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.Value;
 import com.google.cloud.teleport.metadata.SkipDirectRunnerTest;
 import com.google.cloud.teleport.metadata.TemplateIntegrationTest;
-import com.google.common.io.Resources;
 import com.google.pubsub.v1.SubscriptionName;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -57,8 +56,6 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
 
   private static final String SPANNER_DDL_RESOURCE =
       "SpannerToCassandraSourceDbDatatypeIT/spanner-schema.sql";
-  private static final String SESSION_FILE_RESOURCE =
-      "SpannerToCassandraSourceDbDatatypeIT/session.json";
   private static final String CASSANDRA_SCHEMA_FILE_RESOURCE =
       "SpannerToCassandraSourceDbDatatypeIT/cassandra-schema.sql";
 
@@ -94,8 +91,6 @@ public class SpannerToCassandraSourceDbDatatypeIT extends SpannerToCassandraDbIT
                 .build();
         createCassandraSchema(cassandraResourceManager, CASSANDRA_SCHEMA_FILE_RESOURCE);
         createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraResourceManager);
-        gcsResourceManager.uploadArtifact(
-            "input/session.json", Resources.getResource(SESSION_FILE_RESOURCE).getPath());
         pubsubResourceManager = setUpPubSubResourceManager();
         subscriptionName =
             createPubsubResources(

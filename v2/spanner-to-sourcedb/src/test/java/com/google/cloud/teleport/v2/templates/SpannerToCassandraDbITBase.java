@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -221,11 +222,11 @@ public abstract class SpannerToCassandraDbITBase extends TemplateTestBase {
             Resources.readLines(
                 Resources.getResource(cassandraSchemaFile), StandardCharsets.UTF_8));
     ddl = ddl.trim();
-    LOG.info("DDL {}", ddl);
+    System.out.println("DDL {}" + ddl);
     String[] ddls = ddl.split(";");
-    LOG.info("DDLs statement {}", ddls);
+    System.out.println("DDLs statement {}"+ Arrays.toString(ddls));
     for (String d : ddls) {
-      LOG.info("DDL statement {}", d);
+      System.out.println("DDL statement {}"+ d);
       if (!d.isBlank()) {
         cassandraResourceManager.executeStatement(d);
       }

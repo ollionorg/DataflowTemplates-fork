@@ -477,23 +477,6 @@ potentially speed up orchestration execution
 when orchestrating a large sharded migration. We strongly recommend against
 setting this value > 20. In most cases, the default value should suffice.
 
-
-## Supporting Infra
-To set up the necessary infrastructure for testing, navigate to the "supporting-infra" folder, update the values in the "config.yaml" file, and execute the following command:
-```
-./apply.sh
-```
-Executing this command will set up the following infrastructure components:
-1. VPC and Subnet
-2. Spanner instance
-3. Cassandra VM
-4. Firewall rule
-
-If you wish to dismantle the infrastructure that was set up, execute the following command:
-```
-./destroy.sh
-```
-
 ### Setup Cassandra
 To prepare Cassandra for testing, follow these steps within the "cassandra-setup" directory (note that the scripts are tailored for Ubuntu 22.04 and may require modifications for use on different distributions):
 1. Install java by executing

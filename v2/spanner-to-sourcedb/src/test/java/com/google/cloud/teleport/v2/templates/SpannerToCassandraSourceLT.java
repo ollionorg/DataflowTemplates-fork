@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 @RunWith(JUnit4.class)
 public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SpannerToMySqlSourceLT.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SpannerToCassandraSourceLT.class);
   private String generatorSchemaPath;
   private final String artifactBucket = TestProperties.artifactBucket();
   private final String spannerDdlResource = "SpannerToCassandraSourceLT/spanner-schema.sql";

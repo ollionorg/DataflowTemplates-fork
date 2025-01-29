@@ -52,7 +52,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
 
   private static final String TEMPLATE_SPEC_PATH =
       MoreObjects.firstNonNull(
-          TestProperties.specPath(), "gs://dataflow-templates/latest/flex/Spanner_to_SourceDb");
+              TestProperties.specPath(), "gs://dataflow-templates-spanner-to-cassandra/templates/flex/Spanner_to_SourceDb");
   public SpannerResourceManager spannerResourceManager;
   public SpannerResourceManager spannerMetadataResourceManager;
   public CassandraSharedResourceManager cassandraSharedResourceManager;

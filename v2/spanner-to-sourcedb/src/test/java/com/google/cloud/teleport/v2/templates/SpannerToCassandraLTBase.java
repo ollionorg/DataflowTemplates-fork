@@ -61,10 +61,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
   private SubscriptionName subscriptionName;
 
   public void setupResourceManagers(
-      String spannerDdlResource,
-      String cassandraDdlResource,
-      String sessionFileResource,
-      String artifactBucket)
+      String spannerDdlResource, String cassandraDdlResource, String artifactBucket)
       throws IOException {
     spannerResourceManager = createSpannerDatabase(spannerDdlResource);
     spannerMetadataResourceManager = createSpannerMetadataDatabase();
@@ -75,8 +72,8 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     gcsResourceManager =
         GcsResourceManager.builder(artifactBucket, getClass().getSimpleName(), CREDENTIALS).build();
 
-    gcsResourceManager.uploadArtifact(
-        "input/session.json", Resources.getResource(sessionFileResource).getPath());
+    //    gcsResourceManager.uploadArtifact(
+    //        "input/session.json", Resources.getResource(sessionFileResource).getPath());
 
     createCassandraSchema(cassandraSharedResourceManager, cassandraDdlResource);
     createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraSharedResourceManager);
@@ -235,9 +232,6 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     Map<String, String> params =
         new HashMap<>() {
           {
-            put(
-                "sessionFilePath",
-                getGcsPath(artifactBucket, "input/session.json", gcsResourceManager));
             put("instanceId", spannerResourceManager.getInstanceId());
             put("databaseId", spannerResourceManager.getDatabaseId());
             put("spannerProjectId", project);

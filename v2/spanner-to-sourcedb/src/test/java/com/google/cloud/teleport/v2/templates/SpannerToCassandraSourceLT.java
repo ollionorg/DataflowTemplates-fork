@@ -15,7 +15,6 @@
  */
 package com.google.cloud.teleport.v2.templates;
 
-import static org.apache.beam.it.gcp.artifacts.utils.ArtifactUtils.getFullGcsPath;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
@@ -35,7 +34,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.shaded.com.google.common.io.Resources;
 
 @Category(TemplateLoadTest.class)
 @TemplateLoadTest(SpannerToSourceDb.class)
@@ -46,7 +44,6 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   private String generatorSchemaPath;
   private final String artifactBucket = TestProperties.artifactBucket();
   private final String spannerDdlResource = "SpannerToCassandraSourceLT/spanner-schema.sql";
-  private final String sessionFileResource = "SpannerToCassandraSourceLT/session.json";
   private static final String cassandraDdlResource =
       "SpannerToCassandraSourceLT/cassandra-schema.sql";
   private final String dataGeneratorSchemaResource =
@@ -60,16 +57,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
 
   @Before
   public void setup() throws IOException {
-    setupResourceManagers(
-        spannerDdlResource, cassandraDdlResource, sessionFileResource, artifactBucket);
-    generatorSchemaPath =
-        getFullGcsPath(
-            artifactBucket,
-            gcsResourceManager
-                .uploadArtifact(
-                    "input/schema.json",
-                    Resources.getResource(dataGeneratorSchemaResource).getPath())
-                .name());
+    setupResourceManagers(spannerDdlResource, cassandraDdlResource, artifactBucket);
     jobInfo = launchDataflowJob(artifactBucket, numWorkers, maxWorkers);
   }
 

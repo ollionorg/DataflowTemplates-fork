@@ -72,13 +72,8 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     System.out.println("Class Name: " + getClass().getSimpleName());
     gcsResourceManager =
         GcsResourceManager.builder(artifactBucket, getClass().getSimpleName(), CREDENTIALS).build();
-
-    //    gcsResourceManager.uploadArtifact(
-    //        "input/session.json", Resources.getResource(sessionFileResource).getPath());
-
     createCassandraSchema(cassandraSharedResourceManager, cassandraDdlResource);
     createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraSharedResourceManager);
-
     pubsubResourceManager = setUpPubSubResourceManager();
     subscriptionName =
         createPubsubResources(

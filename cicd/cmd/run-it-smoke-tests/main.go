@@ -58,8 +58,8 @@ func main() {
 		mvnFlags.RunIntegrationSmokeTests(),
 		mvnFlags.ThreadCount(8),
 		mvnFlags.IntegrationTestParallelism(4),
-		mvnFlags.StaticBigtableInstance("teleport"),
-		mvnFlags.StaticSpannerInstance("teleport"),
+// 		mvnFlags.StaticBigtableInstance("teleport"),
+		mvnFlags.StaticSpannerInstance("spanner-demo"),
 		mvnFlags.InternalMaven(),
 		flags.Region(),
 		flags.Project(),
@@ -68,13 +68,13 @@ func main() {
 		flags.PrivateConnectivity(),
 		flags.SpannerHost(),
 		flags.FailureMode(),
-		flags.RetryFailures(),
-		flags.StaticOracleHost(),
-		flags.StaticOracleSysPassword(),
-		flags.CloudProxyHost(),
-		flags.CloudProxyMySqlPort(),
-		flags.CloudProxyPostgresPort(),
-		flags.CloudProxyPassword())
+		flags.RetryFailures())
+// 		flags.StaticOracleHost(),
+// 		flags.StaticOracleSysPassword(),
+// 		flags.CloudProxyHost(),
+// 		flags.CloudProxyMySqlPort(),
+// 		flags.CloudProxyPostgresPort(),
+// 		flags.CloudProxyPassword())
 	if err != nil {
 		log.Fatalf("%v\n", err)
 	}

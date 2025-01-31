@@ -4,22 +4,6 @@
 > jobs to replicate spanner writes for a Cassandra source, setting up all the required cloud infrastructure.
 > **Details of Cassandra configuration are needed as input.**
 
-## Prerequisite
-you'll need to create a dataflow template. In the root directory of the repo use following command to do this:
-```
-export BUCKET_NAME=<YOUR_BUCKET_NAME>
-export PROJECT=<YOUR_PROJECT_ID>
-export REGION=<YOUR_REGION>
-
-mvn clean package -PtemplatesStage \
-  -DskipTests -DprojectId="$PROJECT" \
-  -DbucketName="$BUCKET_NAME" \
-  -DstagePrefix="templates" \
-  -DtemplateName="Spanner_to_SourceDb" \
-  -pl v2/spanner-to-sourcedb -am
-
-```
-
 ## Terraform permissions
 
 In order to create the resources in this sample,
@@ -128,6 +112,7 @@ It takes the following assumptions -
      1. Check that the Cassandra credentials are correctly specified in the `tfvars` file. 
      2. Check that the Cassandra server is up. 
      3. The Cassandra user configured in the `tfvars`. 
+     4. The Cassandra user configured in the tfvars has neccessary permissions to execute the prepared statements
 2. Ensure that the Cassandra instance and Dataflow workers can establish connectivity with each other. Template automatically adds networking firewalls rules to enable this access. This can differ depending on the source configuration. Please validate the template rules and ensure that network connectivity can be established.
 3. The Cassandra instance with database containing reverse-replication compatible
    schema is created.
@@ -318,7 +303,7 @@ Source shard configuration file that is supplied to the dataflow is automaticall
 created by Terraform. A sample file that this uploaded to GCS looks like
 below - 
 
-```json
+```
   datastax-java-driver {
       basic.contact-points = ["10.0.0.2:9042"]
       basic.session-keyspace = "ecommerce"
@@ -476,49 +461,3 @@ Increasing this value can
 potentially speed up orchestration execution
 when orchestrating a large sharded migration. We strongly recommend against
 setting this value > 20. In most cases, the default value should suffice.
-
-
-## Supporting Infra
-To set up the necessary infrastructure for testing, navigate to the "supporting-infra" folder, update the values in the "config.yaml" file, and execute the following command:
-```
-./apply.sh
-```
-Executing this command will set up the following infrastructure components:
-1. VPC and Subnet
-2. Spanner instance
-3. Cassandra VM
-4. Firewall rule
-
-If you wish to dismantle the infrastructure that was set up, execute the following command:
-```
-./destroy.sh
-```
-
-### Setup Cassandra
-To prepare Cassandra for testing, follow these steps within the "cassandra-setup" directory (note that the scripts are tailored for Ubuntu 22.04 and may require modifications for use on different distributions):
-1. Install java by executing
-```
-./java.sh
-```
-2. Install Cassandra by executing
-```
-./cassandra-installation.sh
-```
-3. Configure the Cassandra setup by editing the file at /etc/cassandra/cassandra.yaml
-- Change "authenticator: AllowAllAuthenticator" to "authenticator: PasswordAuthenticator"
-- Change "authorizer: AllowAllAuthorizer" to "authorizer: CassandraAuthorizer"
-- Change "rpc_address: localhost" to "rpc_address: 0.0.0.0"
-- Change broadcast_rpc_address to the IP address of your Cassandra cluster
-You can check sample of updated file in cassandra.yaml 
-
-4. Restarting the Cassandra servive by executing
-```
-service cassandra restart
-```
-
-5. Update the credentials with the following commands:
-```
-cqlsh -u cassandra -p cassandra;
-cqlsh> CREATE ROLE <NEW_USERNAME> WITH PASSWORD = '<NEW_PASSWORD>' AND SUPERUSER = true AND LOGIN = true;
-```
-6. Restart the Cassandra service again by executing the command from step 4.

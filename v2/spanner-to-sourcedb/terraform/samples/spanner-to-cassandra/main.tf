@@ -2,6 +2,7 @@ resource "random_pet" "migration_id" {
   prefix = "spanner-csdr"
 } 
 
+# create cassandra-config.conf file based
 resource "null_resource" "replace_keys" {
   triggers = {
     always_run = timestamp()
@@ -58,6 +59,7 @@ resource "google_compute_firewall" "allow_dataflow_vms_communication" {
   target_tags = ["dataflow"]
 }
 
+# allow all comunication between dataflow worker
 resource "google_compute_firewall" "allow_dataflow_worker_all" {
   count       = var.common_params.target_tags != null ? 1 : 0
   depends_on  = [google_project_service.enabled_apis]
@@ -68,30 +70,30 @@ resource "google_compute_firewall" "allow_dataflow_worker_all" {
   
   allow {
     protocol = "tcp"
-    ports    = ["0-65535"]  # All TCP ports
+    ports    = ["0-65535"] 
   }
 
   allow {
     protocol = "udp"
-    ports    = ["0-65535"]  # All UDP ports
+    ports    = ["0-65535"]  
   }
 
-  source_ranges = [var.dataflow_params.runner_params.subnetwork_cidr]  # Source IP range
+  source_ranges = [var.dataflow_params.runner_params.subnetwork_cidr] 
   target_tags   = ["dataflow"]
 }
 
-resource "google_compute_firewall" "allow_google_apis" {
-  name    = "allow-google-apis-traffics"
-  network = var.dataflow_params.runner_params.network != null ? var.common_params.host_project != null ? "projects/${var.common_params.host_project}/global/networks/${var.dataflow_params.runner_params.network}" : "projects/${var.common_params.project}/global/networks/${var.dataflow_params.runner_params.network}" : "default"
+# resource "google_compute_firewall" "allow_google_apis" {
+#   name    = "allow-google-apis-traffics"
+#   network = var.dataflow_params.runner_params.network != null ? var.common_params.host_project != null ? "projects/${var.common_params.host_project}/global/networks/${var.dataflow_params.runner_params.network}" : "projects/${var.common_params.project}/global/networks/${var.dataflow_params.runner_params.network}" : "default"
   
-  allow {
-    protocol = "tcp"
-    ports    = ["443"]
-  }
+#   allow {
+#     protocol = "tcp"
+#     ports    = ["443"]
+#   }
   
-  source_tags = ["dataflow"]
-  destination_ranges = ["199.36.153.4/30"] # Google API range
-}
+#   source_tags = ["dataflow"]
+#   destination_ranges = ["199.36.153.4/30"] # Google API range
+# }
 
 # GCS bucket for holding configuration objects
 resource "google_storage_bucket" "reverse_replication_bucket" {
@@ -155,6 +157,7 @@ resource "google_spanner_database" "reverse_replication_metadata_database" {
   deletion_protection = false
 }
 
+# Create a change stream for the Spanner database
 resource "null_resource" "create_spanner_change_stream" {
   count = var.dataflow_params.template_params.change_stream_name == null ? 1 : 0
   triggers = {

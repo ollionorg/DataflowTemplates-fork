@@ -1,3 +1,4 @@
+#create random prefix for migration id
 resource "random_pet" "migration_id" {
   prefix = "spanner-csdr"
 } 
@@ -59,7 +60,7 @@ resource "google_compute_firewall" "allow_dataflow_vms_communication" {
   target_tags = ["dataflow"]
 }
 
-# allow all comunication between dataflow worker
+# allow all comunication from gcp project resource to dataflow worker
 resource "google_compute_firewall" "allow_dataflow_worker_all" {
   count       = var.common_params.target_tags != null ? 1 : 0
   depends_on  = [google_project_service.enabled_apis]
@@ -81,19 +82,6 @@ resource "google_compute_firewall" "allow_dataflow_worker_all" {
   source_ranges = [var.dataflow_params.runner_params.subnetwork_cidr] 
   target_tags   = ["dataflow"]
 }
-
-# resource "google_compute_firewall" "allow_google_apis" {
-#   name    = "allow-google-apis-traffics"
-#   network = var.dataflow_params.runner_params.network != null ? var.common_params.host_project != null ? "projects/${var.common_params.host_project}/global/networks/${var.dataflow_params.runner_params.network}" : "projects/${var.common_params.project}/global/networks/${var.dataflow_params.runner_params.network}" : "default"
-  
-#   allow {
-#     protocol = "tcp"
-#     ports    = ["443"]
-#   }
-  
-#   source_tags = ["dataflow"]
-#   destination_ranges = ["199.36.153.4/30"] # Google API range
-# }
 
 # GCS bucket for holding configuration objects
 resource "google_storage_bucket" "reverse_replication_bucket" {

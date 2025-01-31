@@ -94,10 +94,10 @@ A few prerequisites must be considered before starting with reverse replication.
 8. Ensure that the target Spanner instance is ready.
 9. Ensure that that [session file](https://googlecloudplatform.github.io/spanner-migration-tool/reports.html#session-file-ending-in-sessionjson) is uploaded to GCS (this requires a schema conversion to be done).
 10. For MySQL: 
-   [Source shards file](#sample-source-shards-file-for-MySQL) already uploaded to GCS. 
+   [Source shards file](./RunnigReverseReplication.md#sample-source-shards-file-for-MySQL) already uploaded to GCS. 
 
 11. For Cassandra:
-    [Source file](#Sample-source-File-for-Cassandra) already uploaded to GCS.
+    [Source file](./RunnigReverseReplication.md#Sample-source-File-for-Cassandra) already uploaded to GCS.
 
 12. Resources needed for reverse replication incur cost. Make sure to read [cost](#cost).
 13. Reverse replication uses shard identifier column per table to route the Spanner records to a given source shard.The column identified as the sharding column needs to be selected via Spanner Migration Tool when performing migration.The value of this column should be the logicalShardId value specified in the [source shard file](#sample-source-shards-file-for-MySQL).In the event that the shard identifier column is not an existing column,the application code needs to be changed to populate this shard identifier column when writing to Spanner. Or use a custom shard identifier plugin to supply the shard identifier.

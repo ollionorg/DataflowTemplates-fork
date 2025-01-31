@@ -53,314 +53,314 @@ import org.testcontainers.utility.DockerImageName;
  * <p>The class is thread-safe.
  */
 public class CassandraSharedResourceManager
-        extends TestContainerResourceManager<GenericContainer<?>> implements ResourceManager {
+    extends TestContainerResourceManager<GenericContainer<?>> implements ResourceManager {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CassandraSharedResourceManager.class);
+  private static final Logger LOG = LoggerFactory.getLogger(CassandraSharedResourceManager.class);
 
-    private static final String DEFAULT_CASSANDRA_CONTAINER_NAME = "cassandra";
+  private static final String DEFAULT_CASSANDRA_CONTAINER_NAME = "cassandra";
 
-    // A list of available Cassandra Docker image tags can be found at
-    // https://hub.docker.com/_/cassandra/tags
-    private static final String DEFAULT_CASSANDRA_CONTAINER_TAG = "4.1.0";
+  // A list of available Cassandra Docker image tags can be found at
+  // https://hub.docker.com/_/cassandra/tags
+  private static final String DEFAULT_CASSANDRA_CONTAINER_TAG = "4.1.0";
 
-    // 9042 is the default port that Cassandra is configured to listen on
-    private static final int CASSANDRA_INTERNAL_PORT = 9042;
+  // 9042 is the default port that Cassandra is configured to listen on
+  private static final int CASSANDRA_INTERNAL_PORT = 9042;
 
-    private final CqlSession cassandraClient;
-    private final String keyspaceName;
-    private final boolean usingStaticDatabase;
+  private final CqlSession cassandraClient;
+  private final String keyspaceName;
+  private final boolean usingStaticDatabase;
 
-    private CassandraSharedResourceManager(Builder builder) {
-        this(
-                null,
-                new CassandraContainer<>(
-                        DockerImageName.parse(builder.containerImageName).withTag(builder.containerImageTag)),
-                builder);
+  private CassandraSharedResourceManager(Builder builder) {
+    this(
+        null,
+        new CassandraContainer<>(
+            DockerImageName.parse(builder.containerImageName).withTag(builder.containerImageTag)),
+        builder);
+  }
+
+  @VisibleForTesting
+  @SuppressWarnings("nullness")
+  CassandraSharedResourceManager(
+      @Nullable CqlSession cassandraClient, CassandraContainer<?> container, Builder builder) {
+    super(container, builder);
+    // we are trying to handle userDefined KeyspaceName name without usingStatic Container
+    this.usingStaticDatabase = builder.keyspaceName != null && !builder.preGeneratedKeyspaceName;
+    this.keyspaceName =
+        usingStaticDatabase || builder.preGeneratedKeyspaceName
+            ? builder.keyspaceName
+            : generateKeyspaceName(builder.testId);
+    this.cassandraClient =
+        cassandraClient == null
+            ? CqlSession.builder()
+                .addContactPoint(
+                    new InetSocketAddress(this.getHost(), this.getPort(CASSANDRA_INTERNAL_PORT)))
+                .withLocalDatacenter("datacenter1")
+                .build()
+            : cassandraClient;
+
+    if (!usingStaticDatabase) {
+      Failsafe.with(buildRetryPolicy())
+          .run(
+              () ->
+                  this.cassandraClient.execute(
+                      String.format(
+                          "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy', 'replication_factor':1}",
+                          this.keyspaceName)));
+    }
+  }
+
+  private String generateKeyspaceName(String testName) {
+    return ResourceManagerUtils.generateResourceId(
+            testName,
+            Pattern.compile("[/\\\\. \"\u0000$]"),
+            "-",
+            27,
+            DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSSSSS"))
+        .replace('-', '_');
+  }
+
+  public static Builder builder(String testId) {
+    return new Builder(testId);
+  }
+
+  /** Returns the port to connect to the Cassandra Database. */
+  public int getPort() {
+    return super.getPort(CASSANDRA_INTERNAL_PORT);
+  }
+
+  /**
+   * Returns the name of the Database that this Cassandra manager will operate in.
+   *
+   * @return the name of the Cassandra Database.
+   */
+  public synchronized String getKeyspaceName() {
+    return keyspaceName;
+  }
+
+  /**
+   * Execute the given statement on the managed keyspace.
+   *
+   * @param statement The statement to execute.
+   * @return ResultSet from Cassandra.
+   */
+  public synchronized ResultSet executeStatement(String statement) {
+    LOG.info("Executing statement: {}", statement);
+
+    try {
+      return Failsafe.with(buildRetryPolicy())
+          .get(
+              () ->
+                  cassandraClient.execute(
+                      SimpleStatement.newInstance(statement).setKeyspace(this.keyspaceName)));
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Error reading collection.", e);
+    }
+  }
+
+  /**
+   * Execute the given statement on the managed keyspace without returning ResultSet.
+   *
+   * @param statement The statement to execute.
+   */
+  public synchronized void execute(String statement) {
+    LOG.info("execute statement: {}", statement);
+
+    try {
+      Failsafe.with(buildRetryPolicy())
+          .run(
+              () ->
+                  cassandraClient.execute(
+                      SimpleStatement.newInstance(statement).setKeyspace(this.keyspaceName)));
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Error reading collection.", e);
+    }
+  }
+
+  /**
+   * Inserts the given Document into a table.
+   *
+   * <p>A database will be created here, if one does not already exist.
+   *
+   * @param tableName The name of the table to insert the document into.
+   * @param document The document to insert into the table.
+   * @return A boolean indicating whether the Document was inserted successfully.
+   */
+  public synchronized boolean insertDocument(String tableName, Map<String, Object> document) {
+    return insertDocuments(tableName, ImmutableList.of(document));
+  }
+
+  /**
+   * Inserts the given Documents into a collection.
+   *
+   * <p>Note: Implementations may do collection creation here, if one does not already exist.
+   *
+   * @param tableName The name of the collection to insert the documents into.
+   * @param documents A list of documents to insert into the collection.
+   * @return A boolean indicating whether the Documents were inserted successfully.
+   * @throws IllegalArgumentException if there is an error inserting the documents.
+   */
+  public synchronized boolean insertDocuments(String tableName, List<Map<String, Object>> documents)
+      throws IllegalArgumentException {
+    LOG.info(
+        "Attempting to write {} documents to {}.{}.", documents.size(), keyspaceName, tableName);
+
+    try {
+      for (Map<String, Object> document : documents) {
+        executeStatement(createInsertStatement(tableName, document));
+      }
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Error inserting documents.", e);
     }
 
-    @VisibleForTesting
-    @SuppressWarnings("nullness")
-    CassandraSharedResourceManager(
-            @Nullable CqlSession cassandraClient, CassandraContainer<?> container, Builder builder) {
-        super(container, builder);
-        // we are trying to handle userDefined KeyspaceName name without usingStatic Container
-        this.usingStaticDatabase = builder.keyspaceName != null && !builder.preGeneratedKeyspaceName;
-        this.keyspaceName =
-                usingStaticDatabase || builder.preGeneratedKeyspaceName
-                        ? builder.keyspaceName
-                        : generateKeyspaceName(builder.testId);
-        this.cassandraClient =
-                cassandraClient == null
-                        ? CqlSession.builder()
-                        .addContactPoint(
-                                new InetSocketAddress(this.getHost(), this.getPort(CASSANDRA_INTERNAL_PORT)))
-                        .withLocalDatacenter("datacenter1")
-                        .build()
-                        : cassandraClient;
+    LOG.info("Successfully wrote {} documents to {}.{}", documents.size(), keyspaceName, tableName);
 
-        if (!usingStaticDatabase) {
-            Failsafe.with(buildRetryPolicy())
-                    .run(
-                            () ->
-                                    this.cassandraClient.execute(
-                                            String.format(
-                                                    "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy', 'replication_factor':1}",
-                                                    this.keyspaceName)));
+    return true;
+  }
+
+  /**
+   * Reads all the Documents in a collection.
+   *
+   * @param tableName The name of the collection to read from.
+   * @return An iterable of all the Documents in the collection.
+   * @throws IllegalArgumentException if there is an error reading the collection.
+   */
+  public synchronized Iterable<Row> readTable(String tableName) throws IllegalArgumentException {
+    LOG.info("Reading all documents from {}.{}", keyspaceName, tableName);
+
+    Iterable<Row> documents;
+    try {
+      ResultSet resultSet = executeStatement(String.format("SELECT * FROM %s", tableName));
+      documents = resultSet.all();
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Error reading table.", e);
+    }
+
+    LOG.info("Successfully loaded documents from {}.{}", keyspaceName, tableName);
+
+    return documents;
+  }
+
+  @Override
+  public synchronized void cleanupAll() {
+    LOG.info("Attempting to cleanup Cassandra manager.");
+
+    boolean producedError = false;
+
+    // First, delete the database if it was not given as a static argument
+    if (!usingStaticDatabase) {
+      try {
+        executeStatement(String.format("DROP KEYSPACE IF EXISTS %s", this.keyspaceName));
+      } catch (Exception e) {
+        LOG.error("Failed to drop Cassandra keyspace {}.", keyspaceName, e);
+
+        // Only bubble exception if the cause is not timeout or does not exist
+        if (!ExceptionUtils.containsType(e, DriverTimeoutException.class)
+            && !ExceptionUtils.containsMessage(e, "does not exist")) {
+          producedError = true;
         }
+      }
     }
 
-    private String generateKeyspaceName(String testName) {
-        return ResourceManagerUtils.generateResourceId(
-                        testName,
-                        Pattern.compile("[/\\\\. \"\u0000$]"),
-                        "-",
-                        27,
-                        DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSSSSS"))
-                .replace('-', '_');
+    // Next, try to close the Cassandra client connection
+    try {
+      cassandraClient.close();
+    } catch (Exception e) {
+      LOG.error("Failed to delete Cassandra client.", e);
+      producedError = true;
     }
 
-    public static Builder builder(String testId) {
-        return new Builder(testId);
+    // Throw Exception at the end if there were any errors
+    if (producedError) {
+      throw new IllegalArgumentException("Failed to delete resources. Check above for errors.");
     }
 
-    /** Returns the port to connect to the Cassandra Database. */
-    public int getPort() {
-        return super.getPort(CASSANDRA_INTERNAL_PORT);
+    super.cleanupAll();
+
+    LOG.info("Cassandra manager successfully cleaned up.");
+  }
+
+  private String createInsertStatement(String tableName, Map<String, Object> map) {
+    StringBuilder columns = new StringBuilder();
+    StringBuilder values = new StringBuilder();
+
+    for (Map.Entry<String, Object> entry : map.entrySet()) {
+      columns.append(entry.getKey()).append(", ");
+
+      // add quotes around strings
+      if (entry.getValue() instanceof String) {
+        values.append("'").append(entry.getValue()).append("'");
+      } else {
+        values.append(entry.getValue());
+      }
+      values.append(", ");
     }
 
-    /**
-     * Returns the name of the Database that this Cassandra manager will operate in.
-     *
-     * @return the name of the Cassandra Database.
-     */
-    public synchronized String getKeyspaceName() {
-        return keyspaceName;
+    // Remove trailing comma and space
+    if (!map.isEmpty()) {
+      columns.delete(columns.length() - 2, columns.length());
+      values.delete(values.length() - 2, values.length());
     }
 
-    /**
-     * Execute the given statement on the managed keyspace.
-     *
-     * @param statement The statement to execute.
-     * @return ResultSet from Cassandra.
-     */
-    public synchronized ResultSet executeStatement(String statement) {
-        LOG.info("Executing statement: {}", statement);
+    return String.format("INSERT INTO %s (%s) VALUES (%s)", tableName, columns, values);
+  }
 
-        try {
-            return Failsafe.with(buildRetryPolicy())
-                    .get(
-                            () ->
-                                    cassandraClient.execute(
-                                            SimpleStatement.newInstance(statement).setKeyspace(this.keyspaceName)));
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error reading collection.", e);
-        }
-    }
+  private static RetryPolicy<Object> buildRetryPolicy() {
+    return RetryPolicy.builder()
+        .withMaxRetries(5)
+        .withDelay(Duration.ofSeconds(1))
+        .handle(DriverTimeoutException.class)
+        .build();
+  }
 
-    /**
-     * Execute the given statement on the managed keyspace without returning ResultSet.
-     *
-     * @param statement The statement to execute.
-     */
-    public synchronized void execute(String statement) {
-        LOG.info("execute statement: {}", statement);
+  /** Builder for {@link CassandraSharedResourceManager}. */
+  public static final class Builder
+      extends TestContainerResourceManager.Builder<CassandraSharedResourceManager> {
 
-        try {
-            Failsafe.with(buildRetryPolicy())
-                    .run(
-                            () ->
-                                    cassandraClient.execute(
-                                            SimpleStatement.newInstance(statement).setKeyspace(this.keyspaceName)));
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error reading collection.", e);
-        }
-    }
+    private @Nullable String keyspaceName;
 
-    /**
-     * Inserts the given Document into a table.
-     *
-     * <p>A database will be created here, if one does not already exist.
-     *
-     * @param tableName The name of the table to insert the document into.
-     * @param document The document to insert into the table.
-     * @return A boolean indicating whether the Document was inserted successfully.
-     */
-    public synchronized boolean insertDocument(String tableName, Map<String, Object> document) {
-        return insertDocuments(tableName, ImmutableList.of(document));
+    private @Nullable boolean preGeneratedKeyspaceName;
+
+    private Builder(String testId) {
+      super(testId, DEFAULT_CASSANDRA_CONTAINER_NAME, DEFAULT_CASSANDRA_CONTAINER_TAG);
+      this.keyspaceName = null;
     }
 
     /**
-     * Inserts the given Documents into a collection.
+     * Sets the keyspace name to that of a preGeneratedKeyspaceName database instance.
      *
-     * <p>Note: Implementations may do collection creation here, if one does not already exist.
+     * <p>Note: if a database name is set, and a static Cassandra server is being used
+     * (useStaticContainer() is also called on the builder), then a database will be created on the
+     * static server if it does not exist, and it will not be removed when cleanupAll() is called on
+     * the CassandraResourceManager.
      *
-     * @param tableName The name of the collection to insert the documents into.
-     * @param documents A list of documents to insert into the collection.
-     * @return A boolean indicating whether the Documents were inserted successfully.
-     * @throws IllegalArgumentException if there is an error inserting the documents.
+     * @param keyspaceName The database name.
+     * @return this builder object with the database name set.
      */
-    public synchronized boolean insertDocuments(String tableName, List<Map<String, Object>> documents)
-            throws IllegalArgumentException {
-        LOG.info(
-                "Attempting to write {} documents to {}.{}.", documents.size(), keyspaceName, tableName);
-
-        try {
-            for (Map<String, Object> document : documents) {
-                executeStatement(createInsertStatement(tableName, document));
-            }
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error inserting documents.", e);
-        }
-
-        LOG.info("Successfully wrote {} documents to {}.{}", documents.size(), keyspaceName, tableName);
-
-        return true;
+    public Builder setKeyspaceName(String keyspaceName) {
+      this.keyspaceName = keyspaceName;
+      return this;
     }
 
     /**
-     * Reads all the Documents in a collection.
+     * Sets the preGeneratedKeyspaceName to that of a static database instance. Use this method only
+     * when attempting to operate on a pre-existing Cassandra database.
      *
-     * @param tableName The name of the collection to read from.
-     * @return An iterable of all the Documents in the collection.
-     * @throws IllegalArgumentException if there is an error reading the collection.
+     * <p>Note: if a database name is set, and a static Cassandra server is being used
+     * (useStaticContainer() is also called on the builder), then a database will be created on the
+     * static server if it does not exist, and it will not be removed when cleanupAll() is called on
+     * the CassandraResourceManager.
+     *
+     * @param preGeneratedKeyspaceName The database name.
+     * @return this builder object with the database is need to create.
      */
-    public synchronized Iterable<Row> readTable(String tableName) throws IllegalArgumentException {
-        LOG.info("Reading all documents from {}.{}", keyspaceName, tableName);
-
-        Iterable<Row> documents;
-        try {
-            ResultSet resultSet = executeStatement(String.format("SELECT * FROM %s", tableName));
-            documents = resultSet.all();
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error reading table.", e);
-        }
-
-        LOG.info("Successfully loaded documents from {}.{}", keyspaceName, tableName);
-
-        return documents;
+    public Builder sePreGeneratedKeyspaceName(boolean preGeneratedKeyspaceName) {
+      this.preGeneratedKeyspaceName = preGeneratedKeyspaceName;
+      return this;
     }
 
     @Override
-    public synchronized void cleanupAll() {
-        LOG.info("Attempting to cleanup Cassandra manager.");
-
-        boolean producedError = false;
-
-        // First, delete the database if it was not given as a static argument
-        if (!usingStaticDatabase) {
-            try {
-                executeStatement(String.format("DROP KEYSPACE IF EXISTS %s", this.keyspaceName));
-            } catch (Exception e) {
-                LOG.error("Failed to drop Cassandra keyspace {}.", keyspaceName, e);
-
-                // Only bubble exception if the cause is not timeout or does not exist
-                if (!ExceptionUtils.containsType(e, DriverTimeoutException.class)
-                        && !ExceptionUtils.containsMessage(e, "does not exist")) {
-                    producedError = true;
-                }
-            }
-        }
-
-        // Next, try to close the Cassandra client connection
-        try {
-            cassandraClient.close();
-        } catch (Exception e) {
-            LOG.error("Failed to delete Cassandra client.", e);
-            producedError = true;
-        }
-
-        // Throw Exception at the end if there were any errors
-        if (producedError) {
-            throw new IllegalArgumentException("Failed to delete resources. Check above for errors.");
-        }
-
-        super.cleanupAll();
-
-        LOG.info("Cassandra manager successfully cleaned up.");
+    public CassandraSharedResourceManager build() {
+      return new CassandraSharedResourceManager(this);
     }
-
-    private String createInsertStatement(String tableName, Map<String, Object> map) {
-        StringBuilder columns = new StringBuilder();
-        StringBuilder values = new StringBuilder();
-
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            columns.append(entry.getKey()).append(", ");
-
-            // add quotes around strings
-            if (entry.getValue() instanceof String) {
-                values.append("'").append(entry.getValue()).append("'");
-            } else {
-                values.append(entry.getValue());
-            }
-            values.append(", ");
-        }
-
-        // Remove trailing comma and space
-        if (!map.isEmpty()) {
-            columns.delete(columns.length() - 2, columns.length());
-            values.delete(values.length() - 2, values.length());
-        }
-
-        return String.format("INSERT INTO %s (%s) VALUES (%s)", tableName, columns, values);
-    }
-
-    private static RetryPolicy<Object> buildRetryPolicy() {
-        return RetryPolicy.builder()
-                .withMaxRetries(5)
-                .withDelay(Duration.ofSeconds(1))
-                .handle(DriverTimeoutException.class)
-                .build();
-    }
-
-    /** Builder for {@link CassandraSharedResourceManager}. */
-    public static final class Builder
-            extends TestContainerResourceManager.Builder<CassandraSharedResourceManager> {
-
-        private @Nullable String keyspaceName;
-
-        private @Nullable boolean preGeneratedKeyspaceName;
-
-        private Builder(String testId) {
-            super(testId, DEFAULT_CASSANDRA_CONTAINER_NAME, DEFAULT_CASSANDRA_CONTAINER_TAG);
-            this.keyspaceName = null;
-        }
-
-        /**
-         * Sets the keyspace name to that of a preGeneratedKeyspaceName database instance.
-         *
-         * <p>Note: if a database name is set, and a static Cassandra server is being used
-         * (useStaticContainer() is also called on the builder), then a database will be created on the
-         * static server if it does not exist, and it will not be removed when cleanupAll() is called on
-         * the CassandraResourceManager.
-         *
-         * @param keyspaceName The database name.
-         * @return this builder object with the database name set.
-         */
-        public Builder setKeyspaceName(String keyspaceName) {
-            this.keyspaceName = keyspaceName;
-            return this;
-        }
-
-        /**
-         * Sets the preGeneratedKeyspaceName to that of a static database instance. Use this method only
-         * when attempting to operate on a pre-existing Cassandra database.
-         *
-         * <p>Note: if a database name is set, and a static Cassandra server is being used
-         * (useStaticContainer() is also called on the builder), then a database will be created on the
-         * static server if it does not exist, and it will not be removed when cleanupAll() is called on
-         * the CassandraResourceManager.
-         *
-         * @param preGeneratedKeyspaceName The database name.
-         * @return this builder object with the database is need to create.
-         */
-        public Builder sePreGeneratedKeyspaceName(boolean preGeneratedKeyspaceName) {
-            this.preGeneratedKeyspaceName = preGeneratedKeyspaceName;
-            return this;
-        }
-
-        @Override
-        public CassandraSharedResourceManager build() {
-            return new CassandraSharedResourceManager(this);
-        }
-    }
+  }
 }

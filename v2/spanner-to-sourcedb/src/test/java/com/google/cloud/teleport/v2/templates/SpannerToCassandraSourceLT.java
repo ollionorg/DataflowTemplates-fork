@@ -42,78 +42,78 @@ import org.slf4j.LoggerFactory;
 @RunWith(JUnit4.class)
 public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SpannerToCassandraSourceLT.class);
-    private String generatorSchemaPath;
-    private final String artifactBucket = TestProperties.artifactBucket();
-    private final String spannerDdlResource = "SpannerToCassandraSourceLT/spanner-schema.sql";
-    private static final String cassandraDdlResource =
-            "SpannerToCassandraSourceLT/cassandra-schema.sql";
-    private final String dataGeneratorSchemaResource =
-            "SpannerToCassandraSourceLT/datagenerator-schema.json";
-    private final String table = "person";
-    private final int maxWorkers = 50; // 3; // 50;
-    private final int numWorkers = 20; // 2; // 20;
-    private PipelineLauncher.LaunchInfo jobInfo;
-    private final int numShards = 1;
+  private static final Logger LOG = LoggerFactory.getLogger(SpannerToCassandraSourceLT.class);
+  private String generatorSchemaPath;
+  private final String artifactBucket = TestProperties.artifactBucket();
+  private final String spannerDdlResource = "SpannerToCassandraSourceLT/spanner-schema.sql";
+  private static final String cassandraDdlResource =
+      "SpannerToCassandraSourceLT/cassandra-schema.sql";
+  private final String dataGeneratorSchemaResource =
+      "SpannerToCassandraSourceLT/datagenerator-schema.json";
+  private final String table = "person";
+  private final int maxWorkers = 50;
+  private final int numWorkers = 20;
+  private PipelineLauncher.LaunchInfo jobInfo;
+  private final int numShards = 1;
 
-    @Before
-    public void setup() throws IOException {
-        setupResourceManagers(spannerDdlResource, cassandraDdlResource, artifactBucket);
-        generatorSchemaPath =
-                getFullGcsPath(
-                        artifactBucket,
-                        gcsResourceManager
-                                .uploadArtifact(
-                                        "input/schema.json",
-                                        Resources.getResource(dataGeneratorSchemaResource).getPath())
-                                .name());
-        jobInfo = launchDataflowJob(artifactBucket, numWorkers, maxWorkers);
-    }
+  @Before
+  public void setup() throws IOException {
+    setupResourceManagers(spannerDdlResource, cassandraDdlResource, artifactBucket);
+    generatorSchemaPath =
+        getFullGcsPath(
+            artifactBucket,
+            gcsResourceManager
+                .uploadArtifact(
+                    "input/schema.json",
+                    Resources.getResource(dataGeneratorSchemaResource).getPath())
+                .name());
+    jobInfo = launchDataflowJob(artifactBucket, numWorkers, maxWorkers);
+  }
 
-    @After
-    public void teardown() {
-        cleanupResourceManagers();
-    }
+  @After
+  public void teardown() {
+    cleanupResourceManagers();
+  }
 
-    @Test
-    public void reverseReplicationCassandra1KTpsLoadTest()
-            throws IOException, ParseException, InterruptedException {
+  @Test
+  public void reverseReplicationCassandra1KTpsLoadTest()
+      throws IOException, ParseException, InterruptedException {
 
-        Integer numRecords = 300000;
-        DataGenerator dataGenerator =
-                DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-                        .setQPS("1000")
-                        .setMessagesLimit(String.valueOf(numRecords))
-                        .setSpannerInstanceName(spannerResourceManager.getInstanceId())
-                        .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
-                        .setSpannerTableName(table)
-                        .setNumWorkers("50")
-                        .setMaxNumWorkers("100")
-                        .setSinkType("SPANNER")
-                        .setProjectId(project)
-                        .setBatchSizeBytes("0")
-                        .build();
+    Integer numRecords = 300000;
+    DataGenerator dataGenerator =
+        DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
+            .setQPS("1000")
+            .setMessagesLimit(String.valueOf(numRecords))
+            .setSpannerInstanceName(spannerResourceManager.getInstanceId())
+            .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
+            .setSpannerTableName(table)
+            .setNumWorkers("50")
+            .setMaxNumWorkers("100")
+            .setSinkType("SPANNER")
+            .setProjectId(project)
+            .setBatchSizeBytes("0")
+            .build();
 
-        dataGenerator.execute(Duration.ofMinutes(90));
-        assertThatPipeline(jobInfo).isRunning();
+    dataGenerator.execute(Duration.ofMinutes(90));
+    assertThatPipeline(jobInfo).isRunning();
 
-        CassandraRowsCheck check =
-                CassandraRowsCheck.builder(cassandraSharedResourceManager, table)
-                        .setMinRows(numRecords)
-                        .setMaxRows(numRecords)
-                        .build();
+    CassandraRowsCheck check =
+        CassandraRowsCheck.builder(cassandraSharedResourceManager, table)
+            .setMinRows(numRecords)
+            .setMaxRows(numRecords)
+            .build();
 
-        PipelineOperator.Result result =
-                pipelineOperator.waitForCondition(
-                        createConfig(jobInfo, Duration.ofMinutes(10), Duration.ofSeconds(30)), check); // 5 30
+    PipelineOperator.Result result =
+        pipelineOperator.waitForCondition(
+            createConfig(jobInfo, Duration.ofMinutes(10), Duration.ofSeconds(30)), check);
 
-        assertThatResult(result).meetsConditions();
+    assertThatResult(result).meetsConditions();
 
-        PipelineOperator.Result result1 =
-                pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(20)));
+    PipelineOperator.Result result1 =
+        pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(20)));
 
-        assertThatResult(result1).isLaunchFinished();
+    assertThatResult(result1).isLaunchFinished();
 
-        exportMetrics(jobInfo, numShards);
-    }
+    exportMetrics(jobInfo, numShards);
+  }
 }

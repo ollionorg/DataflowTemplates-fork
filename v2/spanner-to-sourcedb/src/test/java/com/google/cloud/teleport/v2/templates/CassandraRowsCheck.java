@@ -24,83 +24,83 @@ import org.apache.beam.it.conditions.ConditionCheck;
 @AutoValue
 public abstract class CassandraRowsCheck extends ConditionCheck {
 
-    abstract CassandraSharedResourceManager resourceManager();
+  abstract CassandraSharedResourceManager resourceManager();
 
-    abstract String tableName();
+  abstract String tableName();
 
-    abstract Integer minRows();
+  abstract Integer minRows();
 
-    @Nullable
-    abstract Integer maxRows();
+  @Nullable
+  abstract Integer maxRows();
 
-    @Override
-    public String getDescription() {
-        if (maxRows() != null) {
-            return String.format(
-                    "Cassandra table check if table %s has between %d and %d rows",
-                    tableName(), minRows(), maxRows());
-        }
-        return String.format(
-                "Cassandra table check if table %s has at least %d rows", tableName(), minRows());
+  @Override
+  public String getDescription() {
+    if (maxRows() != null) {
+      return String.format(
+          "Cassandra table check if table %s has between %d and %d rows",
+          tableName(), minRows(), maxRows());
+    }
+    return String.format(
+        "Cassandra table check if table %s has at least %d rows", tableName(), minRows());
+  }
+
+  private long getRowCount(String tableName) {
+    String query = String.format("SELECT COUNT(*) FROM %s", tableName);
+    ResultSet resultSet = resourceManager().executeStatement(query);
+    Row row = resultSet.one();
+    if (row != null) {
+      return row.getLong(0);
+    } else {
+      throw new RuntimeException("Query did not return a result for table: " + tableName);
+    }
+  }
+
+  @Override
+  public CheckResult check() {
+    long totalRows = getRowCount(tableName());
+    if (totalRows < minRows()) {
+      return new CheckResult(
+          false,
+          String.format("Expected at least %d rows but found only %d", minRows(), totalRows));
+    }
+    if (maxRows() != null && totalRows > maxRows()) {
+      return new CheckResult(
+          false, String.format("Expected up to %d rows but found %d", maxRows(), totalRows));
     }
 
-    private long getRowCount(String tableName) {
-        String query = String.format("SELECT COUNT(*) FROM %s", tableName);
-        ResultSet resultSet = resourceManager().executeStatement(query);
-        Row row = resultSet.one();
-        if (row != null) {
-            return row.getLong(0);
-        } else {
-            throw new RuntimeException("Query did not return a result for table: " + tableName);
-        }
+    if (maxRows() != null) {
+      return new CheckResult(
+          true,
+          String.format(
+              "Expected between %d and %d rows and found %d", minRows(), maxRows(), totalRows));
     }
 
-    @Override
-    public CheckResult check() {
-        long totalRows = getRowCount(tableName());
-        if (totalRows < minRows()) {
-            return new CheckResult(
-                    false,
-                    String.format("Expected at least %d rows but found only %d", minRows(), totalRows));
-        }
-        if (maxRows() != null && totalRows > maxRows()) {
-            return new CheckResult(
-                    false, String.format("Expected up to %d rows but found %d", maxRows(), totalRows));
-        }
+    return new CheckResult(
+        true, String.format("Expected at least %d rows and found %d", minRows(), totalRows));
+  }
 
-        if (maxRows() != null) {
-            return new CheckResult(
-                    true,
-                    String.format(
-                            "Expected between %d and %d rows and found %d", minRows(), maxRows(), totalRows));
-        }
+  public static Builder builder(CassandraSharedResourceManager resourceManager, String tableName) {
+    return new AutoValue_CassandraRowsCheck.Builder()
+        .setResourceManager(resourceManager)
+        .setTableName(tableName);
+  }
 
-        return new CheckResult(
-                true, String.format("Expected at least %d rows and found %d", minRows(), totalRows));
+  /** Builder for {@link CassandraRowsCheck}. */
+  @AutoValue.Builder
+  public abstract static class Builder {
+
+    public abstract Builder setResourceManager(CassandraSharedResourceManager resourceManager);
+
+    public abstract Builder setTableName(String tableName);
+
+    public abstract Builder setMinRows(Integer minRows);
+
+    public abstract Builder setMaxRows(Integer maxRows);
+
+    abstract CassandraRowsCheck autoBuild();
+
+    public CassandraRowsCheck build() {
+      return autoBuild();
     }
-
-    public static Builder builder(CassandraSharedResourceManager resourceManager, String tableName) {
-        return new AutoValue_CassandraRowsCheck.Builder()
-                .setResourceManager(resourceManager)
-                .setTableName(tableName);
-    }
-
-    /** Builder for {@link CassandraRowsCheck}. */
-    @AutoValue.Builder
-    public abstract static class Builder {
-
-        public abstract Builder setResourceManager(CassandraSharedResourceManager resourceManager);
-
-        public abstract Builder setTableName(String tableName);
-
-        public abstract Builder setMinRows(Integer minRows);
-
-        public abstract Builder setMaxRows(Integer maxRows);
-
-        abstract CassandraRowsCheck autoBuild();
-
-        public CassandraRowsCheck build() {
-            return autoBuild();
-        }
-    }
+  }
 }

@@ -1,4 +1,4 @@
-CREATE TABLE `person` (
+CREATE TABLE `person_rr_cass` (
     `first_name1` STRING(500),
     `last_name1` STRING(500),
     `first_name2` STRING(500),

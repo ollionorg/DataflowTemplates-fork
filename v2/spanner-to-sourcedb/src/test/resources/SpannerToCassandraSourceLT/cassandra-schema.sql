@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS person (
+CREATE TABLE IF NOT EXISTS person_rr_cass (
     id uuid PRIMARY KEY,
     first_name1 text,
     last_name1 text,

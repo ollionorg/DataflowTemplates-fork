@@ -82,7 +82,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     System.out.println("SpannerInstanceID :: " + spannerResourceManager.getInstanceId());
     System.out.println("SpannerDatabaseID :: " + spannerResourceManager.getDatabaseId());
 
-    Integer numRecords = 200000; // 100 300000
+    Integer numRecords = 150000; // 100 300000
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
             .setQPS("1000") // 10

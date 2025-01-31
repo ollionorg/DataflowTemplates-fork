@@ -45,13 +45,17 @@ public abstract class CassandraRowsCheck extends ConditionCheck {
   }
 
   private long getRowCount(String tableName) {
-    String query = String.format("SELECT COUNT(*) FROM %s", tableName);
-    ResultSet resultSet = resourceManager().executeStatement(query);
-    Row row = resultSet.one();
-    if (row != null) {
-      return row.getLong(0);
-    } else {
-      throw new RuntimeException("Query did not return a result for table: " + tableName);
+    try {
+      String query = String.format("SELECT COUNT(*) FROM %s", tableName);
+      ResultSet resultSet = resourceManager().executeStatement(query);
+      Row row = resultSet.one();
+      if (row != null) {
+        return row.getLong(0);
+      } else {
+        throw new RuntimeException("Query did not return a result for table: " + tableName);
+      }
+    } catch (Exception e) {
+      throw new RuntimeException("Error while executing query for table: " + tableName, e);
     }
   }
 

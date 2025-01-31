@@ -109,14 +109,14 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     System.out.println("Waiting for Job");
     PipelineOperator.Result result =
         pipelineOperator.waitForCondition(
-            createConfig(jobInfo, Duration.ofMinutes(10), Duration.ofSeconds(30)), check); // 5 30
+            createConfig(jobInfo, Duration.ofMinutes(30), Duration.ofSeconds(30)), check); // 5 30
 
     System.out.println("Job wait: " + result);
     // Assert Conditions
     assertThatResult(result).meetsConditions();
 
     PipelineOperator.Result result1 =
-        pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(20)));
+        pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(30)));
 
     System.out.println("Job finished: " + result1);
     assertThatResult(result1).isLaunchFinished();

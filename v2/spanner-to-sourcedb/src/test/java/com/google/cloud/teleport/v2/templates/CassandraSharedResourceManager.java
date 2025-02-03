@@ -152,7 +152,9 @@ public class CassandraSharedResourceManager
           .get(
               () ->
                   cassandraClient.execute(
-                      SimpleStatement.newInstance(statement).setKeyspace(this.keyspaceName)));
+                      SimpleStatement.newInstance(statement)
+                          .setTimeout(Duration.ofSeconds(10))
+                          .setKeyspace(this.keyspaceName)));
     } catch (Exception e) {
       System.out.println(e.getMessage());
       System.out.println(e.fillInStackTrace());

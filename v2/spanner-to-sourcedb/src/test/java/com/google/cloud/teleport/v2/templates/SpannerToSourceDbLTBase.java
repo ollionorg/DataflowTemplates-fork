@@ -58,7 +58,6 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
       MoreObjects.firstNonNull(
           TestProperties.specPath(),
           "gs://dataflow-templates-spanner-to-cassandra/templates/flex/Spanner_to_SourceDb");
-  //          "gs://dataflow-templates/latest/flex/Spanner_to_SourceDb"
   public SpannerResourceManager spannerResourceManager;
   public SpannerResourceManager spannerMetadataResourceManager;
   public List<JDBCResourceManager> jdbcResourceManagers;

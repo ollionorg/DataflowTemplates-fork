@@ -173,7 +173,7 @@ jobs:
   java_load_tests_templates:
     # if: contains(github.event.pull_request.labels.*.name, 'run-load-tests')
     name: Dataflow Templates Load Tests
-    needs: [spotless_check, checkstyle_check, java_build]
+    needs: [spotless_check, checkstyle_check, java_build, java_integration_tests_templates]
     # needs: [spotless_check, checkstyle_check]
     timeout-minutes: 600
     # Run on any runner that matches all the specified runs-on values.

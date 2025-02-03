@@ -126,6 +126,7 @@ public class SpannerToSourceDbInterleaveMultiShardIT extends SpannerToSourceDbIT
                 null,
                 null,
                 null,
+                null,
                 null);
       }
     }

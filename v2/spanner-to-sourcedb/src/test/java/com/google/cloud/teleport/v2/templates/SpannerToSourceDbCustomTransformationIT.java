@@ -134,7 +134,8 @@ public class SpannerToSourceDbCustomTransformationIT extends SpannerToSourceDbIT
                 null,
                 null,
                 null,
-                customTransformation);
+                customTransformation,
+                null);
       }
     }
   }

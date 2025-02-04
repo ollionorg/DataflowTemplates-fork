@@ -32,7 +32,6 @@ CREATE TABLE IF NOT EXISTS alldatatypetransformation (
     enum_column STRING(MAX),
     bool_column STRING(MAX),
     other_bool_column STRING(MAX),
-    bytes_column BYTES(MAX),
     list_text_column JSON,
     list_int_column JSON,
     frozen_list_bigint_column JSON,

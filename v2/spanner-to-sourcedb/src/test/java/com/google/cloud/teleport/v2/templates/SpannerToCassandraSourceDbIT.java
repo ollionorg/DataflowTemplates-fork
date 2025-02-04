@@ -147,6 +147,15 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         pubsubResourceManager);
   }
 
+  /**
+   * Tests the data flow from Spanner to Cassandra.
+   *
+   * <p>This test ensures that a basic row is successfully written to Spanner and subsequently
+   * appears in Cassandra, validating end-to-end data consistency.
+   *
+   * @throws InterruptedException if the thread is interrupted during execution.
+   * @throws IOException if an I/O error occurs during the test execution.
+   */
   @Test
   public void spannerToCasandraSourceDbBasic() throws InterruptedException, IOException {
     assertThatPipeline(jobInfo).isRunning();
@@ -154,6 +163,16 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     assertBasicRowInCassandraDB();
   }
 
+  /**
+   * Tests the data type conversion from Spanner to Cassandra.
+   *
+   * <p>This test ensures that all supported data types are correctly written to Spanner and
+   * subsequently retrieved from Cassandra, verifying data integrity and type conversions.
+   *
+   * @throws InterruptedException if the thread is interrupted during execution.
+   * @throws IOException if an I/O error occurs during the test execution.
+   * @throws MultipleFailureException if multiple assertions fail during validation.
+   */
   @Test
   public void spannerToCassandraSourceAllDataTypeConversionTest()
       throws InterruptedException, IOException, MultipleFailureException {
@@ -170,6 +189,16 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     assertStringToActualRowsInCassandraDB();
   }
 
+  /**
+   * Tests the conversion of string data types from Spanner to actual data type in Cassandra.
+   *
+   * <p>This test ensures that string-based data types are correctly written to Spanner and
+   * subsequently retrieved from Cassandra, verifying data integrity and conversion accuracy.
+   *
+   * @throws InterruptedException if the thread is interrupted during execution.
+   * @throws IOException if an I/O error occurs during the test execution.
+   * @throws MultipleFailureException if multiple assertions fail during validation.
+   */
   @Test
   public void spannerToCassandraSourceDataTypeStringConversionDeleteTest()
       throws InterruptedException, IOException, MultipleFailureException {

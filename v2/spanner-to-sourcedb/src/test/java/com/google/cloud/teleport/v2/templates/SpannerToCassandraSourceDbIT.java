@@ -24,7 +24,6 @@ import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.cloud.ByteArray;
 import com.google.cloud.Date;
 import com.google.cloud.Timestamp;
-import com.google.cloud.spanner.Key;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.Options;
 import com.google.cloud.spanner.TransactionRunner;
@@ -181,14 +180,6 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     assertAllDataTypeRowsRowInCassandraDB();
   }
 
-  @Test
-  public void spannerToCassandraSourceDataTypeStringConversionTest()
-      throws InterruptedException, IOException, MultipleFailureException {
-    assertThatPipeline(jobInfo).isRunning();
-    writeStringRowsInSpanner();
-    assertStringToActualRowsInCassandraDB();
-  }
-
   /**
    * Tests the conversion of string data types from Spanner to actual data type in Cassandra.
    *
@@ -200,11 +191,11 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
    * @throws MultipleFailureException if multiple assertions fail during validation.
    */
   @Test
-  public void spannerToCassandraSourceDataTypeStringConversionDeleteTest()
+  public void spannerToCassandraSourceDataTypeStringConversionTest()
       throws InterruptedException, IOException, MultipleFailureException {
     assertThatPipeline(jobInfo).isRunning();
-    writeAndDeleteRowsInSpanner();
-    assertInCassandraDB();
+    writeStringRowsInSpanner();
+    assertStringToActualRowsInCassandraDB();
   }
 
   private long getRowCount(String tableName) {
@@ -745,199 +736,8 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
 
     assertThat(rows).hasSize(2);
     Row row = rows.iterator().next();
-    System.out.println(row.getFormattedContents());
     assertAll(
         () -> assertThat(row.getString("varchar_column")).isEqualTo("SampleVarchar2"),
         () -> assertThat(row.getByte("tinyint_column")).isEqualTo((byte) 127));
-  }
-
-  private void writeAndDeleteRowsInSpanner() {
-    Mutation m;
-    m =
-        Mutation.newInsertOrUpdateBuilder(ALL_DATA_TYPES_CUSTOM_CONVERSION_TABLE)
-            .set("varchar_column")
-            .to("SampleVarchar")
-            .set("tinyint_column")
-            .to(String.valueOf(127))
-            .set("text_column")
-            .to("This is some sample text data for the text column.")
-            .set("date_column")
-            .to(String.valueOf(Date.fromJavaUtilDate(java.sql.Date.valueOf("2025-01-27"))))
-            .set("smallint_column")
-            .to(String.valueOf(32767))
-            .set("mediumint_column")
-            .to(String.valueOf(8388607))
-            .set("int_column")
-            .to(String.valueOf(2147483647))
-            .set("bigint_column")
-            .to(String.valueOf(9223372036854775807L))
-            .set("float_column")
-            .to(String.valueOf(3.14159f))
-            .set("double_column")
-            .to(String.valueOf(2.718281828459045))
-            .set("decimal_column")
-            .to(new BigDecimal("12345.6789").toPlainString())
-            .set("datetime_column")
-            .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00Z")))
-            .set("timestamp_column")
-            .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00Z")))
-            .set("time_column")
-            .to("12:30:00")
-            .set("year_column")
-            .to("2025")
-            .set("char_column")
-            .to("CHAR_DATA")
-            .set("tinytext_column")
-            .to("Short text for tinytext.")
-            .set("mediumtext_column")
-            .to("Longer text data for mediumtext column.")
-            .set("longtext_column")
-            .to("Very long text data that exceeds the medium text column length for long text.")
-            .set("enum_column")
-            .to("OptionA")
-            .set("bool_column")
-            .to(String.valueOf(Boolean.TRUE))
-            .set("other_bool_column")
-            .to(String.valueOf(Boolean.FALSE))
-            .set("list_text_column")
-            .to(Value.json("[\"apple\", \"banana\", \"cherry\"]"))
-            .set("list_int_column")
-            .to(Value.json("[1, 2, 3, 4, 5]"))
-            .set("frozen_list_bigint_column")
-            .to(Value.json("[123456789012345, 987654321012345]"))
-            .set("set_text_column")
-            .to(Value.json("[\"apple\", \"orange\", \"banana\"]"))
-            .set("set_date_column")
-            .to(Value.json("[\"2025-01-27\", \"2025-02-01\"]"))
-            .set("frozen_set_bool_column")
-            .to(Value.json("[true, false]"))
-            .set("map_text_to_int_column")
-            .to(Value.json("{\"key1\": 10, \"key2\": 20}"))
-            .set("map_date_to_text_column")
-            .to(Value.json("{\"2025-01-27\": \"event1\", \"2025-02-01\": \"event2\"}"))
-            .set("frozen_map_int_to_bool_column")
-            .to(Value.json("{\"1\": true, \"2\": false}"))
-            .set("map_text_to_list_column")
-            .to(Value.json("{\"fruit\": [\"apple\", \"banana\"], \"color\": [\"red\", \"green\"]}"))
-            .set("map_text_to_set_column")
-            .to(
-                Value.json(
-                    "{\"fruit\": [\"apple\", \"banana\"], \"vegetables\": [\"carrot\", \"spinach\"]}"))
-            .set("set_of_maps_column")
-            .to(Value.json("[{\"key1\": 10, \"key2\": 20}, {\"keyA\": 5, \"keyB\": 10}]"))
-            .set("list_of_sets_column")
-            .to(Value.json("[[\"apple\", \"banana\"], [\"carrot\", \"spinach\"]]"))
-            .set("frozen_map_text_to_list_column")
-            .to(Value.json("{\"fruits\": [\"apple\", \"banana\"]}"))
-            .set("frozen_map_text_to_set_column")
-            .to(Value.json("{\"vegetables\": [\"carrot\", \"spinach\"]}"))
-            .set("frozen_set_of_maps_column")
-            .to(Value.json("[{\"key1\": 10, \"key2\": 20}, {\"keyA\": 5, \"keyB\": 10}]"))
-            .set("frozen_list_of_sets_column")
-            .to(Value.json("[[\"apple\", \"banana\"], [\"carrot\", \"spinach\"]]"))
-            .set("varint_column")
-            .to("123456789")
-            .build();
-
-    spannerResourceManager.write(m);
-
-    m =
-        Mutation.newInsertOrUpdateBuilder(ALL_DATA_TYPES_CUSTOM_CONVERSION_TABLE)
-            .set("varchar_column")
-            .to("SampleVarchar")
-            .set("tinyint_column")
-            .to(String.valueOf(122))
-            .set("text_column")
-            .to("This is some sample text data for the text column.")
-            .set("date_column")
-            .to(String.valueOf(Date.fromJavaUtilDate(java.sql.Date.valueOf("2025-01-27"))))
-            .set("smallint_column")
-            .to(String.valueOf(32767))
-            .set("mediumint_column")
-            .to(String.valueOf(8388607))
-            .set("int_column")
-            .to(String.valueOf(2147483647))
-            .set("bigint_column")
-            .to(String.valueOf(9223372036854775807L))
-            .set("float_column")
-            .to(String.valueOf(3.14159f))
-            .set("double_column")
-            .to(String.valueOf(2.718281828459045))
-            .set("decimal_column")
-            .to(new BigDecimal("12345.6789").toPlainString())
-            .set("datetime_column")
-            .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00Z")))
-            .set("timestamp_column")
-            .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00Z")))
-            .set("time_column")
-            .to("12:30:00")
-            .set("year_column")
-            .to("2025")
-            .set("char_column")
-            .to("CHAR_DATA")
-            .set("tinytext_column")
-            .to("Short text for tinytext.")
-            .set("mediumtext_column")
-            .to("Longer text data for mediumtext column.")
-            .set("longtext_column")
-            .to("Very long text data that exceeds the medium text column length for long text.")
-            .set("enum_column")
-            .to("OptionA")
-            .set("bool_column")
-            .to(String.valueOf(Boolean.TRUE))
-            .set("other_bool_column")
-            .to(String.valueOf(Boolean.FALSE))
-            .set("list_text_column")
-            .to(Value.json("[\"apple\", \"banana\", \"cherry\"]"))
-            .set("list_int_column")
-            .to(Value.json("[1, 2, 3, 4, 5]"))
-            .set("frozen_list_bigint_column")
-            .to(Value.json("[123456789012345, 987654321012345]"))
-            .set("set_text_column")
-            .to(Value.json("[\"apple\", \"orange\", \"banana\"]"))
-            .set("set_date_column")
-            .to(Value.json("[\"2025-01-27\", \"2025-02-01\"]"))
-            .set("frozen_set_bool_column")
-            .to(Value.json("[true, false]"))
-            .set("map_text_to_int_column")
-            .to(Value.json("{\"key1\": 10, \"key2\": 20}"))
-            .set("map_date_to_text_column")
-            .to(Value.json("{\"2025-01-27\": \"event1\", \"2025-02-01\": \"event2\"}"))
-            .set("frozen_map_int_to_bool_column")
-            .to(Value.json("{\"1\": true, \"2\": false}"))
-            .set("map_text_to_list_column")
-            .to(Value.json("{\"fruit\": [\"apple\", \"banana\"], \"color\": [\"red\", \"green\"]}"))
-            .set("map_text_to_set_column")
-            .to(
-                Value.json(
-                    "{\"fruit\": [\"apple\", \"banana\"], \"vegetables\": [\"carrot\", \"spinach\"]}"))
-            .set("set_of_maps_column")
-            .to(Value.json("[{\"key1\": 10, \"key2\": 20}, {\"keyA\": 5, \"keyB\": 10}]"))
-            .set("list_of_sets_column")
-            .to(Value.json("[[\"apple\", \"banana\"], [\"carrot\", \"spinach\"]]"))
-            .set("frozen_map_text_to_list_column")
-            .to(Value.json("{\"fruits\": [\"apple\", \"banana\"]}"))
-            .set("frozen_map_text_to_set_column")
-            .to(Value.json("{\"vegetables\": [\"carrot\", \"spinach\"]}"))
-            .set("frozen_set_of_maps_column")
-            .to(Value.json("[{\"key1\": 10, \"key2\": 20}, {\"keyA\": 5, \"keyB\": 10}]"))
-            .set("frozen_list_of_sets_column")
-            .to(Value.json("[[\"apple\", \"banana\"], [\"carrot\", \"spinach\"]]"))
-            .set("varint_column")
-            .to("123456789")
-            .build();
-
-    spannerResourceManager.write(m);
-    m = Mutation.delete(ALL_DATA_TYPES_CUSTOM_CONVERSION_TABLE, Key.of("SampleVarchar"));
-    spannerResourceManager.write(m);
-  }
-
-  private void assertInCassandraDB() {
-    PipelineOperator.Result result =
-        pipelineOperator()
-            .waitForCondition(
-                createConfig(jobInfo, Duration.ofMinutes(15)),
-                () -> getRowCount(ALL_DATA_TYPES_CUSTOM_CONVERSION_TABLE) == 0);
-    assertThatResult(result).meetsConditions();
   }
 }

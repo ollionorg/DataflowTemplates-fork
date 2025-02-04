@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS alldatatypetransformation (
     frozen_map_text_to_set_column JSON,
     frozen_set_of_maps_column JSON,
     frozen_list_of_sets_column JSON,
-    varint_column BYTES(MAX)
+    varint_column STRING(MAX)
 ) PRIMARY KEY(varchar_column);
 
 CREATE TABLE IF NOT EXISTS alldatatypecolumns (
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS alldatatypecolumns (
     frozen_map_text_to_set_column JSON,
     frozen_set_of_maps_column JSON,
     frozen_list_of_sets_column JSON,
-    varint_column BYTES(MAX),
+    varint_column STRING(MAX),
     inet_column STRING(MAX)
 ) PRIMARY KEY(varchar_column);
 

@@ -342,7 +342,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("frozen_list_of_sets_column")
             .to(Value.json("[[\"apple\", \"banana\"], [\"carrot\", \"spinach\"]]"))
             .set("varint_column")
-            .to(Value.bytes(ByteArray.copyFrom("b3f5ed4f".getBytes())))
+            .to("123456789")
             .set("inet_column")
             .to("192.168.1.10")
             .build();
@@ -508,7 +508,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(java.time.Instant.parse("2025-01-27T10:30:00.000Z")),
         () ->
             assertThat(row.getBigInteger("varint_column"))
-                .isEqualTo(java.math.BigInteger.valueOf(7076111819049546854L)));
+                .isEqualTo(java.math.BigInteger.valueOf(123456789L)));
   }
 
   private void writeCustomRowsInSpanner() {
@@ -598,7 +598,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("frozen_list_of_sets_column")
             .to(Value.json("[[\"apple\", \"banana\"], [\"carrot\", \"spinach\"]]"))
             .set("varint_column")
-            .to(Value.bytes(ByteArray.copyFrom("b3f5ed4f".getBytes())))
+            .to("123456789")
             .build();
 
     spannerResourceManager.write(m);
@@ -688,7 +688,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("frozen_list_of_sets_column")
             .to(Value.json("[[\"apple\", \"banana\"], [\"carrot\", \"spinach\"]]"))
             .set("varint_column")
-            .to(Value.bytes(ByteArray.copyFrom("b3f5ed4f".getBytes())))
+            .to("123456789")
             .build();
 
     spannerResourceManager.write(m);
@@ -714,7 +714,6 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
 
     assertThat(rows).hasSize(1);
     Row row = rows.iterator().next();
-    assertThat(rows).hasSize(1);
 
     assertAll(
         () -> assertThat(row.getString("varchar_column")).isEqualTo("SampleVarchar"),
@@ -737,7 +736,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     PipelineOperator.Result result1 =
         pipelineOperator()
             .waitForCondition(
-                createConfig(jobInfo, Duration.ofMinutes(25)),
+                createConfig(jobInfo, Duration.ofMinutes(20)),
                 () -> getRowCount(ALL_DATA_TYPES_CUSTOM_CONVERSION_TABLE) == 0);
     assertThatResult(result1).meetsConditions();
   }

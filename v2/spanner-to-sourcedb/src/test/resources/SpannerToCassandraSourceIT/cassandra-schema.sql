@@ -27,7 +27,6 @@ CREATE TABLE AllDatatypeTransformation (
     enum_column text,
     bool_column boolean,
     other_bool_column boolean,
-    bytes_column BLOB,
     list_text_column list<text>,
     list_int_column list<int>,
     frozen_list_bigint_column frozen<list<bigint>>,
@@ -89,6 +88,6 @@ CREATE TABLE AllDatatypeColumns (
     frozen_map_text_to_set_column map<text, frozen<set<text>>>,
     frozen_set_of_maps_column set<frozen<map<text, int>>>,
     frozen_list_of_sets_column list<frozen<set<text>>>,
-    varint_column varint
+    varint_column varint,
     inet_column INET
 );

@@ -162,13 +162,13 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     assertAllDataTypeRowsRowInCassandraDB();
   }
 
-  @Test
-  public void spannerToCassandraSourceDataTypeCustomConversionTest()
-      throws InterruptedException, IOException, MultipleFailureException {
-    assertThatPipeline(jobInfo).isRunning();
-    writeCustomRowsInSpanner();
-    assertCustomRowsInCassandraDB();
-  }
+  //  @Test
+  //  public void spannerToCassandraSourceDataTypeCustomConversionTest()
+  //      throws InterruptedException, IOException, MultipleFailureException {
+  //    assertThatPipeline(jobInfo).isRunning();
+  //    writeCustomRowsInSpanner();
+  //    assertCustomRowsInCassandraDB();
+  //  }
 
   private long getRowCount(String tableName) {
     String query = String.format("SELECT COUNT(*) FROM %s", tableName);

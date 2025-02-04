@@ -32,7 +32,6 @@ CREATE TABLE IF NOT EXISTS alldatatypetransformation (
     enum_column STRING(MAX),
     bool_column STRING(MAX),
     other_bool_column STRING(MAX),
-    bytes_column BYTES(MAX),
     list_text_column JSON,
     list_int_column JSON,
     frozen_list_bigint_column JSON,
@@ -50,7 +49,7 @@ CREATE TABLE IF NOT EXISTS alldatatypetransformation (
     frozen_map_text_to_set_column JSON,
     frozen_set_of_maps_column JSON,
     frozen_list_of_sets_column JSON,
-    varint_column BYTES(MAX)
+    varint_column STRING(MAX)
 ) PRIMARY KEY(varchar_column);
 
 CREATE TABLE IF NOT EXISTS alldatatypecolumns (
@@ -94,7 +93,7 @@ CREATE TABLE IF NOT EXISTS alldatatypecolumns (
     frozen_map_text_to_set_column JSON,
     frozen_set_of_maps_column JSON,
     frozen_list_of_sets_column JSON,
-    varint_column BYTES(MAX),
+    varint_column STRING(MAX),
     inet_column STRING(MAX)
 ) PRIMARY KEY(varchar_column);
 

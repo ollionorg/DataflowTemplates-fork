@@ -177,7 +177,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
       throws InterruptedException, IOException, MultipleFailureException {
     assertThatPipeline(jobInfo).isRunning();
     writeAllDataTypeRowsInSpanner();
-    assertAllDataTypeRowsRowInCassandraDB();
+    assertAllDataTypeRowsInCassandraDB();
   }
 
   /**
@@ -194,10 +194,20 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
   public void spannerToCassandraSourceDataTypeStringConversionTest()
       throws InterruptedException, IOException, MultipleFailureException {
     assertThatPipeline(jobInfo).isRunning();
-    writeStringRowsInSpanner();
+    writeAllRowsAsStringInSpanner();
     assertStringToActualRowsInCassandraDB();
   }
 
+  /**
+   * Retrieves the total row count of a specified table in Cassandra.
+   *
+   * <p>This method executes a `SELECT COUNT(*)` query on the given table and returns the number of
+   * rows present in it.
+   *
+   * @param tableName the name of the table whose row count is to be retrieved.
+   * @return the total number of rows in the specified table.
+   * @throws RuntimeException if the query does not return a result.
+   */
   private long getRowCount(String tableName) {
     String query = String.format("SELECT COUNT(*) FROM %s", tableName);
     ResultSet resultSet = cassandraResourceManager.executeStatement(query);
@@ -209,6 +219,21 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     }
   }
 
+  /**
+   * Writes basic rows to multiple tables in Google Cloud Spanner.
+   *
+   * <p>This method performs the following operations:
+   *
+   * <ul>
+   *   <li>Inserts or updates a row in the "users" table with an ID of 1.
+   *   <li>Inserts or updates a row in the "users2" table with an ID of 2.
+   *   <li>Executes a transactionally buffered insert/update operation in the "users" table with an
+   *       ID of 3, using a transaction tag for tracking.
+   * </ul>
+   *
+   * The transaction uses a Spanner client with a specific transaction tag
+   * ("txBy=forwardMigration").
+   */
   private void writeBasicRowInSpanner() {
     Mutation m1 =
         Mutation.newInsertOrUpdateBuilder("users")
@@ -260,6 +285,24 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 });
   }
 
+  /**
+   * Asserts that a basic row exists in the Cassandra database.
+   *
+   * <p>This method performs the following steps:
+   *
+   * <ul>
+   *   <li>Waits for the condition that ensures one row exists in the Cassandra table {@code
+   *       USER_TABLE}.
+   *   <li>Retrieves and logs rows from the Cassandra table.
+   *   <li>Checks if exactly one row is present in the table.
+   *   <li>Verifies that the row contains expected values for columns: {@code id}, {@code
+   *       full_name}, and {@code from}.
+   * </ul>
+   *
+   * @throws InterruptedException if the thread is interrupted while waiting for the row count
+   *     condition.
+   * @throws RuntimeException if reading from the Cassandra table fails.
+   */
   private void assertBasicRowInCassandraDB() throws InterruptedException {
     PipelineOperator.Result result =
         pipelineOperator()
@@ -284,6 +327,62 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     assertThat(row.getString("from")).isEqualTo("B");
   }
 
+  /**
+   * Writes a row containing all supported data types into the Spanner database.
+   *
+   * <p>This method creates and inserts a row into the {@code ALL_DATA_TYPES_TABLE} with various
+   * data types, including text, numerical, date/time, boolean, byte arrays, lists, sets, and maps.
+   * The values are set explicitly to ensure compatibility with Spanner's schema.
+   *
+   * <p>The following data types are included:
+   *
+   * <ul>
+   *   <li>{@code varchar_column} - String
+   *   <li>{@code tinyint_column} - Integer
+   *   <li>{@code text_column} - String
+   *   <li>{@code date_column} - Date
+   *   <li>{@code smallint_column} - Integer
+   *   <li>{@code mediumint_column} - Integer
+   *   <li>{@code int_column} - Integer
+   *   <li>{@code bigint_column} - Long
+   *   <li>{@code float_column} - Float
+   *   <li>{@code double_column} - Double
+   *   <li>{@code decimal_column} - BigDecimal
+   *   <li>{@code datetime_column} - Timestamp
+   *   <li>{@code timestamp_column} - Timestamp
+   *   <li>{@code time_column} - String
+   *   <li>{@code year_column} - String
+   *   <li>{@code char_column} - String
+   *   <li>{@code tinytext_column} - String
+   *   <li>{@code mediumtext_column} - String
+   *   <li>{@code longtext_column} - String
+   *   <li>{@code enum_column} - String
+   *   <li>{@code bool_column} - Boolean
+   *   <li>{@code other_bool_column} - Boolean
+   *   <li>{@code bytes_column} - ByteArray
+   *   <li>{@code list_text_column} - JSON List of Strings
+   *   <li>{@code list_int_column} - JSON List of Integers
+   *   <li>{@code frozen_list_bigint_column} - JSON List of Big Integers
+   *   <li>{@code set_text_column} - JSON Set of Strings
+   *   <li>{@code set_date_column} - JSON Set of Dates
+   *   <li>{@code frozen_set_bool_column} - JSON Set of Booleans
+   *   <li>{@code map_text_to_int_column} - JSON Map of Strings to Integers
+   *   <li>{@code map_date_to_text_column} - JSON Map of Dates to Strings
+   *   <li>{@code frozen_map_int_to_bool_column} - JSON Map of Integers to Booleans
+   *   <li>{@code map_text_to_list_column} - JSON Map of Strings to Lists
+   *   <li>{@code map_text_to_set_column} - JSON Map of Strings to Sets
+   *   <li>{@code set_of_maps_column} - JSON Set of Maps
+   *   <li>{@code list_of_sets_column} - JSON List of Sets
+   *   <li>{@code frozen_map_text_to_list_column} - JSON Map of Strings to Lists
+   *   <li>{@code frozen_map_text_to_set_column} - JSON Map of Strings to Sets
+   *   <li>{@code frozen_set_of_maps_column} - JSON Set of Maps
+   *   <li>{@code frozen_list_of_sets_column} - JSON List of Sets
+   *   <li>{@code varint_column} - String (Varint Representation)
+   *   <li>{@code inet_column} - String (IP Address Representation)
+   * </ul>
+   *
+   * @throws RuntimeException if writing to Spanner fails.
+   */
   private void writeAllDataTypeRowsInSpanner() {
     Mutation mutation =
         Mutation.newInsertOrUpdateBuilder(ALL_DATA_TYPES_TABLE)
@@ -378,6 +477,26 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     spannerResourceManager.write(mutation);
   }
 
+  /**
+   * Executes multiple assertions and collects all assertion failures.
+   *
+   * <p>This method takes a variable number of {@link Runnable} assertions and executes them
+   * sequentially. If any assertions fail, their errors are collected, and a {@link
+   * MultipleFailureException} is thrown containing all assertion errors.
+   *
+   * <p>Usage Example:
+   *
+   * <pre>
+   * assertAll(
+   *     () -> assertEquals(expectedValue, actualValue),
+   *     () -> assertNotNull(someObject),
+   *     () -> assertTrue(condition)
+   * );
+   * </pre>
+   *
+   * @param assertions One or more assertions provided as {@link Runnable} lambdas.
+   * @throws MultipleFailureException if one or more assertions fail.
+   */
   private void assertAll(Runnable... assertions) throws MultipleFailureException {
     for (Runnable assertion : assertions) {
       try {
@@ -391,7 +510,35 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     }
   }
 
-  private void assertAllDataTypeRowsRowInCassandraDB()
+  /**
+   * Validates that all data type rows inserted in Spanner have been correctly migrated and stored
+   * in Cassandra.
+   *
+   * <p>This method ensures that the data in the Cassandra table {@code ALL_DATA_TYPES_TABLE}
+   * matches the expected values after migration. It waits for the pipeline to process the data,
+   * reads the data from Cassandra, and asserts all column values.
+   *
+   * <p><b>Assertions:</b>
+   *
+   * <ul>
+   *   <li>Basic Data Types - Ensures correct values for varchar, bigint, bool, char, date,
+   *       datetime, decimal, double, float.
+   *   <li>Collections - Validates frozen lists, sets, and maps including nested structures.
+   *   <li>Lists and Sets - Ensures list and set columns contain expected elements.
+   *   <li>Maps - Validates various map column structures including text-to-int, date-to-text, and
+   *       list/set mappings.
+   * </ul>
+   *
+   * <p>Example Usage:
+   *
+   * <pre>
+   * assertAllDataTypeRowsInCassandraDB();
+   * </pre>
+   *
+   * @throws InterruptedException if the thread is interrupted while waiting for pipeline execution.
+   * @throws MultipleFailureException if multiple assertion failures occur.
+   */
+  private void assertAllDataTypeRowsInCassandraDB()
       throws InterruptedException, MultipleFailureException {
     PipelineOperator.Result result =
         pipelineOperator()
@@ -539,7 +686,23 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(java.math.BigInteger.valueOf(123456789L)));
   }
 
-  private void writeStringRowsInSpanner() {
+  /**
+   * Inserts multiple rows into the Spanner table {@code ALL_DATA_TYPES_CUSTOM_CONVERSION_TABLE},
+   * ensuring that all values are stored as strings, regardless of their original data type.
+   *
+   * <p>This method writes sample data to the Spanner table, converting all numerical, boolean, and
+   * date/time values to their string representations. This ensures compatibility for scenarios
+   * requiring string-based storage.
+   *
+   * <p><b>Columns and Data Mapping:</b>
+   *
+   * <ul>
+   *   <li><b>Basic Types:</b> Strings, numbers (converted to strings), booleans.
+   *   <li><b>Complex Types:</b> JSON representations for lists, sets, and maps.
+   *   <li><b>Temporal Types:</b> Date, datetime, timestamp values stored as strings.
+   * </ul>
+   */
+  private void writeAllRowsAsStringInSpanner() {
     Mutation m;
     m =
         Mutation.newInsertOrUpdateBuilder(ALL_DATA_TYPES_CUSTOM_CONVERSION_TABLE)
@@ -718,6 +881,28 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     spannerResourceManager.write(m);
   }
 
+  /**
+   * Validates that string-based data stored in Spanner is correctly converted to its actual data
+   * types when retrieved from Cassandra.
+   *
+   * <p>This method ensures that values stored as strings in Spanner are properly transformed into
+   * their expected data types in Cassandra. It performs the following:
+   *
+   * <ul>
+   *   <li>Waits for the migration process to complete.
+   *   <li>Reads and verifies that two rows are present in Cassandra.
+   *   <li>Checks specific column values to confirm correct data type conversion.
+   * </ul>
+   *
+   * <p><b>Assertions Performed:</b>
+   *
+   * <ul>
+   *   <li>Verifies that {@code varchar_column} retains its expected string value.
+   *   <li>Confirms that {@code tinyint_column} is correctly converted to a {@code byte}.
+   * </ul>
+   *
+   * @throws MultipleFailureException if multiple assertions fail during validation.
+   */
   private void assertStringToActualRowsInCassandraDB() throws MultipleFailureException {
     PipelineOperator.Result result =
         pipelineOperator()

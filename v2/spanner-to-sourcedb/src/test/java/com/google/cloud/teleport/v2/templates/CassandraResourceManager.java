@@ -33,7 +33,6 @@ import org.apache.beam.it.common.utils.ExceptionUtils;
 import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.testcontainers.TestContainerResourceManager;
 import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.annotations.VisibleForTesting;
-import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.collect.ImmutableList;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,19 +173,6 @@ public class CassandraResourceManager extends TestContainerResourceManager<Gener
     } catch (Exception e) {
       throw new IllegalArgumentException("Error reading collection.", e);
     }
-  }
-
-  /**
-   * Inserts the given Document into a table.
-   *
-   * <p>A database will be created here, if one does not already exist.
-   *
-   * @param tableName The name of the table to insert the document into.
-   * @param document The document to insert into the table.
-   * @return A boolean indicating whether the Document was inserted successfully.
-   */
-  public synchronized boolean insertDocument(String tableName, Map<String, Object> document) {
-    return insertDocuments(tableName, ImmutableList.of(document));
   }
 
   /**

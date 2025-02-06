@@ -85,7 +85,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     Integer numRecords = 300000; // 100 300000
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-            .setQPS("1000") // 10
+            .setQPS("100000") // 10
             .setMessagesLimit(String.valueOf(numRecords)) //  100
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())

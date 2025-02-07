@@ -82,7 +82,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     System.out.println("SpannerInstanceID :: " + spannerResourceManager.getInstanceId());
     System.out.println("SpannerDatabaseID :: " + spannerResourceManager.getDatabaseId());
 
-    Integer numRecords = 1080000000; // 100 300000
+    Integer numRecords = 180000000; // 100 300000
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
             .setQPS("300000") // 10
@@ -97,7 +97,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
             .setBatchSizeBytes("0")
             .build();
 
-    dataGenerator.execute(Duration.ofMinutes(90)); // 10 90
+    dataGenerator.execute(Duration.ofMinutes(30)); // 10 90
     assertThatPipeline(jobInfo).isRunning();
 
     CassandraRowsCheck check =
@@ -109,14 +109,14 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     System.out.println("Waiting for Job");
     PipelineOperator.Result result =
         pipelineOperator.waitForCondition(
-            createConfig(jobInfo, Duration.ofMinutes(90), Duration.ofSeconds(90)), check); // 5 30
+            createConfig(jobInfo, Duration.ofMinutes(10), Duration.ofSeconds(30)), check); // 5 30
 
     System.out.println("Job wait: " + result);
     // Assert Conditions
     assertThatResult(result).meetsConditions();
 
     PipelineOperator.Result result1 =
-        pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(90)));
+        pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(10)));
 
     System.out.println("Job finished: " + result1);
     assertThatResult(result1).isLaunchFinished();

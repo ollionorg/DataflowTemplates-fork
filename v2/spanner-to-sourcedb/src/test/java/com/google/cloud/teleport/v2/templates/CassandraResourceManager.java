@@ -151,7 +151,9 @@ public class CassandraResourceManager extends TestContainerResourceManager<Gener
           .get(
               () ->
                   cassandraClient.execute(
-                      SimpleStatement.newInstance(statement).setKeyspace(this.keyspaceName).setTimeout(Duration.ofSeconds(30))));
+                      SimpleStatement.newInstance(statement)
+                          .setKeyspace(this.keyspaceName)
+                          .setTimeout(Duration.ofSeconds(30))));
     } catch (Exception e) {
       throw new IllegalArgumentException("Error reading collection.", e);
     }

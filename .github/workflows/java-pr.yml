@@ -175,7 +175,7 @@ jobs:
     name: Dataflow Templates Load Tests
     needs: [spotless_check, checkstyle_check, java_build]
     # needs: [spotless_check, checkstyle_check]
-    timeout-minutes: 600
+    timeout-minutes: 1200
     # Run on any runner that matches all the specified runs-on values.
     runs-on: [self-hosted, it]
     steps:

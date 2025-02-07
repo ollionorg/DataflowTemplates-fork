@@ -656,7 +656,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(java.time.LocalTime.parse("12:30:00.000000000")),
         () ->
             assertThat(row.getInstant("timestamp_column"))
-                .isEqualTo(java.time.Instant.parse("2025-01-27T10:30:00.000Z")),
+                .isEqualTo(java.time.Instant.parse("2025-01-27T10:30:00.123456Z")),
         () ->
             assertThat(row.getBigInteger("varint_column"))
                 .isEqualTo(java.math.BigInteger.valueOf(123456789L)),
@@ -710,7 +710,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("datetime_column")
             .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00Z")))
             .set("timestamp_column")
-            .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00Z")))
+            .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00.123456Z")))
             .set("time_column")
             .to("12:30:00")
             .set("year_column")
@@ -798,7 +798,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("datetime_column")
             .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00Z")))
             .set("timestamp_column")
-            .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00Z")))
+            .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00.123456Z")))
             .set("time_column")
             .to("12:30:00")
             .set("year_column")
@@ -886,7 +886,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("datetime_column")
             .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00Z")))
             .set("timestamp_column")
-            .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00Z")))
+            .to(String.valueOf(Timestamp.parseTimestamp("2025-01-27T10:30:00.123456Z")))
             .set("time_column")
             .to("12:30:00")
             .set("year_column")

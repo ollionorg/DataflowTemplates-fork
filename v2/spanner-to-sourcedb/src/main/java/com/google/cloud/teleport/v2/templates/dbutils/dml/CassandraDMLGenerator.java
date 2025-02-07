@@ -109,10 +109,7 @@ public class CassandraDMLGenerator implements IDMLGenerator {
           sourceTable.getName());
       return new DMLGeneratorResponse("");
     }
-    LOG.info("Schema :: {}", schema);
-    LOG.info("dmlGeneratorRequest.getNewValuesJson :: {}", dmlGeneratorRequest.getNewValuesJson());
-    LOG.info(
-        "dmlGeneratorRequest.getKeyValuesJson() :: {}", dmlGeneratorRequest.getKeyValuesJson());
+
     Map<String, PreparedStatementValueObject<?>> pkColumnNameValues =
         getPkColumnValues(
             spannerTable,

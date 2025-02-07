@@ -91,8 +91,8 @@ A few prerequisites must be considered before starting with reverse replication.
 7. Ensure that the target Spanner instance is ready.
 8. Ensure that that [session file](https://googlecloudplatform.github.io/spanner-migration-tool/reports.html#session-file-ending-in-sessionjson) is uploaded to GCS (this requires a schema conversion to be done).
 9. Configuration Files Upload
-    - **For MySQL:** 
-      [Source shards file](./RunnigReverseReplication.md#sample-source-shards-file-for-MySQL) already uploaded to GCS. 
+    - **For MySQL:**
+      [Source shards file](./RunnigReverseReplication.md#sample-source-shards-file-for-MySQL) already uploaded to GCS.
     - **For Cassandra:**
       [Source file](./RunnigReverseReplication.md#Sample-source-File-for-Cassandra) already uploaded to GCS.
 10. Resources needed for reverse replication incur cost. Make sure to read [cost](#cost).

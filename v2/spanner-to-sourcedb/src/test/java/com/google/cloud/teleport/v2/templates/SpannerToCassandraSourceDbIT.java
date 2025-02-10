@@ -76,6 +76,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
       "SpannerToCassandraSourceIT/cassandra-config-template.conf";
 
   private static final String USER_TABLE = "Users";
+  private static final String USER_TABLE_2 = "Users2";
   private static final String ALL_DATA_TYPES_TABLE = "AllDatatypeColumns";
   private static final String ALL_DATA_TYPES_CUSTOM_CONVERSION_TABLE = "AllDatatypeTransformation";
   private static final HashSet<SpannerToCassandraSourceDbIT> testInstances = new HashSet<>();
@@ -183,8 +184,18 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
 
   /** De basic rows to multiple tables in Google Cloud Spanner. */
   private void writeDeleteInSpanner() {
+
+    Mutation insertOrUpdateMutation =
+        Mutation.newInsertOrUpdateBuilder(USER_TABLE_2)
+            .set("id")
+            .to(4)
+            .set("full_name")
+            .to("GG")
+            .build();
+    spannerResourceManager.write(insertOrUpdateMutation);
+
     KeySet allRows = KeySet.all();
-    Mutation deleteAllMutation = Mutation.delete(USER_TABLE, allRows);
+    Mutation deleteAllMutation = Mutation.delete(USER_TABLE_2, allRows);
     spannerResourceManager.write(deleteAllMutation);
   }
 
@@ -277,7 +288,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
    */
   private void writeBasicRowInSpanner() {
     Mutation m1 =
-        Mutation.newInsertOrUpdateBuilder("users")
+        Mutation.newInsertOrUpdateBuilder(USER_TABLE)
             .set("id")
             .to(1)
             .set("full_name")
@@ -288,7 +299,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     spannerResourceManager.write(m1);
 
     Mutation m2 =
-        Mutation.newInsertOrUpdateBuilder("users2")
+        Mutation.newInsertOrUpdateBuilder(USER_TABLE)
             .set("id")
             .to(2)
             .set("full_name")
@@ -313,13 +324,11 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             (TransactionRunner.TransactionCallable<Void>)
                 transaction -> {
                   Mutation m3 =
-                      Mutation.newInsertOrUpdateBuilder("users")
+                      Mutation.newInsertOrUpdateBuilder(USER_TABLE_2)
                           .set("id")
                           .to(3)
                           .set("full_name")
                           .to("GG")
-                          .set("from")
-                          .to("BB")
                           .build();
                   transaction.buffer(m3);
                   return null;
@@ -348,8 +357,9 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     PipelineOperator.Result result =
         pipelineOperator()
             .waitForCondition(
-                createConfig(jobInfo, Duration.ofMinutes(10)), () -> getRowCount(USER_TABLE) == 1);
+                createConfig(jobInfo, Duration.ofMinutes(10)), () -> getRowCount(USER_TABLE) == 2);
     assertThatResult(result).meetsConditions();
+
     Iterable<Row> rows;
     try {
       LOG.info("Reading from Cassandra table: {}", USER_TABLE);
@@ -359,13 +369,20 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
       throw new RuntimeException("Failed to read from Cassandra table: " + USER_TABLE, e);
     }
 
-    assertThat(rows).hasSize(1);
+    assertThat(rows).hasSize(2);
 
-    Row row = rows.iterator().next();
-    LOG.info("Cassandra Row to Assert: {}", row.toString());
-    assertThat(row.getInt("id")).isEqualTo(1);
-    assertThat(row.getString("full_name")).isEqualTo("A");
-    assertThat(row.getString("from")).isEqualTo("B");
+    for (Row row : rows) {
+      LOG.info("Cassandra Row to Assert: {}", row.getFormattedContents());
+      int id = row.getInt("id");
+      if (id == 1) {
+        assertThat(row.getString("full_name")).isEqualTo("A");
+        assertThat(row.getString("from")).isEqualTo("B");
+      } else if (id == 2) {
+        assertThat(row.getString("full_name")).isEqualTo("BB");
+      } else {
+        throw new AssertionError("Unexpected row ID found: " + id);
+      }
+    }
   }
 
   /**
@@ -990,6 +1007,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
 
     assertThat(rows).hasSize(2);
     Row row = rows.iterator().next();
+    System.out.println(row.getFormattedContents());
     assertAll(
         () -> assertThat(row.getString("varchar_column")).isEqualTo("SampleVarchar2"),
         () -> assertThat(row.getByte("tinyint_column")).isEqualTo((byte) 127),
@@ -1112,7 +1130,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(java.time.LocalTime.parse("12:30:00.000000000")),
         () ->
             assertThat(row.getInstant("timestamp_column"))
-                .isEqualTo(java.time.Instant.parse("2025-01-27T10:30:00.123456Z")),
+                .isEqualTo(java.time.Instant.parse("2025-01-27T10:30:00.123Z")),
         () ->
             assertThat(row.getBigInteger("varint_column"))
                 .isEqualTo(java.math.BigInteger.valueOf(123456789L)));

@@ -191,8 +191,6 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .to(4)
             .set("full_name")
             .to("GG")
-            .set("from")
-            .to("BB")
             .build();
     spannerResourceManager.write(insertOrUpdateMutation);
 
@@ -331,8 +329,6 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                           .to(3)
                           .set("full_name")
                           .to("GG")
-                          .set("from")
-                          .to("BB")
                           .build();
                   transaction.buffer(m3);
                   return null;
@@ -1003,6 +999,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
 
     assertThat(rows).hasSize(2);
     Row row = rows.iterator().next();
+    System.out.println(row.getFormattedContents());
     assertAll(
         () -> assertThat(row.getString("varchar_column")).isEqualTo("SampleVarchar2"),
         () -> assertThat(row.getByte("tinyint_column")).isEqualTo((byte) 127),

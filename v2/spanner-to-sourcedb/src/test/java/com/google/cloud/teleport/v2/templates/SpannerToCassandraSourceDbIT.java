@@ -1007,7 +1007,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
 
     assertThat(rows).hasSize(2);
     Row row = rows.iterator().next();
-    System.out.println(row.getFormattedContents());
+    LOG.info("[AssertStringToActualRowsInCassandraDB] row: {}", row.getFormattedContents());
     assertAll(
         () -> assertThat(row.getString("varchar_column")).isEqualTo("SampleVarchar2"),
         () -> assertThat(row.getByte("tinyint_column")).isEqualTo((byte) 127),

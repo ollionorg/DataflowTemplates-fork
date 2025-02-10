@@ -359,6 +359,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .waitForCondition(
                 createConfig(jobInfo, Duration.ofMinutes(10)), () -> getRowCount(USER_TABLE) == 2);
     assertThatResult(result).meetsConditions();
+
     Iterable<Row> rows;
     try {
       LOG.info("Reading from Cassandra table: {}", USER_TABLE);
@@ -368,13 +369,20 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
       throw new RuntimeException("Failed to read from Cassandra table: " + USER_TABLE, e);
     }
 
-    assertThat(rows).hasSize(1);
+    assertThat(rows).hasSize(2);
 
-    Row row = rows.iterator().next();
-    LOG.info("Cassandra Row to Assert: {}", row.toString());
-    assertThat(row.getInt("id")).isEqualTo(1);
-    assertThat(row.getString("full_name")).isEqualTo("A");
-    assertThat(row.getString("from")).isEqualTo("B");
+    for (Row row : rows) {
+      LOG.info("Cassandra Row to Assert: {}", row.getFormattedContents());
+      int id = row.getInt("id");
+      if (id == 1) {
+        assertThat(row.getString("full_name")).isEqualTo("A");
+        assertThat(row.getString("from")).isEqualTo("B");
+      } else if (id == 2) {
+        assertThat(row.getString("full_name")).isEqualTo("BB");
+      } else {
+        throw new AssertionError("Unexpected row ID found: " + id);
+      }
+    }
   }
 
   /**
@@ -1122,7 +1130,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(java.time.LocalTime.parse("12:30:00.000000000")),
         () ->
             assertThat(row.getInstant("timestamp_column"))
-                .isEqualTo(java.time.Instant.parse("2025-01-27T10:30:00.123456Z")),
+                .isEqualTo(java.time.Instant.parse("2025-01-27T10:30:00.123Z")),
         () ->
             assertThat(row.getBigInteger("varint_column"))
                 .isEqualTo(java.math.BigInteger.valueOf(123456789L)));

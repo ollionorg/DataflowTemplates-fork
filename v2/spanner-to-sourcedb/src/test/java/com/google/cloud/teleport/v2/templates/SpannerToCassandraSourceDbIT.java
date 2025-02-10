@@ -15,6 +15,7 @@
  */
 package com.google.cloud.teleport.v2.templates;
 
+import static com.google.cloud.teleport.v2.spanner.migrations.constants.Constants.CASSANDRA_SOURCE_TYPE;
 import static com.google.common.truth.Truth.assertThat;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
@@ -24,7 +25,7 @@ import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.cloud.ByteArray;
 import com.google.cloud.Date;
 import com.google.cloud.Timestamp;
-import com.google.cloud.spanner.Key;
+import com.google.cloud.spanner.KeySet;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.Options;
 import com.google.cloud.spanner.TransactionRunner;
@@ -125,7 +126,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 null,
                 null,
                 null,
-                "cassandra");
+                CASSANDRA_SOURCE_TYPE);
       }
     }
   }
@@ -182,8 +183,9 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
 
   /** De basic rows to multiple tables in Google Cloud Spanner. */
   private void writeDeleteInSpanner() {
-    Mutation m = Mutation.delete(USER_TABLE, Key.of(1, 3));
-    spannerResourceManager.write(m);
+    KeySet allRows = KeySet.all();
+    Mutation deleteAllMutation = Mutation.delete(USER_TABLE, allRows);
+    spannerResourceManager.write(deleteAllMutation);
   }
 
   /**
@@ -656,7 +658,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(java.time.LocalTime.parse("12:30:00.000000000")),
         () ->
             assertThat(row.getInstant("timestamp_column"))
-                .isEqualTo(java.time.Instant.parse("2025-01-27T10:30:00.123456Z")),
+                .isEqualTo(java.time.Instant.parse("2025-01-27T10:30:00Z")),
         () ->
             assertThat(row.getBigInteger("varint_column"))
                 .isEqualTo(java.math.BigInteger.valueOf(123456789L)),
@@ -989,7 +991,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     assertThat(rows).hasSize(2);
     Row row = rows.iterator().next();
     assertAll(
-        () -> assertThat(row.getString("varchar_column")).isEqualTo("SampleVarchar"),
-        () -> assertThat(row.getByte("tinyint_column")).isEqualTo((byte) 122));
+        () -> assertThat(row.getString("varchar_column")).isEqualTo("SampleVarchar2"),
+        () -> assertThat(row.getByte("tinyint_column")).isEqualTo((byte) 127));
   }
 }

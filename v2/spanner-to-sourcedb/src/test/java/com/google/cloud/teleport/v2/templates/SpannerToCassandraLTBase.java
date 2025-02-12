@@ -100,7 +100,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     return CassandraSharedResourceManager.builder(testName)
         .setKeyspaceName(keyspaceName)
         .sePreGeneratedKeyspaceName(true)
-        //        .useStaticContainer()
+        .useStaticContainer()
         .setHost("10.0.0.25")
         .setPort(9042)
         .build();

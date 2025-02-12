@@ -50,8 +50,8 @@ import org.testcontainers.utility.DockerImageName;
  *
  * <p>The class is thread-safe.
  */
-public class CassandraResourceManager extends TestContainerResourceManager<GenericContainer<?>>
-    implements ResourceManager {
+public class CassandraResourceManager
+    extends TestContainerResourceManager<@NotNull GenericContainer<?>> implements ResourceManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(CassandraResourceManager.class);
 
@@ -86,16 +86,11 @@ public class CassandraResourceManager extends TestContainerResourceManager<Gener
     this.usingStaticDatabase = builder.keyspaceName != null;
     this.keyspaceName =
         usingStaticDatabase ? builder.keyspaceName : generateKeyspaceName(builder.testId);
-    System.out.println(
-        "Connecting to Cassandra at "
-            + this.getHost()
-            + ":"
-            + this.getPort(CASSANDRA_INTERNAL_PORT));
     this.cassandraClient =
         cassandraClient == null
             ? CqlSession.builder()
                 .addContactPoint(
-                    new InetSocketAddress("34.100.245.221", this.getPort(CASSANDRA_INTERNAL_PORT)))
+                    new InetSocketAddress(this.getHost(), this.getPort(CASSANDRA_INTERNAL_PORT)))
                 .withLocalDatacenter("datacenter1")
                 .build()
             : cassandraClient;
@@ -106,7 +101,7 @@ public class CassandraResourceManager extends TestContainerResourceManager<Gener
               () ->
                   this.cassandraClient.execute(
                       String.format(
-                          "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy', 'replication_factor':1}",
+                          "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy'}",
                           this.keyspaceName)));
     }
   }
@@ -258,7 +253,7 @@ public class CassandraResourceManager extends TestContainerResourceManager<Gener
 
   /** Builder for {@link CassandraResourceManager}. */
   public static final class Builder
-      extends TestContainerResourceManager.Builder<CassandraResourceManager> {
+      extends TestContainerResourceManager.Builder<@NotNull CassandraResourceManager> {
 
     private @Nullable String keyspaceName;
 

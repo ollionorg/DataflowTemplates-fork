@@ -24,6 +24,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.text.ParseException;
 import java.time.Duration;
+import org.apache.beam.it.cassandra.conditions.CassandraRowsCheck;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.TestProperties;
@@ -97,8 +98,9 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     dataGenerator.execute(Duration.ofMinutes(90));
     assertThatPipeline(jobInfo).isRunning();
 
-    CassandraRowsCheck check =
-        CassandraRowsCheck.builder(cassandraSharedResourceManager, table)
+    CassandraRowsCheck<CassandraResourceManager> check =
+        CassandraRowsCheck.<CassandraResourceManager>builder(table)
+            .setResourceManager(cassandraSharedResourceManager)
             .setMinRows(numRecords)
             .setMaxRows(numRecords)
             .build();

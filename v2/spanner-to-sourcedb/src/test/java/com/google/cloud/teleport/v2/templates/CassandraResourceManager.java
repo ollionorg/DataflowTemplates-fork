@@ -94,8 +94,6 @@ public class CassandraResourceManager
             "datastax-java-driver {\n"
                 + "  basic.request.timeout = 30s\n"
                 + // Query timeout
-                "  basic.session-keyspace = my_keyspace\n"
-                + // Optional keyspace
                 "  advanced.connection.init-query-timeout = 30s\n"
                 + // Connection init timeout
                 "  advanced.connection.connect-timeout = 30s\n"

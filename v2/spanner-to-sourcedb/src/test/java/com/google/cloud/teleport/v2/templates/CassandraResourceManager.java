@@ -141,7 +141,7 @@ public class CassandraResourceManager extends TestContainerResourceManager<Gener
    * @return ResultSet from Cassandra.
    */
   public synchronized ResultSet executeStatement(String statement, long timeouts) {
-    LOG.info("Executing statement with timeout : {}", statement, timeouts);
+    LOG.info("Executing statement with timeout : {} {}", statement, timeouts);
 
     try {
       return Failsafe.with(buildRetryPolicy())

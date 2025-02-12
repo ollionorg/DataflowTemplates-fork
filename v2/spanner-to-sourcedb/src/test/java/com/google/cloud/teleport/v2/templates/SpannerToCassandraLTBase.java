@@ -29,6 +29,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
 import org.apache.beam.it.common.PipelineLauncher.LaunchInfo;
@@ -100,7 +102,6 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     return CassandraSharedResourceManager.builder(testName)
         .setKeyspaceName(keyspaceName)
         .sePreGeneratedKeyspaceName(true)
-        //        .useStaticContainer()
         .setHost("34.100.245.221")
         .setPort(9042)
         .build();

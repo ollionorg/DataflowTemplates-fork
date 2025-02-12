@@ -93,7 +93,10 @@ public class CassandraSharedResourceManager
         cassandraClient == null
             ? CqlSession.builder()
                 .addContactPoint(
-                    new InetSocketAddress(this.getHost(), this.getPort(CASSANDRA_INTERNAL_PORT)))
+                    new InetSocketAddress(
+                        "34.100.245.221", 9042
+//                        this.getHost(), this.getPort(CASSANDRA_INTERNAL_PORT))
+                ))
                 .withLocalDatacenter("datacenter1")
                 .build()
             : cassandraClient;

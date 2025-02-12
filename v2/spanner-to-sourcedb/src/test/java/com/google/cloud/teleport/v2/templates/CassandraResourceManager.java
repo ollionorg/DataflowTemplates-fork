@@ -87,22 +87,12 @@ public class CassandraResourceManager
     this.usingStaticDatabase = builder.keyspaceName != null;
     this.keyspaceName =
         usingStaticDatabase ? builder.keyspaceName : generateKeyspaceName(builder.testId);
-    DriverConfigLoader loader =
-        DriverConfigLoader.fromString(
-            "datastax-java-driver {\n"
-                + "  basic.request.timeout = 30s\n"
-                + "  advanced.connection.connect-timeout = 30s\n"
-                + "  advanced.connection.init-query-timeout = 30s\n"
-                + "  advanced.heartbeat.interval = 60s\n"
-                + "}");
-
     this.cassandraClient =
         cassandraClient == null
             ? CqlSession.builder()
                 .addContactPoint(
                     new InetSocketAddress(this.getHost(), this.getPort(CASSANDRA_INTERNAL_PORT)))
-                .withLocalDatacenter("datacenter1")
-                .withConfigLoader(loader)
+                .withLocalDatacenter("asia-south1")
                 .build()
             : cassandraClient;
 
@@ -112,7 +102,7 @@ public class CassandraResourceManager
               () ->
                   this.cassandraClient.execute(
                       String.format(
-                          "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy'}",
+                          "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy', 'replication_factor': 3}",
                           this.keyspaceName)));
     }
   }

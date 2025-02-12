@@ -109,6 +109,7 @@ public class CassandraResourceManager
                 .addContactPoint(
                     new InetSocketAddress(this.getHost(), this.getPort(CASSANDRA_INTERNAL_PORT)))
                 .withLocalDatacenter("datacenter1")
+                .withConfigLoader(loader)
                 .build()
             : cassandraClient;
 

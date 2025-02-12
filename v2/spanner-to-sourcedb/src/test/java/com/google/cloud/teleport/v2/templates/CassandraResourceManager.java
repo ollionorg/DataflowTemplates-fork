@@ -84,8 +84,8 @@ public class CassandraResourceManager
       @Nullable CqlSession cassandraClient, CassandraContainer<?> container, Builder builder) {
     super(container, builder);
     this.usingStaticDatabase = builder.keyspaceName != null;
-    this.keyspaceName =
-        usingStaticDatabase ? builder.keyspaceName : generateKeyspaceName(builder.testId);
+    this.keyspaceName = "test_keyspace";
+    // usingStaticDatabase ? builder.keyspaceName : generateKeyspaceName(builder.testId);
     this.cassandraClient =
         cassandraClient == null
             ? CqlSession.builder()

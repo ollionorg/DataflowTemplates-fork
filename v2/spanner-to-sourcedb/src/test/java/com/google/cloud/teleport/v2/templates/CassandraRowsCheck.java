@@ -19,6 +19,7 @@ import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.auto.value.AutoValue;
 import javax.annotation.Nullable;
+import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.conditions.ConditionCheck;
 
 @AutoValue
@@ -83,7 +84,7 @@ public abstract class CassandraRowsCheck extends ConditionCheck {
         true, String.format("Expected at least %d rows and found %d", minRows(), totalRows));
   }
 
-  public static Builder builder(CassandraSharedResourceManager resourceManager, String tableName) {
+  public static Builder builder(CassandraResourceManager resourceManager, String tableName) {
     return new AutoValue_CassandraRowsCheck.Builder()
         .setResourceManager(resourceManager)
         .setTableName(tableName);

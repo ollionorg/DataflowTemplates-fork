@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
 import org.apache.beam.it.common.PipelineLauncher.LaunchInfo;
@@ -56,7 +57,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
           "gs://dataflow-templates-spanner-to-cassandra/templates/flex/Spanner_to_SourceDb");
   public SpannerResourceManager spannerResourceManager;
   public SpannerResourceManager spannerMetadataResourceManager;
-  public CassandraSharedResourceManager cassandraSharedResourceManager;
+  public CassandraResourceManager cassandraSharedResourceManager;
   public GcsResourceManager gcsResourceManager;
   private static PubsubResourceManager pubsubResourceManager;
   private SubscriptionName subscriptionName;
@@ -83,7 +84,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
                 .replace("gs://" + artifactBucket, ""));
   }
 
-  public CassandraSharedResourceManager generateKeyspaceAndBuildCassandraResource() {
+  public CassandraResourceManager generateKeyspaceAndBuildCassandraResource() {
     String keyspaceName =
         ResourceManagerUtils.generateResourceId(
                 testName,
@@ -97,12 +98,16 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
     }
 
     System.out.println("Cassandra keyspaceName :: " + keyspaceName);
-    return CassandraSharedResourceManager.builder(testName)
-        .setKeyspaceName(keyspaceName)
-        .sePreGeneratedKeyspaceName(true)
+    return CassandraResourceManager.builder(testName)
         .setHost("34.100.245.221")
         .setPort(9042)
         .build();
+    //    return CassandraSharedResourceManager.builder(testName)
+    //        .setKeyspaceName(keyspaceName)
+    //        .sePreGeneratedKeyspaceName(true)
+    //        .setHost("34.100.245.221")
+    //        .setPort(9042)
+    //        .build();
   }
 
   public void cleanupResourceManagers() {
@@ -168,8 +173,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
   }
 
   public void createAndUploadCassandraConfigToGcs(
-      GcsResourceManager gcsResourceManager,
-      CassandraSharedResourceManager cassandraResourceManagers)
+      GcsResourceManager gcsResourceManager, CassandraResourceManager cassandraResourceManagers)
       throws IOException {
 
     String host = cassandraResourceManagers.getHost();
@@ -204,7 +208,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
   }
 
   public void createCassandraSchema(
-      CassandraSharedResourceManager cassandraResourceManager, String cassandraDdlResourceFile)
+      CassandraResourceManager cassandraResourceManager, String cassandraDdlResourceFile)
       throws IOException {
     String ddl =
         String.join(

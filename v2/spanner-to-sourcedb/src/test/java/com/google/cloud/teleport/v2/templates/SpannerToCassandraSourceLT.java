@@ -82,10 +82,10 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   public void reverseReplicationCassandra1KTpsLoadTest()
       throws IOException, ParseException, InterruptedException {
 
-    Integer numRecords = 300000;
+    Integer numRecords = 18000000;
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-            .setQPS("1000")
+            .setQPS("300000")
             .setMessagesLimit(String.valueOf(numRecords))
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
@@ -94,7 +94,6 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
             .setMaxNumWorkers("100")
             .setSinkType("SPANNER")
             .setProjectId(project)
-            .setBatchSizeBytes("0")
             .build();
 
     dataGenerator.execute(Duration.ofMinutes(90));

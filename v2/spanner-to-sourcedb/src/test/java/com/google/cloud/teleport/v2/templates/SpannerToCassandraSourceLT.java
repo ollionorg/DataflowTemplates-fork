@@ -94,7 +94,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
             .setMaxNumWorkers("100")
             .setSinkType("SPANNER")
             .setProjectId(project)
-//            .setBatchSizeBytes("0")
+            //            .setBatchSizeBytes("0")
             .build();
 
     dataGenerator.execute(Duration.ofMinutes(30)); // 10 90

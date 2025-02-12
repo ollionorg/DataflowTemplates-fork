@@ -25,7 +25,7 @@ import org.apache.beam.it.conditions.ConditionCheck;
 @AutoValue
 public abstract class CassandraRowsCheck extends ConditionCheck {
 
-  abstract CassandraSharedResourceManager resourceManager();
+  abstract CassandraResourceManager resourceManager();
 
   abstract String tableName();
 
@@ -94,7 +94,7 @@ public abstract class CassandraRowsCheck extends ConditionCheck {
   @AutoValue.Builder
   public abstract static class Builder {
 
-    public abstract Builder setResourceManager(CassandraSharedResourceManager resourceManager);
+    public abstract Builder setResourceManager(CassandraResourceManager resourceManager);
 
     public abstract Builder setTableName(String tableName);
 

@@ -17,9 +17,7 @@ package com.google.cloud.teleport.v2.templates;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.DriverTimeoutException;
-import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
-import com.datastax.oss.driver.api.core.config.ProgrammaticDriverConfigLoader;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
@@ -90,11 +88,14 @@ public class CassandraResourceManager
     this.keyspaceName =
         usingStaticDatabase ? builder.keyspaceName : generateKeyspaceName(builder.testId);
     DriverConfigLoader loader =
-        ProgrammaticDriverConfigLoader.builder()
-            .withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(30))
-            .withDuration(DefaultDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, Duration.ofSeconds(30))
-            .withDuration(DefaultDriverOption.CONNECTION_CONNECT_TIMEOUT, Duration.ofSeconds(30))
-            .build();
+        DriverConfigLoader.fromString(
+            "datastax-java-driver {\n"
+                + "  basic.request.timeout = 30s\n"
+                + "  advanced.connection.connect-timeout = 30s\n"
+                + "  advanced.connection.init-query-timeout = 30s\n"
+                + "  advanced.heartbeat.interval = 60s\n"
+                + "}");
+
     this.cassandraClient =
         cassandraClient == null
             ? CqlSession.builder()

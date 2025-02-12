@@ -86,11 +86,16 @@ public class CassandraResourceManager extends TestContainerResourceManager<Gener
     this.usingStaticDatabase = builder.keyspaceName != null;
     this.keyspaceName =
         usingStaticDatabase ? builder.keyspaceName : generateKeyspaceName(builder.testId);
+    System.out.println(
+        "Connecting to Cassandra at "
+            + this.getHost()
+            + ":"
+            + this.getPort(CASSANDRA_INTERNAL_PORT));
     this.cassandraClient =
         cassandraClient == null
             ? CqlSession.builder()
                 .addContactPoint(
-                    new InetSocketAddress(this.getHost(), this.getPort(CASSANDRA_INTERNAL_PORT)))
+                    new InetSocketAddress("34.100.245.221", this.getPort(CASSANDRA_INTERNAL_PORT)))
                 .withLocalDatacenter("datacenter1")
                 .build()
             : cassandraClient;

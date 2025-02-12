@@ -22,11 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
-import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
 import org.apache.beam.it.common.PipelineLauncher.LaunchInfo;
@@ -69,22 +67,7 @@ public class SpannerToCassandraLTBase extends SpannerToSourceDbLTBase {
   }
 
   public CassandraResourceManager generateKeyspaceAndBuildCassandraResource() {
-    String keyspaceName =
-        ResourceManagerUtils.generateResourceId(
-                testName,
-                Pattern.compile("[/\\\\. \"\u0000$]"),
-                "-",
-                27,
-                DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSSSSS"))
-            .replace('-', '_');
-    if (keyspaceName.length() > 48) {
-      keyspaceName = keyspaceName.substring(0, 48);
-    }
-
-    return CassandraResourceManager.builder(testName)
-        .setKeyspaceName(keyspaceName)
-        .sePreGeneratedKeyspaceName(true)
-        .build();
+    return CassandraResourceManager.builder(testName).build();
   }
 
   public void cleanupResourceManagers() {

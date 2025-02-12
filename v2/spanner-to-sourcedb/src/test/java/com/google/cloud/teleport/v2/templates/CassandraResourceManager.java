@@ -17,12 +17,12 @@ package com.google.cloud.teleport.v2.templates;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.DriverTimeoutException;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.config.ProgrammaticDriverConfigLoader;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
 import java.net.InetSocketAddress;
@@ -89,20 +89,12 @@ public class CassandraResourceManager
     this.usingStaticDatabase = builder.keyspaceName != null;
     this.keyspaceName =
         usingStaticDatabase ? builder.keyspaceName : generateKeyspaceName(builder.testId);
-    Config config =
-        ConfigFactory.parseString(
-            "datastax-java-driver {\n"
-                + "  basic.request.timeout = 30s\n"
-                + // Query timeout
-                "  advanced.connection.init-query-timeout = 30s\n"
-                + // Connection init timeout settings
-                "  advanced.connection.connect-timeout = 30s\n"
-                + // Connection establishment timeout
-                "  advanced.heartbeat.interval = 60s\n"
-                + // Keep-alive interval
-                "}");
-
-    DriverConfigLoader loader = DriverConfigLoader.fromConfig(config);
+    DriverConfigLoader loader =
+        ProgrammaticDriverConfigLoader.builder()
+            .withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(30))
+            .withDuration(DefaultDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, Duration.ofSeconds(30))
+            .withDuration(DefaultDriverOption.CONNECTION_CONNECT_TIMEOUT, Duration.ofSeconds(30))
+            .build();
     this.cassandraClient =
         cassandraClient == null
             ? CqlSession.builder()

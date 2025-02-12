@@ -15,6 +15,7 @@
  */
 package com.google.cloud.teleport.v2.templates;
 
+import static com.google.cloud.teleport.v2.spanner.migrations.constants.Constants.CASSANDRA_SOURCE_TYPE;
 import static org.apache.beam.it.gcp.artifacts.utils.ArtifactUtils.getFullGcsPath;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
@@ -68,7 +69,8 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
                     "input/schema.json",
                     Resources.getResource(dataGeneratorSchemaResource).getPath())
                 .name());
-    jobInfo = launchDataflowJob(artifactBucket, numWorkers, maxWorkers);
+    jobInfo =
+        launchDataflowJob(artifactBucket, numWorkers, maxWorkers, null, CASSANDRA_SOURCE_TYPE);
   }
 
   @After

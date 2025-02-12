@@ -79,27 +79,6 @@ public class SpannerToCassandraLTBase extends SpannerToSourceDbLTBase {
         cassandraSharedResourceManager);
   }
 
-  public SpannerResourceManager createSpannerDatabase(String spannerDdlResourceFile)
-      throws IOException {
-    SpannerResourceManager spannerResourceManager =
-        SpannerResourceManager.builder("rr-lt-main" + testName, project, region)
-            .maybeUseStaticInstance()
-            .build();
-    String ddl =
-        String.join(
-            " ",
-            Resources.readLines(
-                Resources.getResource(spannerDdlResourceFile), StandardCharsets.UTF_8));
-    ddl = ddl.trim();
-    String[] ddls = ddl.split(";");
-    for (String d : ddls) {
-      if (!d.isBlank()) {
-        spannerResourceManager.executeDdlStatement(d);
-      }
-    }
-    return spannerResourceManager;
-  }
-
   public void createAndUploadCassandraConfigToGcs(
       GcsResourceManager gcsResourceManager, CassandraResourceManager cassandraResourceManagers)
       throws IOException {

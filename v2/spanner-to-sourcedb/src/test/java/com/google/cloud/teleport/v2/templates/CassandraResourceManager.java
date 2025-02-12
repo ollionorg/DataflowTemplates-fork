@@ -95,7 +95,7 @@ public class CassandraResourceManager
                 + "  basic.request.timeout = 30s\n"
                 + // Query timeout
                 "  advanced.connection.init-query-timeout = 30s\n"
-                + // Connection init timeout
+                + // Connection init timeout settings
                 "  advanced.connection.connect-timeout = 30s\n"
                 + // Connection establishment timeout
                 "  advanced.heartbeat.interval = 60s\n"

@@ -101,7 +101,7 @@ public class SpannerToCassandraLTBase extends TemplateLoadTestBase {
         .setKeyspaceName(keyspaceName)
         .sePreGeneratedKeyspaceName(true)
         .useStaticContainer()
-        .setHost("10.0.0.25")
+        .setHost("34.100.245.221")
         .setPort(9042)
         .build();
   }

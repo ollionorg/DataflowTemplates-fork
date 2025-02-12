@@ -82,7 +82,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     System.out.println("SpannerInstanceID :: " + spannerResourceManager.getInstanceId());
     System.out.println("SpannerDatabaseID :: " + spannerResourceManager.getDatabaseId());
 
-    Integer numRecords = 180000000; // 100 300000
+    Integer numRecords = 180000000;
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
             .setQPS("300000") // 10
@@ -90,11 +90,11 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
             .setSpannerTableName(table)
-            .setNumWorkers("50") // 2  50
-            .setMaxNumWorkers("100") // 3 100
+            .setNumWorkers("50")
+            .setMaxNumWorkers("100")
             .setSinkType("SPANNER")
             .setProjectId(project)
-            // .setBatchSizeBytes("0")
+//            .setBatchSizeBytes("0")
             .build();
 
     dataGenerator.execute(Duration.ofMinutes(30)); // 10 90
@@ -102,8 +102,8 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
 
     CassandraRowsCheck check =
         CassandraRowsCheck.builder(cassandraSharedResourceManager, table)
-            .setMinRows(numRecords) // 100 300000
-            .setMaxRows(numRecords) // 100 300000
+            .setMinRows(numRecords)
+            .setMaxRows(numRecords)
             .build();
 
     System.out.println("Waiting for Job");

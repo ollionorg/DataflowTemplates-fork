@@ -39,7 +39,7 @@
         </profile>
     </profiles>
     <mirrors>
-        <mirror>
+<!--         <mirror>
             <id>google-maven-central</id>
             <name>GCS Maven Central mirror</name>
             <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
@@ -50,6 +50,6 @@
             <name>Local proxy of central repo</name>
             <url>artifactregistry://us-maven.pkg.dev/artifact-foundry-prod/ah-3p-staging-maven</url>
             <mirrorOf>external:artifactregistry:*</mirrorOf>
-        </mirror>
+        </mirror> -->
     </mirrors>
 </settings>

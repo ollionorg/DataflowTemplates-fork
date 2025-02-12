@@ -61,6 +61,7 @@ public class SpannerToCassandraLTBase extends SpannerToSourceDbLTBase {
     return CassandraResourceManager.builder(testName)
         .setHost("34.100.245.221")
         .setPort(9042)
+        .setKeyspaceName("test_keyspace")
         .build();
   }
 

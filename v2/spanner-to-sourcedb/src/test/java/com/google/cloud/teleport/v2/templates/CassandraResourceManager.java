@@ -17,7 +17,6 @@ package com.google.cloud.teleport.v2.templates;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.DriverTimeoutException;
-import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
@@ -93,33 +92,19 @@ public class CassandraResourceManager
                 .addContactPoint(
                     new InetSocketAddress(this.getHost(), this.getPort(CASSANDRA_INTERNAL_PORT)))
                 .withLocalDatacenter("datacenter1")
-                .withConfigLoader( // Use withConfigLoader for custom settings
-                    DriverConfigLoader.programmaticBuilder()
-                        .withDuration(
-                            "datastax-java-driver.basic.request.timeout",
-                            Duration.ofSeconds(30)) // Request timeout (adjust as needed)
-                        .withDuration(
-                            "datastax-java-driver.basic.connection.timeout",
-                            Duration.ofSeconds(10)) // Connection timeout
-                        .withDuration(
-                            "datastax-java-driver.basic.read-timeout",
-                            Duration.ofSeconds(30)) // Read timeout
-                        .withDuration(
-                            "datastax-java-driver.basic.write-timeout",
-                            Duration.ofSeconds(30)) // Write timeout
-                        .build())
                 .build()
             : cassandraClient;
 
-    if (!usingStaticDatabase) {
-      Failsafe.with(buildRetryPolicy())
-          .run(
-              () ->
-                  this.cassandraClient.execute(
-                      String.format(
-                          "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy'}",
-                          this.keyspaceName)));
-    }
+    // if (!usingStaticDatabase) {
+    //   Failsafe.with(buildRetryPolicy())
+    //       .run(
+    //           () ->
+    //               this.cassandraClient.execute(
+    //                   String.format(
+    //                       "CREATE KEYSPACE IF NOT EXISTS %s WITH replication =
+    // {'class':'SimpleStrategy'}",
+    //                       this.keyspaceName)));
+    // }
   }
 
   private String generateKeyspaceName(String testName) {

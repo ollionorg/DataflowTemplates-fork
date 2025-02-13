@@ -101,7 +101,7 @@ public class CassandraResourceManager
               () ->
                   this.cassandraClient.execute(
                       String.format(
-                          "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy', 'replication_factor': 3}",
+                          "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy', 'replication_factor': 2}",
                           this.keyspaceName)));
     }
   }
@@ -149,7 +149,9 @@ public class CassandraResourceManager
           .get(
               () ->
                   cassandraClient.execute(
-                      SimpleStatement.newInstance(statement).setKeyspace(this.keyspaceName)));
+                      SimpleStatement.newInstance(statement)
+                          .setTimeout(Duration.ofSeconds(30))
+                          .setKeyspace(this.keyspaceName)));
     } catch (Exception e) {
       throw new IllegalArgumentException("Error reading collection.", e);
     }

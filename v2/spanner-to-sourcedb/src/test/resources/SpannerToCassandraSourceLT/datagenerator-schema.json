@@ -1,4 +1,4 @@
 {
-  "id": "{{uuid()}}",
+  "id": "{{repeat(1,10000)}}",
   "first_name": "{{alphaNumeric(5,10)}}"
 }

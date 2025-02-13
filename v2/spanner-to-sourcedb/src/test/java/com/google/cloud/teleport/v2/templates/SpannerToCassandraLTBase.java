@@ -40,8 +40,8 @@ public class SpannerToCassandraLTBase extends SpannerToSourceDbLTBase {
   public void setupResourceManagers(
       String spannerDdlResource, String cassandraDdlResource, String artifactBucket)
       throws IOException {
-    spannerResourceManager = createSpannerDatabase(spannerDdlResource);
-    spannerMetadataResourceManager = createSpannerMetadataDatabase();
+    // spannerResourceManager = createSpannerDatabase(spannerDdlResource);
+    // spannerMetadataResourceManager = createSpannerMetadataDatabase();
     cassandraSharedResourceManager = generateKeyspaceAndBuildCassandraResource();
 
     gcsResourceManager =

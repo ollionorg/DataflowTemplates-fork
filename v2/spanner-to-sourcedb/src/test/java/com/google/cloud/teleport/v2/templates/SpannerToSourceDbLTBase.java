@@ -15,7 +15,10 @@
  */
 package com.google.cloud.teleport.v2.templates;
 
+import static com.google.cloud.teleport.v2.spanner.migrations.constants.Constants.MYSQL_SOURCE_TYPE;
+
 import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
+import com.google.cloud.teleport.v2.spanner.migrations.transformation.CustomTransformation;
 import com.google.common.base.MoreObjects;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
@@ -31,10 +34,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
 import org.apache.beam.it.common.PipelineLauncher.LaunchInfo;
 import org.apache.beam.it.common.TestProperties;
+import org.apache.beam.it.common.utils.IORedirectUtil;
 import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.gcp.TemplateLoadTestBase;
 import org.apache.beam.it.gcp.artifacts.utils.ArtifactUtils;
@@ -55,8 +60,8 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(SpannerToSourceDbLTBase.class);
 
   private static final String TEMPLATE_SPEC_PATH =
-      MoreObjects.firstNonNull(
-          TestProperties.specPath(), "gs://dataflow-templates/latest/flex/Spanner_to_SourceDb");
+          MoreObjects.firstNonNull(
+                  TestProperties.specPath(), "gs://dataflow-templates/latest/flex/Spanner_to_SourceDb");
   public SpannerResourceManager spannerResourceManager;
   public SpannerResourceManager spannerMetadataResourceManager;
   public List<JDBCResourceManager> jdbcResourceManagers;
@@ -65,24 +70,24 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
   protected SubscriptionName subscriptionName;
 
   public void setupResourceManagers(
-      String spannerDdlResource, String sessionFileResource, String artifactBucket)
-      throws IOException {
+          String spannerDdlResource, String sessionFileResource, String artifactBucket)
+          throws IOException {
     spannerResourceManager = createSpannerDatabase(spannerDdlResource);
     spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
     gcsResourceManager =
-        GcsResourceManager.builder(artifactBucket, getClass().getSimpleName(), CREDENTIALS).build();
+            GcsResourceManager.builder(artifactBucket, getClass().getSimpleName(), CREDENTIALS).build();
 
     gcsResourceManager.uploadArtifact(
-        "input/session.json", Resources.getResource(sessionFileResource).getPath());
+            "input/session.json", Resources.getResource(sessionFileResource).getPath());
 
     pubsubResourceManager = setUpPubSubResourceManager();
     subscriptionName =
-        createPubsubResources(
-            getClass().getSimpleName(),
-            pubsubResourceManager,
-            getGcsPath(artifactBucket, "dlq", gcsResourceManager)
-                .replace("gs://" + artifactBucket, ""));
+            createPubsubResources(
+                    getClass().getSimpleName(),
+                    pubsubResourceManager,
+                    getGcsPath(artifactBucket, "dlq", gcsResourceManager)
+                            .replace("gs://" + artifactBucket, ""));
   }
 
   public void setupMySQLResourceManager(int numShards) throws IOException {
@@ -96,10 +101,10 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
 
   public void cleanupResourceManagers() {
     ResourceManagerUtils.cleanResources(
-        spannerResourceManager,
-        spannerMetadataResourceManager,
-        gcsResourceManager,
-        pubsubResourceManager);
+            spannerResourceManager,
+            spannerMetadataResourceManager,
+            gcsResourceManager,
+            pubsubResourceManager);
     for (JDBCResourceManager jdbcResourceManager : jdbcResourceManagers) {
       ResourceManagerUtils.cleanResources(jdbcResourceManager);
     }
@@ -107,17 +112,17 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
 
   public PubsubResourceManager setUpPubSubResourceManager() throws IOException {
     return PubsubResourceManager.builder(testName, project, CREDENTIALS_PROVIDER)
-        .setMonitoringClient(monitoringClient)
-        .build();
+            .setMonitoringClient(monitoringClient)
+            .build();
   }
 
   public SubscriptionName createPubsubResources(
-      String identifierSuffix, PubsubResourceManager pubsubResourceManager, String gcsPrefix) {
+          String identifierSuffix, PubsubResourceManager pubsubResourceManager, String gcsPrefix) {
     String topicNameSuffix = "rr-load" + identifierSuffix;
     String subscriptionNameSuffix = "rr-load-sub" + identifierSuffix;
     TopicName topic = pubsubResourceManager.createTopic(topicNameSuffix);
     SubscriptionName subscription =
-        pubsubResourceManager.createSubscription(topic, subscriptionNameSuffix);
+            pubsubResourceManager.createSubscription(topic, subscriptionNameSuffix);
     String prefix = gcsPrefix;
     if (prefix.startsWith("/")) {
       prefix = prefix.substring(1);
@@ -128,16 +133,16 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
   }
 
   public SpannerResourceManager createSpannerDatabase(String spannerDdlResourceFile)
-      throws IOException {
+          throws IOException {
     SpannerResourceManager spannerResourceManager =
-        SpannerResourceManager.builder("rr-loadtest-" + testName, project, region)
-            .maybeUseStaticInstance()
-            .build();
+            SpannerResourceManager.builder("rr-loadtest-" + testName, project, region)
+                    .maybeUseStaticInstance()
+                    .build();
     String ddl =
-        String.join(
-            " ",
-            Resources.readLines(
-                Resources.getResource(spannerDdlResourceFile), StandardCharsets.UTF_8));
+            String.join(
+                    " ",
+                    Resources.readLines(
+                            Resources.getResource(spannerDdlResourceFile), StandardCharsets.UTF_8));
     ddl = ddl.trim();
     String[] ddls = ddl.split(";");
     for (String d : ddls) {
@@ -150,17 +155,17 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
 
   public SpannerResourceManager createSpannerMetadataDatabase() throws IOException {
     SpannerResourceManager spannerMetadataResourceManager =
-        SpannerResourceManager.builder("rr-meta-" + testName, project, region)
-            .maybeUseStaticInstance()
-            .build();
+            SpannerResourceManager.builder("rr-meta-" + testName, project, region)
+                    .maybeUseStaticInstance()
+                    .build();
     String dummy = "create table t1(id INT64 ) primary key(id)";
     spannerMetadataResourceManager.executeDdlStatement(dummy);
     return spannerMetadataResourceManager;
   }
 
   public void createAndUploadShardConfigToGcs(
-      GcsResourceManager gcsResourceManager, List<JDBCResourceManager> jdbcResourceManagers)
-      throws IOException {
+          GcsResourceManager gcsResourceManager, List<JDBCResourceManager> jdbcResourceManagers)
+          throws IOException {
     JsonArray ja = new JsonArray();
     for (int i = 0; i < 1; ++i) {
       if (jdbcResourceManagers.get(i) instanceof MySQLResourceManager) {
@@ -177,7 +182,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
         ja.add(jsObj);
       } else {
         throw new UnsupportedOperationException(
-            jdbcResourceManagers.get(i).getClass().getSimpleName() + " is not supported");
+                jdbcResourceManagers.get(i).getClass().getSimpleName() + " is not supported");
       }
     }
     String shardFileContents = ja.toString();
@@ -186,36 +191,54 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
   }
 
   public PipelineLauncher.LaunchInfo launchDataflowJob(
-      String artifactBucket, int numWorkers, int maxWorkers) throws IOException {
+          String artifactBucket,
+          int numWorkers,
+          int maxWorkers,
+          CustomTransformation customTransformation,
+          String sourceType)
+          throws IOException {
     // default parameters
 
     Map<String, String> params =
-        new HashMap<>() {
-          {
-            put(
-                "sessionFilePath",
-                getGcsPath(artifactBucket, "input/session.json", gcsResourceManager));
-            put("instanceId", spannerResourceManager.getInstanceId());
-            put("databaseId", spannerResourceManager.getDatabaseId());
-            put("spannerProjectId", project);
-            put("metadataDatabase", spannerMetadataResourceManager.getDatabaseId());
-            put("metadataInstance", spannerMetadataResourceManager.getInstanceId());
-            put(
-                "sourceShardsFilePath",
-                getGcsPath(artifactBucket, "input/shard.json", gcsResourceManager));
-            put("changeStreamName", "allstream");
-            put("dlqGcsPubSubSubscription", subscriptionName.toString());
-            put("deadLetterQueueDirectory", getGcsPath(artifactBucket, "dlq", gcsResourceManager));
-            put("maxShardConnections", "100");
-          }
-        };
+            new HashMap<>() {
+              {
+                put(
+                        "sessionFilePath",
+                        getGcsPath(artifactBucket, "input/session.json", gcsResourceManager));
+                put("instanceId", spannerResourceManager.getInstanceId());
+                put("databaseId", spannerResourceManager.getDatabaseId());
+                put("spannerProjectId", project);
+                put("metadataDatabase", spannerMetadataResourceManager.getDatabaseId());
+                put("metadataInstance", spannerMetadataResourceManager.getInstanceId());
+                put(
+                        "sourceShardsFilePath",
+                        getGcsPath(
+                                artifactBucket,
+                                !Objects.equals(sourceType, MYSQL_SOURCE_TYPE)
+                                        ? "input/cassandra-config.conf"
+                                        : "input/shard.json",
+                                gcsResourceManager));
+                put("changeStreamName", "allstream");
+                put("dlqGcsPubSubSubscription", subscriptionName.toString());
+                put("deadLetterQueueDirectory", getGcsPath(artifactBucket, "dlq", gcsResourceManager));
+                put("maxShardConnections", "100");
+                put("sourceType", sourceType);
+              }
+            };
+
+    if (customTransformation != null) {
+      params.put(
+              "transformationJarPath",
+              getGcsPath(artifactBucket, customTransformation.jarPath(), gcsResourceManager));
+      params.put("transformationClassName", customTransformation.classPath());
+    }
 
     LaunchConfig.Builder options =
-        LaunchConfig.builder(getClass().getSimpleName(), TEMPLATE_SPEC_PATH);
+            LaunchConfig.builder(getClass().getSimpleName(), TEMPLATE_SPEC_PATH);
     options
-        .addEnvironment("maxWorkers", maxWorkers)
-        .addEnvironment("numWorkers", numWorkers)
-        .addEnvironment("additionalExperiments", Collections.singletonList("use_runner_v2"));
+            .addEnvironment("maxWorkers", maxWorkers)
+            .addEnvironment("numWorkers", numWorkers)
+            .addEnvironment("additionalExperiments", Collections.singletonList("use_runner_v2"));
 
     options.setParameters(params);
     PipelineLauncher.LaunchInfo jobInfo = pipelineLauncher.launch(project, region, options.build());
@@ -223,53 +246,67 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
   }
 
   public String getGcsPath(
-      String bucket, String artifactId, GcsResourceManager gcsResourceManager) {
+          String bucket, String artifactId, GcsResourceManager gcsResourceManager) {
     return ArtifactUtils.getFullGcsPath(
-        bucket, getClass().getSimpleName(), gcsResourceManager.runId(), artifactId);
+            bucket, getClass().getSimpleName(), gcsResourceManager.runId(), artifactId);
   }
 
   public Map<String, Double> getCustomCounters(
-      LaunchInfo launchInfo, int numShards, Map<String, Double> metrics) throws IOException {
+          LaunchInfo launchInfo, int numShards, Map<String, Double> metrics) throws IOException {
     Double successfulEvents =
-        pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "success_record_count");
+            pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "success_record_count");
     metrics.put(
-        "Custom_Counter_SuccessRecordCount", successfulEvents != null ? successfulEvents : 0.0);
+            "Custom_Counter_SuccessRecordCount", successfulEvents != null ? successfulEvents : 0.0);
     Double retryableErrors =
-        pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "retryable_record_count");
+            pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "retryable_record_count");
     metrics.put(
-        "Custom_Counter_RetryableRecordCount", retryableErrors != null ? retryableErrors : 0.0);
+            "Custom_Counter_RetryableRecordCount", retryableErrors != null ? retryableErrors : 0.0);
 
     Double severeErrorCount =
-        pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "severe_error_count");
+            pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "severe_error_count");
     metrics.put(
-        "Custom_Counter_SevereErrorCount", severeErrorCount != null ? severeErrorCount : 0.0);
+            "Custom_Counter_SevereErrorCount", severeErrorCount != null ? severeErrorCount : 0.0);
     Double skippedRecordCount =
-        pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "skipped_record_count");
+            pipelineLauncher.getMetric(project, region, launchInfo.jobId(), "skipped_record_count");
     metrics.put(
-        "Custom_Counter_SkippedRecordCount", skippedRecordCount != null ? skippedRecordCount : 0.0);
+            "Custom_Counter_SkippedRecordCount", skippedRecordCount != null ? skippedRecordCount : 0.0);
 
     for (int i = 1; i <= numShards; ++i) {
       Double replicationLag =
-          pipelineLauncher.getMetric(
-              project,
-              region,
-              launchInfo.jobId(),
-              "replication_lag_in_seconds_Shard" + i + "_MEAN");
+              pipelineLauncher.getMetric(
+                      project,
+                      region,
+                      launchInfo.jobId(),
+                      "replication_lag_in_seconds_Shard" + i + "_MEAN");
       metrics.put(
-          "Custom_Counter_MeanReplicationLagShard" + i,
-          replicationLag != null ? replicationLag : 0.0);
+              "Custom_Counter_MeanReplicationLagShard" + i,
+              replicationLag != null ? replicationLag : 0.0);
     }
     return metrics;
   }
 
   public void exportMetrics(PipelineLauncher.LaunchInfo jobInfo, int numShards)
-      throws ParseException, IOException, InterruptedException {
+          throws ParseException, IOException, InterruptedException {
     Map<String, Double> metrics = getMetrics(jobInfo);
     getCustomCounters(jobInfo, numShards, metrics);
     getResourceManagerMetrics(metrics);
 
     // export results
     exportMetricsToBigQuery(jobInfo, metrics);
+  }
+
+  protected void createAndUploadJarToGcs(GcsResourceManager gcsResourceManager)
+          throws IOException, InterruptedException {
+    String[] shellCommand = {"/bin/bash", "-c", "cd ../spanner-custom-shard"};
+    Process exec = Runtime.getRuntime().exec(shellCommand);
+    IORedirectUtil.redirectLinesLog(exec.getInputStream(), LOG);
+    IORedirectUtil.redirectLinesLog(exec.getErrorStream(), LOG);
+    if (exec.waitFor() != 0) {
+      throw new RuntimeException("Error staging template, check Maven logs.");
+    }
+    gcsResourceManager.uploadArtifact(
+            "input/customShard.jar",
+            "../spanner-custom-shard/target/spanner-custom-shard-1.0-SNAPSHOT.jar");
   }
 
   public void getResourceManagerMetrics(Map<String, Double> metrics) {

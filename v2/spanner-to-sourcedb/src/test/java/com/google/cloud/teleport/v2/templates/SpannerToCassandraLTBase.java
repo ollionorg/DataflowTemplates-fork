@@ -60,7 +60,7 @@ public class SpannerToCassandraLTBase extends SpannerToSourceDbLTBase {
   protected CassandraResourceManager generateKeyspaceAndBuildCassandraResource() {
     return CassandraResourceManager.builder(testName)
         .setHost("34.100.245.221")
-        .setPort("9042")
+        .setPort(9042)
         .build();
   }
 

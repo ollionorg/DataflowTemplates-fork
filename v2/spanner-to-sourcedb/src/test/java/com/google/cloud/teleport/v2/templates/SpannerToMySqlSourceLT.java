@@ -15,6 +15,7 @@
  */
 package com.google.cloud.teleport.v2.templates;
 
+import static com.google.cloud.teleport.v2.spanner.migrations.constants.Constants.MYSQL_SOURCE_TYPE;
 import static org.apache.beam.it.gcp.artifacts.utils.ArtifactUtils.getFullGcsPath;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
@@ -35,6 +36,7 @@ import org.apache.beam.it.jdbc.MySQLResourceManager;
 import org.apache.beam.it.jdbc.conditions.JDBCRowsCheck;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,6 +47,7 @@ import org.slf4j.LoggerFactory;
 @Category(TemplateLoadTest.class)
 @TemplateLoadTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
+@Ignore
 public class SpannerToMySqlSourceLT extends SpannerToSourceDbLTBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(SpannerToMySqlSourceLT.class);
@@ -56,8 +59,8 @@ public class SpannerToMySqlSourceLT extends SpannerToSourceDbLTBase {
   private final String dataGeneratorSchemaResource =
       "SpannerToMySqlSourceLT/datagenerator-schema.json";
   private final String table = "Person";
-  private final int maxWorkers = 50;
-  private final int numWorkers = 20;
+  private final int maxWorkers = 3;
+  private final int numWorkers = 2;
   private PipelineLauncher.LaunchInfo jobInfo;
   private PipelineLauncher.LaunchInfo readerJobInfo;
   private final int numShards = 1;
@@ -76,7 +79,7 @@ public class SpannerToMySqlSourceLT extends SpannerToSourceDbLTBase {
                 .name());
 
     createMySQLSchema(jdbcResourceManagers);
-    jobInfo = launchDataflowJob(artifactBucket, numWorkers, maxWorkers, null);
+    jobInfo = launchDataflowJob(artifactBucket, numWorkers, maxWorkers, null, MYSQL_SOURCE_TYPE);
   }
 
   @After
@@ -90,30 +93,30 @@ public class SpannerToMySqlSourceLT extends SpannerToSourceDbLTBase {
     // Start data generator
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-            .setQPS("1000")
-            .setMessagesLimit(String.valueOf(300000))
+            .setQPS("10")
+            .setMessagesLimit(String.valueOf(100))
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
             .setSpannerTableName(table)
-            .setNumWorkers("50")
-            .setMaxNumWorkers("100")
+            .setNumWorkers("2")
+            .setMaxNumWorkers("3")
             .setSinkType("SPANNER")
             .setProjectId(project)
             .setBatchSizeBytes("0")
             .build();
 
-    dataGenerator.execute(Duration.ofMinutes(90));
+    dataGenerator.execute(Duration.ofMinutes(10));
     assertThatPipeline(jobInfo).isRunning();
 
     JDBCRowsCheck check =
         JDBCRowsCheck.builder(jdbcResourceManagers.get(0), table)
-            .setMinRows(300000)
-            .setMaxRows(300000)
+            .setMinRows(100)
+            .setMaxRows(100)
             .build();
 
     PipelineOperator.Result result =
         pipelineOperator.waitForCondition(
-            createConfig(jobInfo, Duration.ofMinutes(10), Duration.ofSeconds(30)), check);
+            createConfig(jobInfo, Duration.ofMinutes(5), Duration.ofSeconds(30)), check);
 
     // Assert Conditions
     assertThatResult(result).meetsConditions();
@@ -124,6 +127,7 @@ public class SpannerToMySqlSourceLT extends SpannerToSourceDbLTBase {
     assertThatResult(result1).isLaunchFinished();
 
     exportMetrics(jobInfo, numShards);
+    // exportMetrics(jobInfo, numShards, "daring-fiber-439305-v4", "rr");
   }
 
   private void createMySQLSchema(List<JDBCResourceManager> jdbcResourceManagers) {

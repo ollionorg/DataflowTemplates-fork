@@ -91,7 +91,7 @@ public class CassandraResourceManager
             ? CqlSession.builder()
                 .addContactPoint(
                     new InetSocketAddress(this.getHost(), this.getPort(CASSANDRA_INTERNAL_PORT)))
-                .withLocalDatacenter("asia-south1")
+                .withLocalDatacenter("datacenter1")
                 .build()
             : cassandraClient;
 
@@ -101,7 +101,7 @@ public class CassandraResourceManager
               () ->
                   this.cassandraClient.execute(
                       String.format(
-                          "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy', 'replication_factor': 2}",
+                          "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class':'SimpleStrategy', 'replication_factor': 1}",
                           this.keyspaceName)));
     }
   }

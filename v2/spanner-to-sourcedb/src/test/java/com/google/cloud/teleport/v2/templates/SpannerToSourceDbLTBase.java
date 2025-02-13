@@ -72,8 +72,8 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
   public void setupResourceManagers(
       String spannerDdlResource, String sessionFileResource, String artifactBucket)
       throws IOException {
-    spannerResourceManager = createSpannerDatabase(spannerDdlResource);
-    spannerMetadataResourceManager = createSpannerMetadataDatabase();
+    // spannerResourceManager = createSpannerDatabase(spannerDdlResource);
+    // spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
     gcsResourceManager =
         GcsResourceManager.builder(artifactBucket, getClass().getSimpleName(), CREDENTIALS).build();
@@ -205,11 +205,11 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
             put(
                 "sessionFilePath",
                 getGcsPath(artifactBucket, "input/session.json", gcsResourceManager));
-            put("instanceId", spannerResourceManager.getInstanceId());
-            put("databaseId", spannerResourceManager.getDatabaseId());
+            put("instanceId", "rr-demo");
+            put("databaseId", "rr-load-test");
             put("spannerProjectId", project);
-            put("metadataDatabase", spannerMetadataResourceManager.getDatabaseId());
-            put("metadataInstance", spannerMetadataResourceManager.getInstanceId());
+            put("metadataDatabase", "rr-load-test");
+            put("metadataInstance", "rr-demo");
             put(
                 "sourceShardsFilePath",
                 getGcsPath(

@@ -53,8 +53,8 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   private final String dataGeneratorSchemaResource =
       "SpannerToCassandraSourceLT/datagenerator-schema.json";
   private final String table = "person";
-  private final int maxWorkers = 100;
-  private final int numWorkers = 50;
+  private final int maxWorkers = 50;
+  private final int numWorkers = 20;
   private PipelineLauncher.LaunchInfo jobInfo;
   private final int numShards = 1;
 
@@ -82,10 +82,10 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   public void reverseReplicationCassandra1KTpsLoadTest()
       throws IOException, ParseException, InterruptedException {
 
-    Integer numRecords = 18000000;
+    Integer numRecords = 300000;
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-            .setQPS("300000")
+            .setQPS("1000")
             .setMessagesLimit(String.valueOf(numRecords))
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())

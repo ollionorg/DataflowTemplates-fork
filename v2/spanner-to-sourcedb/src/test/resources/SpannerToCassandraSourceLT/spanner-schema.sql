@@ -1,6 +1,6 @@
 CREATE TABLE `person` (
     `id` STRING(100) NOT NULL,
-    `count` INT64
+    `first_name` STRING(100)
 ) PRIMARY KEY (`id`);
 
 

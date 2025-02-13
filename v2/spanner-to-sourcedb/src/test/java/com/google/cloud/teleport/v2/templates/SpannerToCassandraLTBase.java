@@ -65,12 +65,7 @@ public class SpannerToCassandraLTBase extends SpannerToSourceDbLTBase {
   }
 
   public void cleanupResourceManagers() {
-    ResourceManagerUtils.cleanResources(
-        spannerResourceManager,
-        spannerMetadataResourceManager,
-        gcsResourceManager,
-        pubsubResourceManager,
-        cassandraSharedResourceManager);
+    ResourceManagerUtils.cleanResources(gcsResourceManager, pubsubResourceManager);
   }
 
   public void createAndUploadCassandraConfigToGcs(

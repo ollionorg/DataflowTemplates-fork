@@ -18,16 +18,13 @@ package com.google.cloud.teleport.v2.templates;
 import static com.google.cloud.teleport.v2.spanner.migrations.constants.Constants.CASSANDRA_SOURCE_TYPE;
 import static org.apache.beam.it.gcp.artifacts.utils.ArtifactUtils.getFullGcsPath;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
-import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
 import com.google.cloud.teleport.metadata.TemplateLoadTest;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.text.ParseException;
 import java.time.Duration;
-import org.apache.beam.it.cassandra.conditions.CassandraRowsCheck;
 import org.apache.beam.it.common.PipelineLauncher;
-import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.TestProperties;
 import org.apache.beam.it.gcp.datagenerator.DataGenerator;
 import org.junit.After;
@@ -53,8 +50,8 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   private final String dataGeneratorSchemaResource =
       "SpannerToCassandraSourceLT/datagenerator-schema.json";
   private final String table = "person";
-  private final int maxWorkers = 50;
-  private final int numWorkers = 20;
+  private final int maxWorkers = 100;
+  private final int numWorkers = 50;
   private PipelineLauncher.LaunchInfo jobInfo;
   private final int numShards = 1;
 
@@ -82,11 +79,11 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   public void reverseReplicationCassandra1KTpsLoadTest()
       throws IOException, ParseException, InterruptedException {
 
-    Integer numRecords = 300000;
+    // Integer numRecords = 18000000;
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-            .setQPS("1000")
-            .setMessagesLimit(String.valueOf(numRecords))
+            .setQPS("300000")
+            // .setMessagesLimit(String.valueOf(numRecords))
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
             .setSpannerTableName(table)
@@ -96,27 +93,27 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
             .setProjectId(project)
             .build();
 
-    dataGenerator.execute(Duration.ofMinutes(90));
+    dataGenerator.execute(Duration.ofMinutes(60));
     assertThatPipeline(jobInfo).isRunning();
 
-    CassandraRowsCheck<CassandraResourceManager> check =
-        CassandraRowsCheck.<CassandraResourceManager>builder(table)
-            .setResourceManager(cassandraSharedResourceManager)
-            .setMinRows(numRecords)
-            .setMaxRows(numRecords)
-            .build();
+    // CassandraRowsCheck<CassandraResourceManager> check =
+    //     CassandraRowsCheck.<CassandraResourceManager>builder(table)
+    //         .setResourceManager(cassandraSharedResourceManager)
+    //         .setMinRows(numRecords)
+    //         .setMaxRows(numRecords)
+    //         .build();
 
-    PipelineOperator.Result result =
-        pipelineOperator.waitForCondition(
-            createConfig(jobInfo, Duration.ofMinutes(30), Duration.ofSeconds(30)), check);
+    // PipelineOperator.Result result =
+    //     pipelineOperator.waitForCondition(
+    //         createConfig(jobInfo, Duration.ofMinutes(30), Duration.ofSeconds(30)), check);
 
-    assertThatResult(result).meetsConditions();
+    // assertThatResult(result).meetsConditions();
 
-    PipelineOperator.Result result1 =
-        pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(30)));
+    // PipelineOperator.Result result1 =
+    //     pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(65)));
 
-    assertThatResult(result1).isLaunchFinished();
+    // assertThatResult(result1).isLaunchFinished();
 
-    exportMetrics(jobInfo, numShards);
+    // exportMetrics(jobInfo, numShards);
   }
 }

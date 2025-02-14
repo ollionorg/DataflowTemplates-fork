@@ -228,7 +228,7 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
                   spannerRec.getCommitTimestamp(),
                   spannerRec.getRecordSequence()));
         } else {
-          LOG.info(("Record skipped since source has latest record");
+          LOG.info("Record skipped since source has latest record");
         }
         successRecordCountMetric.inc();
         if (spannerRec.isRetryRecord()) {

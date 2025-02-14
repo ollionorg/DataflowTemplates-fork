@@ -38,14 +38,18 @@ public class CassandraDao implements IDao<DMLGeneratorResponse> {
 
   @Override
   public void write(DMLGeneratorResponse dmlGeneratorResponse) throws Exception {
+    long startTime = System.nanoTime();
+
     CqlSession session = (CqlSession) connectionHelper.getConnection(this.cassandraUrl);
     if (session == null) {
       throw new ConnectionException("Connection is null");
     }
+
     PreparedStatementGeneratedResponse preparedStatementGeneratedResponse =
         (PreparedStatementGeneratedResponse) dmlGeneratorResponse;
     String dmlStatement = preparedStatementGeneratedResponse.getDmlStatement();
     PreparedStatement preparedStatement = session.prepare(dmlStatement);
+
     BoundStatement boundStatement =
         preparedStatement.bind(
             preparedStatementGeneratedResponse.getValues().stream()
@@ -57,6 +61,16 @@ public class CassandraDao implements IDao<DMLGeneratorResponse> {
                       return CassandraTypeHandler.castToExpectedType(v.dataType(), v.value());
                     })
                 .toArray());
+
+    long preparationTime = System.nanoTime();
+    long prepareAndBindLatency = preparationTime - startTime;
+    System.out.println(
+        "Latency (t2-t1) - Preparation and Binding: " + prepareAndBindLatency + " ns");
+
     session.execute(boundStatement);
+
+    long executionTime = System.nanoTime();
+    long executionLatency = executionTime - preparationTime;
+    System.out.println("Latency (t3-t2) - Execution: " + executionLatency + " ns");
   }
 }

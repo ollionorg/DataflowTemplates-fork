@@ -23,8 +23,12 @@ import com.google.cloud.teleport.v2.templates.dbutils.dml.CassandraTypeHandler;
 import com.google.cloud.teleport.v2.templates.exceptions.ConnectionException;
 import com.google.cloud.teleport.v2.templates.models.DMLGeneratorResponse;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementGeneratedResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CassandraDao implements IDao<DMLGeneratorResponse> {
+  private static final Logger LOG = LoggerFactory.getLogger(CassandraDao.class);
+
   private final String cassandraUrl;
   private final String cassandraUser;
   private final IConnectionHelper connectionHelper;
@@ -64,13 +68,12 @@ public class CassandraDao implements IDao<DMLGeneratorResponse> {
 
     long preparationTime = System.nanoTime();
     long prepareAndBindLatency = preparationTime - startTime;
-    System.out.println(
-        "Latency (t2-t1) - Preparation and Binding: " + prepareAndBindLatency + " ns");
+    LOG.info("Latency (t2-t1) - Preparation and Binding: {} ns", prepareAndBindLatency);
 
     session.execute(boundStatement);
 
     long executionTime = System.nanoTime();
     long executionLatency = executionTime - preparationTime;
-    System.out.println("Latency (t3-t2) - Execution: " + executionLatency + " ns");
+    LOG.info("Latency (t3-t2) - Execution: {} ns", executionLatency);
   }
 }

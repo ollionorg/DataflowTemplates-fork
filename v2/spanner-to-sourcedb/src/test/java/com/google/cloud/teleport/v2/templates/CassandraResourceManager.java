@@ -50,8 +50,8 @@ import org.testcontainers.utility.DockerImageName;
  *
  * <p>The class is thread-safe.
  */
-public class CassandraResourceManager
-    extends TestContainerResourceManager<@NotNull GenericContainer<?>> implements ResourceManager {
+public class CassandraResourceManager extends TestContainerResourceManager<GenericContainer<?>>
+    implements ResourceManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(CassandraResourceManager.class);
 
@@ -255,7 +255,7 @@ public class CassandraResourceManager
 
   /** Builder for {@link CassandraResourceManager}. */
   public static final class Builder
-      extends TestContainerResourceManager.Builder<@NotNull CassandraResourceManager> {
+      extends TestContainerResourceManager.Builder<CassandraResourceManager> {
 
     private @Nullable String keyspaceName;
 

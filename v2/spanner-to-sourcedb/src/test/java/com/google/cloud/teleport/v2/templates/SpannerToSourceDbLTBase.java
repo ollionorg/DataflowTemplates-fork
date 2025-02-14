@@ -208,7 +208,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
             put("instanceId", "rr-demo");
             put("databaseId", "rr-load-test");
             put("spannerProjectId", project);
-            put("metadataDatabase", "rr-load-test");
+            put("metadataDatabase", "rr-demo-metadata");
             put("metadataInstance", "rr-demo");
             put(
                 "sourceShardsFilePath",
@@ -221,7 +221,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
             put("changeStreamName", "allstream");
             put("dlqGcsPubSubSubscription", subscriptionName.toString());
             put("deadLetterQueueDirectory", getGcsPath(artifactBucket, "dlq", gcsResourceManager));
-            put("maxShardConnections", "5000");
+            put("maxShardConnections", "1000");
             put("sourceType", sourceType);
           }
         };

@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS person (
-    id uuid PRIMARY KEY,
+    id text PRIMARY KEY,
     count INT,
     first_name1 text,
     last_name1 text,

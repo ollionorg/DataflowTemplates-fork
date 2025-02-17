@@ -16,6 +16,9 @@
 package com.google.cloud.teleport.v2.templates.transforms;
 
 import com.datastax.oss.driver.api.core.AllNodesFailedException;
+import com.datastax.oss.driver.api.core.DriverTimeoutException;
+import com.datastax.oss.driver.api.core.NodeUnavailableException;
+import com.datastax.oss.driver.api.core.connection.BusyConnectionException;
 import com.datastax.oss.driver.api.core.connection.ConnectionInitException;
 import com.datastax.oss.driver.api.core.servererrors.QueryExecutionException;
 import com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException;
@@ -192,17 +195,17 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
         isSourceAhead =
             shadowTableRecord != null
                 && ((shadowTableRecord
-                            .getProcessedCommitTimestamp()
-                            .compareTo(spannerRec.getCommitTimestamp())
-                        > 0) // either the source already has record with greater commit
-                    // timestamp
-                    || (shadowTableRecord // or the source has the same commit timestamp but
-                                // greater record sequence
-                                .getProcessedCommitTimestamp()
-                                .compareTo(spannerRec.getCommitTimestamp())
-                            == 0
-                        && shadowTableRecord.getRecordSequence()
-                            > Long.parseLong(spannerRec.getRecordSequence())));
+                .getProcessedCommitTimestamp()
+                .compareTo(spannerRec.getCommitTimestamp())
+                > 0) // either the source already has record with greater commit
+                // timestamp
+                || (shadowTableRecord // or the source has the same commit timestamp but
+                // greater record sequence
+                .getProcessedCommitTimestamp()
+                .compareTo(spannerRec.getCommitTimestamp())
+                == 0
+                && shadowTableRecord.getRecordSequence()
+                > Long.parseLong(spannerRec.getRecordSequence())));
 
         if (!isSourceAhead) {
           IDao sourceDao = sourceProcessor.getSourceDao(shardId);
@@ -227,8 +230,6 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
                   keysJson,
                   spannerRec.getCommitTimestamp(),
                   spannerRec.getRecordSequence()));
-        } else {
-          LOG.info("Record skipped since source has latest record");
         }
         successRecordCountMetric.inc();
         if (spannerRec.isRetryRecord()) {
@@ -239,18 +240,20 @@ public class SourceWriterFn extends DoFn<KV<Long, TrimmedShardedDataChangeRecord
       } catch (InvalidTransformationException ex) {
         invalidTransformationException.inc();
         outputWithTag(c, Constants.PERMANENT_ERROR_TAG, ex.getMessage(), spannerRec);
-      } catch (ChangeEventConvertorException
-          | CodecNotFoundException
-          | QueryExecutionException ex) {
+      } catch (ChangeEventConvertorException | CodecNotFoundException ex) {
         outputWithTag(c, Constants.PERMANENT_ERROR_TAG, ex.getMessage(), spannerRec);
       } catch (SpannerException
-          | IllegalStateException
-          | com.mysql.cj.jdbc.exceptions.CommunicationsException
-          | java.sql.SQLIntegrityConstraintViolationException
-          | java.sql.SQLTransientConnectionException
-          | AllNodesFailedException
-          | ConnectionInitException
-          | ConnectionException ex) {
+               | IllegalStateException
+               | com.mysql.cj.jdbc.exceptions.CommunicationsException
+               | java.sql.SQLIntegrityConstraintViolationException
+               | java.sql.SQLTransientConnectionException
+               | ConnectionInitException
+               | DriverTimeoutException
+               | AllNodesFailedException
+               | BusyConnectionException
+               | NodeUnavailableException
+               | QueryExecutionException
+               | ConnectionException ex) {
         outputWithTag(c, Constants.RETRYABLE_ERROR_TAG, ex.getMessage(), spannerRec);
       } catch (java.sql.SQLNonTransientConnectionException ex) {
         // https://dev.mysql.com/doc/mysql-errors/8.0/en/server-error-reference.html

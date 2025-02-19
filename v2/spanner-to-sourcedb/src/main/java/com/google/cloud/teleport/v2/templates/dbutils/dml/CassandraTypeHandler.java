@@ -172,8 +172,13 @@ public class CassandraTypeHandler {
       return ByteBuffer.wrap((byte[]) colValue);
     } else if (colValue instanceof ByteBuffer) {
       return (ByteBuffer) colValue;
+    } else {
+      String strVal = (String) colValue;
+      if (strVal.matches("^[A-Za-z0-9+/]+={0,2}$") && (strVal.length() % 4 == 0)) {
+        return ByteBuffer.wrap(java.util.Base64.getDecoder().decode(strVal));
+      }
     }
-    return ByteBuffer.wrap(java.util.Base64.getDecoder().decode((String) colValue));
+    throw new IllegalArgumentException("Invalid colValue: " + colValue);
   }
 
   /**
@@ -322,18 +327,22 @@ public class CassandraTypeHandler {
       String spannerType, String columnName, JSONObject valuesJson) {
     try {
       if (spannerType.contains("string")) {
-        return valuesJson.optString(columnName);
+        String value = valuesJson.optString(columnName);
+        return value.isEmpty() ? null : value;
       } else if (spannerType.contains("bytes")) {
         if (valuesJson.isNull(columnName)) {
           return null;
         }
         String hexEncodedString = valuesJson.optString(columnName);
+        if (hexEncodedString.isEmpty()) {
+          return null;
+        }
         return safeHandle(
             () -> {
               try {
-                return safeHandle(() -> convertBinaryEncodedStringToByteArray(hexEncodedString));
+                return safeHandle(() -> parseBlobType(hexEncodedString));
               } catch (IllegalArgumentException e) {
-                return parseBlobType(hexEncodedString);
+                return convertBinaryEncodedStringToByteArray(hexEncodedString);
               }
             });
       } else {
@@ -675,9 +684,10 @@ public class CassandraTypeHandler {
     Object columnValue = handleSpannerColumnType(spannerType, columnName, valuesJson);
 
     if (columnValue == null) {
-      LOG.warn("Column value is null for column: {}, type: {}", columnName, spannerType);
+      LOG.info("Column value is null for column: {}, type: {}", columnName, spannerType);
       return PreparedStatementValueObject.create(cassandraType, NullClass.INSTANCE);
     }
+    LOG.info("Column value is {} for column: {}, type: {}", columnValue, columnName, spannerType);
     return PreparedStatementValueObject.create(cassandraType, columnValue);
   }
 

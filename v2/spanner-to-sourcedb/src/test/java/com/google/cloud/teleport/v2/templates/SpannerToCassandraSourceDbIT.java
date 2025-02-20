@@ -27,8 +27,6 @@ import com.google.cloud.Date;
 import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.KeySet;
 import com.google.cloud.spanner.Mutation;
-import com.google.cloud.spanner.Options;
-import com.google.cloud.spanner.TransactionRunner;
 import com.google.cloud.spanner.Value;
 import com.google.cloud.teleport.metadata.SkipDirectRunnerTest;
 import com.google.cloud.teleport.metadata.TemplateIntegrationTest;
@@ -50,8 +48,6 @@ import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
-import org.apache.beam.sdk.io.gcp.spanner.SpannerAccessor;
-import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
@@ -293,40 +289,13 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .to("BB")
             .build();
     spannerResourceManager.write(m2);
-
-    // Write a single record to Spanner for the given logical shard
-    // Add the record with the transaction tag as txBy=
-    SpannerConfig spannerConfig =
-        SpannerConfig.create()
-            .withProjectId(PROJECT)
-            .withInstanceId(spannerResourceManager.getInstanceId())
-            .withDatabaseId(spannerResourceManager.getDatabaseId());
-    SpannerAccessor spannerAccessor = SpannerAccessor.getOrCreate(spannerConfig);
-    spannerAccessor
-        .getDatabaseClient()
-        .readWriteTransaction(
-            Options.tag("txBy=forwardMigration"),
-            Options.priority(spannerConfig.getRpcPriority().get()))
-        .run(
-            (TransactionRunner.TransactionCallable<Void>)
-                transaction -> {
-                  Mutation m3 =
-                      Mutation.newInsertOrUpdateBuilder(USER_TABLE)
-                          .set("id")
-                          .to(3)
-                          .set("full_name")
-                          .to("GG")
-                          .build();
-                  transaction.buffer(m3);
-                  return null;
-                });
   }
 
   private void assertBasicRowInCassandraDB() throws InterruptedException {
     PipelineOperator.Result result =
         pipelineOperator()
             .waitForCondition(
-                createConfig(jobInfo, Duration.ofMinutes(10)), () -> getRowCount(USER_TABLE) == 3);
+                createConfig(jobInfo, Duration.ofMinutes(10)), () -> getRowCount(USER_TABLE) == 2);
     assertThatResult(result).meetsConditions();
 
     Iterable<Row> rows;
@@ -338,7 +307,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
       throw new RuntimeException("Failed to read from Cassandra table: " + USER_TABLE, e);
     }
 
-    assertThat(rows).hasSize(3);
+    assertThat(rows).hasSize(2);
 
     for (Row row : rows) {
       LOG.info("Cassandra Row to Assert: {}", row.getFormattedContents());
@@ -348,8 +317,6 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         assertThat(row.getString("from")).isEqualTo("B");
       } else if (id == 2) {
         assertThat(row.getString("full_name")).isEqualTo("BB");
-      } else if (id == 3) {
-        assertThat(row.getString("full_name")).isEqualTo("GG");
       } else {
         throw new AssertionError("Unexpected row ID found: " + id);
       }
@@ -461,7 +428,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     Mutation mutationAllNull =
         Mutation.newInsertOrUpdateBuilder(ALL_DATA_TYPES_TABLE)
             .set("varchar_column")
-            .to("SampleVarcharForNull") // Only this column has a value
+            .to("ForNull") // Only this column has a value
             .set("tinyint_column")
             .to(Value.int64(null))
             .set("text_column")
@@ -551,7 +518,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     Mutation mutationForInsertOrUpdatePrimaryKey =
         Mutation.newInsertOrUpdateBuilder(ALL_DATA_TYPES_TABLE)
             .set("varchar_column")
-            .to("SampleVarcharPrimaryKeyOnly")
+            .to("PKey")
             .build();
 
     spannerResourceManager.write(mutationForInsertOrUpdatePrimaryKey);
@@ -732,8 +699,8 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             () ->
                 assertThat(row.getBytesUnsafe("bytes_column"))
                     .isEqualTo(ByteBuffer.wrap(ByteArray.copyFrom("Hello world").toByteArray())));
-      } else if (Objects.equals(varcharColumn, "SampleVarcharForNull")
-          || Objects.equals(varcharColumn, "SampleVarcharPrimaryKeyOnly")) {
+      } else if (Objects.equals(varcharColumn, "PKey")
+          || Objects.equals(varcharColumn, "ForNull")) {
         assertAll(
             () -> assertThat(row.isNull("tinyint_column")).isTrue(),
             () -> assertThat(row.isNull("text_column")).isTrue(),

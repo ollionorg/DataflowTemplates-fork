@@ -54,13 +54,6 @@ public class CustomTransformationWithCassandraForLiveIT implements ISpannerMigra
     if (request.getTableName().equals("customers")) {
       Map<String, Object> requestRow = request.getRequestRow();
       Map<String, Object> row = new HashMap<>();
-      // In case of update/delete events, return request as response without any transformation
-      if (request.getEventType().equals("UPDATE")) {
-        return new MigrationTransformationResponse(null, false);
-      }
-      if (request.getEventType().equals("DELETE")) {
-        return new MigrationTransformationResponse(null, true);
-      }
       row.put("full_name", requestRow.get("first_name") + " " + requestRow.get("last_name"));
       MigrationTransformationResponse response = new MigrationTransformationResponse(row, false);
       return response;

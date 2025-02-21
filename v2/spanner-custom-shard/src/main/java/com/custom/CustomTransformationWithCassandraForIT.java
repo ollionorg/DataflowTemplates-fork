@@ -24,9 +24,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// TODO: Rename the class since its being used in both Live and Reverse replication tests and in
-// both ITs and LTs
-public class CustomTransformationWithCassandraForLiveIT implements ISpannerMigrationTransformer {
+public class CustomTransformationWithCassandraForIT implements ISpannerMigrationTransformer {
 
   private static final Logger LOG = LoggerFactory.getLogger(CustomShardIdFetcher.class);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Google LLC
+ * Copyright (C) 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -24,52 +24,29 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * This is a sample class to be implemented by the customer. All the relevant dependencies have been
- * added and users need to implement the toSpannerRow() and/or toSourceRow() method for forward and
- * reverse replication flows respectively
- */
-public class CustomTransformationFetcher implements ISpannerMigrationTransformer {
+public class CustomTransformationWithCassandraForIT implements ISpannerMigrationTransformer {
 
   private static final Logger LOG = LoggerFactory.getLogger(CustomShardIdFetcher.class);
 
   @Override
-  public void init(String customParameters) {
-    LOG.info("init called with {}", customParameters);
+  public void init(String parameters) {
+    LOG.info("init called with {}", parameters);
   }
 
   @Override
   public MigrationTransformationResponse toSpannerRow(MigrationTransformationRequest request)
       throws InvalidTransformationException {
-    if (request.getTableName().equalsIgnoreCase("Customers")) {
-      Map<String, Object> requestRow = request.getRequestRow();
-      Map<String, Object> responseRow = new HashMap<>();
-
-      responseRow.put(
-          "full_name", requestRow.get("first_name") + " " + requestRow.get("last_name"));
-      responseRow.put("migration_shard_id", request.getShardId() + "_" + requestRow.get("id"));
-      MigrationTransformationResponse response =
-          new MigrationTransformationResponse(responseRow, false);
-      return response;
-    }
     return new MigrationTransformationResponse(null, false);
   }
 
   @Override
   public MigrationTransformationResponse toSourceRow(MigrationTransformationRequest request)
       throws InvalidTransformationException {
-    if (request.getTableName().equalsIgnoreCase("Customers")) {
+    if (request.getTableName().equalsIgnoreCase("customers")) {
       Map<String, Object> requestRow = request.getRequestRow();
-      Map<String, Object> responseRow = new HashMap<>();
-      String fullName = (String) requestRow.get("full_name");
-      String[] nameParts = fullName.split(" ", 2);
-      responseRow.put("first_name", nameParts[0]);
-      responseRow.put("last_name", nameParts[1]);
-      String migrationShardId = (String) requestRow.get("migration_shard_id");
-      String[] idParts = migrationShardId.split("_", 2);
-      responseRow.put("id", idParts[1]);
-      MigrationTransformationResponse response =
-          new MigrationTransformationResponse(responseRow, false);
+      Map<String, Object> row = new HashMap<>();
+      row.put("full_name", requestRow.get("first_name") + " " + requestRow.get("last_name"));
+      MigrationTransformationResponse response = new MigrationTransformationResponse(row, false);
       return response;
     }
     return new MigrationTransformationResponse(null, false);

@@ -1291,7 +1291,8 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     try {
       rows = cassandraResourceManager.readTable("BoundaryConversionTestTable");
     } catch (Exception e) {
-      throw new RuntimeException("Failed to read from Cassandra table: BoundaryConversionTestTable", e);
+      throw new RuntimeException(
+          "Failed to read from Cassandra table: BoundaryConversionTestTable", e);
     }
     assertThat(rows).hasSize(1);
     Row row = rows.iterator().next();

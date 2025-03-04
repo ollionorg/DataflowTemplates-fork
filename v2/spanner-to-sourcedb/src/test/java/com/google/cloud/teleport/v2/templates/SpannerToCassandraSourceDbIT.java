@@ -1337,7 +1337,14 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(Map.of(3.4028235E38f, 1.4E-45f, "Infinity", "Infinity", "NaN", "NaN")),
         () ->
             assertThat(row.getMap("map_double_column", Double.class, Double.class))
-                .isEqualTo(Map.of(1.7976931348623157E308, 1.7976931348623157E308, "Infinity", "Infinity", "NaN", "NaN")),
+                .isEqualTo(
+                    Map.of(
+                        1.7976931348623157E308,
+                        1.7976931348623157E308,
+                        "Infinity",
+                        "Infinity",
+                        "NaN",
+                        "NaN")),
         () ->
             assertThat(row.getMap("map_tinyint_column", Byte.class, Byte.class))
                 .isEqualTo(Map.of((byte) 127, (byte) -128)),

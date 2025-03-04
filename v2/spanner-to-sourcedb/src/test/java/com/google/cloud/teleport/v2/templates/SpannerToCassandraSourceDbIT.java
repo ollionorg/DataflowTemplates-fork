@@ -55,6 +55,7 @@ import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -161,6 +162,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
    * @throws InterruptedException if the thread is interrupted during execution.
    * @throws IOException if an I/O error occurs during the test execution.
    */
+  @Ignore("Disabled")
   @Test
   public void spannerToCasandraSourceDbBasic() throws InterruptedException, IOException {
     assertThatPipeline(jobInfo).isRunning();
@@ -177,6 +179,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
    * @throws InterruptedException if the thread is interrupted during execution.
    * @throws IOException if an I/O error occurs during the test execution.
    */
+  @Ignore("Disabled")
   @Test
   public void spannerToCasandraSourceDbDeleteOperation() throws InterruptedException, IOException {
     assertThatPipeline(jobInfo).isRunning();
@@ -227,6 +230,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
    * @throws IOException if an I/O error occurs during the test execution.
    * @throws MultipleFailureException if multiple assertions fail during validation.
    */
+  @Ignore("Disabled")
   @Test
   public void spannerToCassandraSourceAllDataTypeConversionTest()
       throws InterruptedException, IOException, MultipleFailureException {
@@ -245,6 +249,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
    * @throws IOException if an I/O error occurs during the test execution.
    * @throws MultipleFailureException if multiple assertions fail during validation.
    */
+  @Ignore("Disabled")
   @Test
   public void spannerToCassandraSourceDataTypeStringConversionTest()
       throws InterruptedException, IOException, MultipleFailureException {

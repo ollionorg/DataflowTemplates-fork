@@ -1244,9 +1244,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 Value.json(
                     "{\"3.4028235E38\": 1.4E-45, \"Infinity\": \"Infinity\", \"NaN\": \"NaN\"}"))
             .set("map_double_column")
-            .to(
-                Value.json(
-                    "{\"2.718281828459045\": \"2.718281828459045\"}"))
+            .to(Value.json("{\"2.718281828459045\": \"2.718281828459045\"}"))
             .set("map_tinyint_column")
             .to(Value.json("{\"127\": \"-128\"}"))
             .set("map_smallint_column")

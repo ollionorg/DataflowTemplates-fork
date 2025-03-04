@@ -1223,7 +1223,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("text_column")
             .to("Text data")
             .set("bytes_column")
-            .to(ByteArray.copyFrom("Blob data"))
+            .to("R29vZ2xl")
             .set("date_column")
             .to(Date.parseDate("9999-12-31"))
             .set("time_column")

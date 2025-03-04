@@ -1209,7 +1209,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("double_column")
             .to(Double.POSITIVE_INFINITY)
             .set("decimal_column")
-            .to(Value.numeric("99999999999999999999999999999.999999999"))
+            .to(new BigDecimal("99999999999999999999999999999.999999999").toPlainString())
             .set("bool_column")
             .to(Boolean.TRUE)
             .set("ascii_column")

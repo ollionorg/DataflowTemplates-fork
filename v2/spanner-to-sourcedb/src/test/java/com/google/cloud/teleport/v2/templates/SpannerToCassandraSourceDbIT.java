@@ -82,6 +82,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
   private static final String USER_TABLE_2 = "Users2";
   private static final String ALL_DATA_TYPES_TABLE = "AllDatatypeColumns";
   private static final String ALL_DATA_TYPES_CUSTOM_CONVERSION_TABLE = "AllDatatypeTransformation";
+  private static final String BOUNDARY_CONVERSION_TABLE = "BoundaryConversionTestTable";
   private static final HashSet<SpannerToCassandraSourceDbIT> testInstances = new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
   public static SpannerResourceManager spannerResourceManager;
@@ -1198,7 +1199,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
 
   private void insertBoundaryValuesIntoSpanner() {
     Mutation mutation =
-        Mutation.newInsertOrUpdateBuilder("boundaryConversionTestTable")
+        Mutation.newInsertOrUpdateBuilder(BOUNDARY_CONVERSION_TABLE)
             .set("varchar_column")
             .to("SampleVarchar")
             .set("tinyint_column")
@@ -1291,15 +1292,15 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         pipelineOperator()
             .waitForCondition(
                 createConfig(jobInfo, Duration.ofMinutes(10)),
-                () -> getRowCount("BoundaryConversionTestTable") == 1);
+                () -> getRowCount(BOUNDARY_CONVERSION_TABLE) == 1);
     assertThatResult(result).meetsConditions();
 
     Iterable<Row> rows;
     try {
-      rows = cassandraResourceManager.readTable("BoundaryConversionTestTable");
+      rows = cassandraResourceManager.readTable(BOUNDARY_CONVERSION_TABLE);
     } catch (Exception e) {
       throw new RuntimeException(
-          "Failed to read from Cassandra table: BoundaryConversionTestTable", e);
+          "Failed to read from Cassandra table: " + BOUNDARY_CONVERSION_TABLE, e);
     }
     assertThat(rows).hasSize(1);
     Row row = rows.iterator().next();

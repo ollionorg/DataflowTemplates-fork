@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS alldatatypecolumns (
     inet_column STRING(MAX)
 ) PRIMARY KEY(varchar_column);
 
-CREATE TABLE IF NOT EXISTS boundaryConversionTestTable (
+CREATE TABLE IF NOT EXISTS boundaryconversiontesttable (
     varchar_column STRING(20) NOT NULL,
     tinyint_column INT64,
     smallint_column INT64,

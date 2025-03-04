@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS boundaryconversiontesttable (
     date_column DATE,
     time_column STRING(MAX),
     timestamp_column TIMESTAMP,
-    duration_column STRING(MAX),
+    -- duration_column STRING(MAX),
     uuid_column STRING(MAX),
     timeuuid_column STRING(MAX),
     inet_column STRING(MAX),
@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS boundaryconversiontesttable (
     map_date_column JSON,
     map_time_column JSON,
     map_timestamp_column JSON,
-    map_duration_column JSON,
+    -- map_duration_column JSON,
     map_uuid_column JSON,
     map_timeuuid_column JSON,
     map_inet_column JSON

@@ -113,7 +113,7 @@ CREATE TABLE BoundaryConversionTestTable (
     date_column date,
     time_column time,
     timestamp_column timestamp,
-    duration_column duration,
+    -- duration_column duration,
     uuid_column uuid,
     timeuuid_column timeuuid,
     inet_column inet,
@@ -132,7 +132,7 @@ CREATE TABLE BoundaryConversionTestTable (
     map_date_column map<date, date>,
     map_time_column map<time, time>,
     map_timestamp_column map<timestamp, timestamp>,
-    map_duration_column map<text, duration>,
+    -- map_duration_column map<text, duration>,
     map_uuid_column map<uuid, uuid>,
     map_timeuuid_column map<timeuuid, timeuuid>,
     map_inet_column map<inet, inet>

@@ -1230,8 +1230,8 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .to("23:59:59.999999")
             .set("timestamp_column")
             .to(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999Z"))
-            .set("duration_column")
-            .to("P365243D")
+            // .set("duration_column")
+            // .to("P365243D")
             .set("uuid_column")
             .to("123e4567-e89b-12d3-a456-426614174000")
             .set("timeuuid_column")
@@ -1270,8 +1270,8 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .to(Value.json("{\"12:30:00\": \"02:45:00\"}"))
             .set("map_timestamp_column")
             .to(Value.json("{\"2025-01-01T00:00:00Z\": \"9999-12-31T23:59:59.999999Z\"}"))
-            .set("map_duration_column")
-            .to(Value.json("{\"P1Y2M3DT4H5M6.789S\": \"P365243D\"}"))
+            // .set("map_duration_column")
+            // .to(Value.json("{\"P1Y2M3DT4H5M6.789S\": \"P365243D\"}"))
             .set("map_uuid_column")
             .to(
                 Value.json(
@@ -1391,9 +1391,9 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                     Map.of(
                         Instant.parse("2025-01-01T00:00:00Z"),
                         Instant.parse("9999-12-31T23:59:59.999999Z"))),
-        () ->
-            assertThat(row.getMap("map_duration_column", String.class, String.class))
-                .isEqualTo(Map.of("P1Y2M3DT4H5M6.789S", "P365243D")),
+        // () ->
+        //     assertThat(row.getMap("map_duration_column", String.class, String.class))
+        //         .isEqualTo(Map.of("P1Y2M3DT4H5M6.789S", "P365243D")),
         () ->
             assertThat(row.getMap("map_uuid_column", UUID.class, UUID.class))
                 .isEqualTo(

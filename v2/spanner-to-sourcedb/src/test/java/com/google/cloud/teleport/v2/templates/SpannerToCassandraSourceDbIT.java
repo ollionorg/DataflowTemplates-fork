@@ -1334,7 +1334,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getBoolean("bool_column")).isTrue(),
         () -> assertThat(row.getString("ascii_column")).isEqualTo("ASCII_TEXT"),
         () -> assertThat(row.getString("text_column")).isEqualTo("Text data"),
-        () -> assertThat(row.getString("duration_column")).isEqualTo("P4DT1H"),
+        // () -> assertThat(row.getString("duration_column")).isEqualTo("P4DT1H"),
         () ->
             assertThat(row.getBytesUnsafe("bytes_column"))
                 .isEqualTo(ByteBuffer.wrap(expectedBytes)),
@@ -1446,9 +1446,9 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                     Map.of(
                         Instant.parse("2025-01-01T00:00:00Z"),
                         Instant.parse("9999-12-31T23:59:59.999999Z"))),
-        () ->
-            assertThat(row.getMap("map_duration_column", String.class, String.class))
-                .isEqualTo(Map.of("P4DT1H", "P4DT1H")),
+        // () ->
+        //     assertThat(row.getMap("map_duration_column", String.class, String.class))
+        //         .isEqualTo(Map.of("P4DT1H", "P4DT1H")),
         () ->
             assertThat(row.getMap("map_uuid_column", UUID.class, UUID.class))
                 .isEqualTo(

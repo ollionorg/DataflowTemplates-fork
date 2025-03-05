@@ -34,6 +34,7 @@ import com.google.pubsub.v1.SubscriptionName;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
@@ -1230,8 +1231,8 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .to("23:59:59.999999")
             .set("timestamp_column")
             .to(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999Z"))
-            // .set("duration_column")
-            // .to("P365243D")
+            .set("duration_column")
+            .to("P365243D")
             .set("uuid_column")
             .to("123e4567-e89b-12d3-a456-426614174000")
             .set("timeuuid_column")
@@ -1281,7 +1282,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 Value.json(
                     "{\"321e4567-e89b-12d3-a456-426614174000\": \"123e4567-e89b-12d3-a456-426614174000\"}"))
             .set("map_inet_column")
-            .to(Value.json("{\"192.168.0.1\": \"10.0.0.1\"}"))
+            .to(Value.json("{\"48.49.50.51\": \"::1\",\"3031:3233:3435:3637:3839:4041:4243:4445\": \"::ffff:192.0.2.128\" }"))
             .build();
 
     spannerResourceManager.write(mutation);
@@ -1417,7 +1418,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                         UUID.fromString("321e4567-e89b-12d3-a456-426614174000"),
                         UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))),
         () ->
-            assertThat(row.getMap("map_inet_column", String.class, String.class))
-                .isEqualTo(Map.of("192.168.0.1", "10.0.0.1")));
+            assertThat(row.getMap("map_inet_column", InetAddress.class, InetAddress.class))
+                .isEqualTo(Map.of("48.49.50.51", "::1", "3031:3233:3435:3637:3839:4041:4243:4445", "::ffff:192.0.2.128")));
   }
 }

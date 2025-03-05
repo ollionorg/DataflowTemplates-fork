@@ -1237,7 +1237,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("timestamp_column")
             .to(String.valueOf(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999Z")))
             .set("duration_column")
-            .to("P4DT1H")
+            .to("P1Y2M3DT4H5M6.789S")
             .set("uuid_column")
             .to("123e4567-e89b-12d3-a456-426614174000")
             .set("timeuuid_column")
@@ -1277,7 +1277,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("map_timestamp_column")
             .to(Value.json("{\"2025-01-01T00:00:00Z\": \"9999-12-31T23:59:59.999999Z\"}"))
             .set("map_duration_column")
-            .to(Value.json("{\"P4DT1H\": \"P4DT1H\"}"))
+            .to(Value.json("{\"P4DT1H\": \"P1Y2M3DT4H5M6.789S\"}"))
             .set("map_uuid_column")
             .to(
                 Value.json(
@@ -1337,7 +1337,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getBoolean("bool_column")).isTrue(),
         () -> assertThat(row.getString("ascii_column")).isEqualTo("ASCII_TEXT"),
         () -> assertThat(row.getString("text_column")).isEqualTo("Text data"),
-        () -> assertThat(row.getCqlDuration("duration_column").toString()).isEqualTo("4d"),
+        () -> assertThat(row.getCqlDuration("duration_column").toString()).isEqualTo("1y2mo3d"),
         () ->
             assertThat(row.getBytesUnsafe("bytes_column"))
                 .isEqualTo(ByteBuffer.wrap(expectedBytes)),
@@ -1478,7 +1478,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                         java.time.Instant.parse("9999-12-31T23:59:59.999Z"))),
         () ->
             assertThat(row.getMap("map_duration_column", String.class, CqlDuration.class))
-                .isEqualTo(Map.of("P4DT1H", CqlDuration.from("4d"))),
+                .isEqualTo(Map.of("P4DT1H", CqlDuration.from("1y2mo3d"))),
         () ->
             assertThat(row.getMap("map_uuid_column", UUID.class, UUID.class))
                 .isEqualTo(

@@ -1321,7 +1321,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getString("text_column")).isEqualTo("Text data"),
         () ->
             assertThat(row.getByte("bytes_column"))
-                .isEqualTo(ByteBuffer.wrap("Blob data".getBytes())),
+                .isEqualTo(ByteBuffer.wrap(ByteArray.copyFrom("Google").toByteArray())),
         () -> assertThat(row.getLocalDate("date_column")).isEqualTo(LocalDate.parse("9999-12-31")),
         () ->
             assertThat(row.getLocalTime("time_column"))

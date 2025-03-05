@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS alldatatypecolumns (
     enum_column STRING(MAX),
     bool_column BOOL,
     other_bool_column BOOL,
-    bytes_column BYTES(MAX),
+    bytes_column STRING(MAX),
     list_text_column JSON,
     list_int_column JSON,
     frozen_list_bigint_column JSON,

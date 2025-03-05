@@ -1282,7 +1282,9 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 Value.json(
                     "{\"321e4567-e89b-12d3-a456-426614174000\": \"123e4567-e89b-12d3-a456-426614174000\"}"))
             .set("map_inet_column")
-            .to(Value.json("{\"48.49.50.51\": \"::1\",\"3031:3233:3435:3637:3839:4041:4243:4445\": \"::ffff:192.0.2.128\" }"))
+            .to(
+                Value.json(
+                    "{\"48.49.50.51\": \"::1\",\"3031:3233:3435:3637:3839:4041:4243:4445\": \"::ffff:192.0.2.128\" }"))
             .build();
 
     spannerResourceManager.write(mutation);
@@ -1419,6 +1421,11 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                         UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))),
         () ->
             assertThat(row.getMap("map_inet_column", InetAddress.class, InetAddress.class))
-                .isEqualTo(Map.of("48.49.50.51", "::1", "3031:3233:3435:3637:3839:4041:4243:4445", "::ffff:192.0.2.128")));
+                .isEqualTo(
+                    Map.of(
+                        "48.49.50.51",
+                        "::1",
+                        "3031:3233:3435:3637:3839:4041:4243:4445",
+                        "::ffff:192.0.2.128")));
   }
 }

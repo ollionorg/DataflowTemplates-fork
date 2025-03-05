@@ -42,6 +42,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -1412,7 +1414,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(Map.of(2147483647, -2147483648)),
         () ->
             assertThat(row.getMap("map_bigint_column", Long.class, Long.class))
-                .isEqualTo(Map.of(9223372036854775807L, new BigInteger("9007199254740993"))),
+                .isEqualTo(Map.of(9223372036854775807L, 9007199254740993L)),
         () ->
             assertThat(row.getMap("map_varint_column", BigInteger.class, BigInteger.class))
                 .isEqualTo(
@@ -1428,12 +1430,39 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () ->
             assertThat(row.getMap("map_varchar_column", String.class, String.class))
                 .isEqualTo(Map.of("key1", "value1", "key2", "value2")),
-        () ->
-            assertThat(row.getMap("map_blob_column", ByteBuffer.class, ByteBuffer.class))
-                .isEqualTo(
-                    Map.of(
-                        ByteBuffer.wrap("R29vZ2xl".getBytes()),
-                        ByteBuffer.wrap("Q29tcGFueQ==".getBytes()))),
+        () -> {
+          // Decode base64 to raw byte arrays
+          byte[] keyBytes = Base64.getDecoder().decode("R29vZ2xl");
+          byte[] valueBytes = Base64.getDecoder().decode("Q29tcGFueQ==");
+
+          // Create expected map
+          Map<ByteBuffer, ByteBuffer> expected = new HashMap<>();
+          expected.put(ByteBuffer.wrap(keyBytes), ByteBuffer.wrap(valueBytes));
+
+          // Fetch actual map from Cassandra
+          Map<ByteBuffer, ByteBuffer> actual =
+              row.getMap("map_blob_column", ByteBuffer.class, ByteBuffer.class);
+
+          // Iterate and assert equality based on byte content instead of ByteBuffer object
+          // references
+          Assertions.assertThat(actual)
+              .allSatisfy(
+                  (key, value) -> {
+                    ByteBuffer expectedKey =
+                        expected.keySet().stream()
+                            .filter(k -> compareByteBuffers(k, key))
+                            .findAny()
+                            .orElse(null);
+                    Assertions.assertThat(expectedKey)
+                        .withFailMessage("Unexpected key: %s", keyToString(key))
+                        .isNotNull();
+
+                    ByteBuffer expectedValue = expected.get(expectedKey);
+                    Assertions.assertThat(expectedValue)
+                        .withFailMessage("Unexpected value for key %s", keyToString(key))
+                        .satisfies(v -> compareByteBuffers(v, value));
+                  });
+        },
         () ->
             assertThat(row.getMap("map_date_column", LocalDate.class, LocalDate.class))
                 .isEqualTo(Map.of(LocalDate.parse("2025-01-27"), LocalDate.parse("1995-01-29"))),
@@ -1444,8 +1473,8 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             assertThat(row.getMap("map_timestamp_column", Instant.class, Instant.class))
                 .isEqualTo(
                     Map.of(
-                        Instant.parse("2025-01-01T00:00:00Z"),
-                        Instant.parse("9999-12-31T23:59:59.999999Z"))),
+                        java.time.Instant.parse("2025-01-01T00:00:00Z"),
+                        java.time.Instant.parse("9999-12-31T23:59:59.999999Z"))),
         // () ->
         //     assertThat(row.getMap("map_duration_column", String.class, String.class))
         //         .isEqualTo(Map.of("P4DT1H", "P4DT1H")),
@@ -1482,5 +1511,30 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 e);
           }
         });
+  }
+
+  // Helper function to compare two ByteBuffers byte-by-byte
+  private boolean compareByteBuffers(ByteBuffer buffer1, ByteBuffer buffer2) {
+    if (buffer1.remaining() != buffer2.remaining()) {
+      return false;
+    }
+
+    for (int i = 0; i < buffer1.remaining(); i++) {
+      if (buffer1.get(i) != buffer2.get(i)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Utility for debugging, converting ByteBuffer to readable string
+  private String keyToString(ByteBuffer buffer) {
+    int oldPosition = buffer.position();
+    StringBuilder hex = new StringBuilder();
+    while (buffer.hasRemaining()) {
+      hex.append(String.format("%02x", buffer.get()));
+    }
+    buffer.position(oldPosition); // reset to original position
+    return hex.toString();
   }
 }

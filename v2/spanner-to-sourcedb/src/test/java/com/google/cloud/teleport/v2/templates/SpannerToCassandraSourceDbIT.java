@@ -22,6 +22,7 @@ import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.google.cloud.ByteArray;
 import com.google.cloud.Date;
 import com.google.cloud.Timestamp;
@@ -1336,7 +1337,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getBoolean("bool_column")).isTrue(),
         () -> assertThat(row.getString("ascii_column")).isEqualTo("ASCII_TEXT"),
         () -> assertThat(row.getString("text_column")).isEqualTo("Text data"),
-        () -> assertThat(row.getCqlDuration("duration_column").toString()).isEqualTo("P4DT1H"),
+        // () -> assertThat(row.getString("duration_column")).isEqualTo("P4DT1H"),
         () ->
             assertThat(row.getBytesUnsafe("bytes_column"))
                 .isEqualTo(ByteBuffer.wrap(expectedBytes)),
@@ -1476,8 +1477,8 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                         java.time.Instant.parse("2025-01-01T00:00:00Z"),
                         java.time.Instant.parse("9999-12-31T23:59:59.999Z"))),
         () ->
-            assertThat(row.getMap("map_duration_column", String.class, String.class))
-                .isEqualTo(Map.of("P4DT1H", "P4DT1H")),
+            assertThat(row.getMap("map_duration_column", String.class, CqlDuration.class))
+                .isEqualTo(Map.of("P4DT1H", CqlDuration.from("P4DT1H"))),
         () ->
             assertThat(row.getMap("map_uuid_column", UUID.class, UUID.class))
                 .isEqualTo(

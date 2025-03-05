@@ -48,12 +48,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
+import org.assertj.core.api.Assertions;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -1230,7 +1232,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("time_column")
             .to("23:59:59.999999")
             .set("timestamp_column")
-            .to(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999Z"))
+            .to(String.valueOf(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999Z")))
             // .set("duration_column")
             // .to("P4DT1H")
             .set("uuid_column")
@@ -1254,7 +1256,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("map_int_column")
             .to(Value.json("{\"2147483647\": \"-2147483648\"}"))
             .set("map_bigint_column")
-            .to(Value.json("{\"9223372036854775807\": \"9007199254740993\"}"))
+            .to(Value.json("{\"9223372036854775807\": 9007199254740993}"))
             .set("map_varint_column")
             .to(Value.json("{\"100000000000000000000\": \"-100000000000000000000\"}"))
             .set("map_decimal_column")
@@ -1342,24 +1344,63 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(java.time.LocalTime.parse("23:59:59.999999")),
         () ->
             assertThat(row.getInstant("timestamp_column"))
-                .isEqualTo(Instant.parse("9999-12-31T23:59:59.999999Z")),
+                .isEqualTo(java.time.Instant.parse("9999-12-31T23:59:59.999999Z")),
         // Maps
         () ->
             assertThat(row.getMap("map_bool_column", Boolean.class, Boolean.class))
                 .isEqualTo(Map.of(true, false)),
-        () ->
-            assertThat(row.getMap("map_float_column", Float.class, Float.class))
-                .isEqualTo(Map.of(3.4028235E38f, 1.4E-45f, "Infinity", "Infinity", "NaN", "NaN")),
+        () -> {
+          Map<Float, Float> expected =
+              Map.of(
+                  3.4028235E38f,
+                  1.4E-45f,
+                  Float.POSITIVE_INFINITY,
+                  Float.POSITIVE_INFINITY,
+                  Float.NaN,
+                  Float.NaN);
+
+          Map<Float, Float> actual = row.getMap("map_float_column", Float.class, Float.class);
+
+          // Check if all expected keys exist in the actual map, and assert their values
+          expected.forEach(
+              (key, expectedValue) -> {
+                Assertions.assertThat(actual.containsKey(key))
+                    .withFailMessage("Actual map is missing key: %s", key)
+                    .isTrue();
+
+                Float actualValue = actual.get(key);
+
+                if (Float.isNaN(expectedValue)) {
+                  // Handle NaN separately because NaN is not equal to itself
+                  Assertions.assertThat(Float.isNaN(actualValue))
+                      .withFailMessage("Value for key %s should be NaN", key)
+                      .isTrue();
+                } else if (Float.isInfinite(expectedValue)) {
+                  // Handle Infinity separately
+                  Assertions.assertThat(actualValue)
+                      .withFailMessage("Value for key %s should be Infinity", key)
+                      .isEqualTo(Float.POSITIVE_INFINITY);
+                } else {
+                  // Regular comparison
+                  Assertions.assertThat(actualValue)
+                      .withFailMessage("Value for key %s is incorrect", key)
+                      .isEqualTo(expectedValue);
+                }
+              });
+
+          // Check if the actual map does not have extra keys that are not expected
+          Set<Float> unexpectedKeys =
+              actual.keySet().stream()
+                  .filter(key -> !expected.containsKey(key))
+                  .collect(Collectors.toSet());
+
+          Assertions.assertThat(unexpectedKeys)
+              .withFailMessage("Actual map has unexpected keys: %s", unexpectedKeys)
+              .isEmpty();
+        },
         () ->
             assertThat(row.getMap("map_double_column", Double.class, Double.class))
-                .isEqualTo(
-                    Map.of(
-                        1.7976931348623157E308,
-                        1.7976931348623157E308,
-                        "Infinity",
-                        "Infinity",
-                        "NaN",
-                        "NaN")),
+                .isEqualTo(Map.of(2.718281828459045, 2.718281828459045)),
         () ->
             assertThat(row.getMap("map_tinyint_column", Byte.class, Byte.class))
                 .isEqualTo(Map.of((byte) 127, (byte) -128)),

@@ -1337,7 +1337,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getBoolean("bool_column")).isTrue(),
         () -> assertThat(row.getString("ascii_column")).isEqualTo("ASCII_TEXT"),
         () -> assertThat(row.getString("text_column")).isEqualTo("Text data"),
-        // () -> assertThat(row.getString("duration_column")).isEqualTo("P4DT1H"),
+        () -> assertThat(row.getCqlDuration("duration_column").toString()).isEqualTo("P4DT1H"),
         () ->
             assertThat(row.getBytesUnsafe("bytes_column"))
                 .isEqualTo(ByteBuffer.wrap(expectedBytes)),

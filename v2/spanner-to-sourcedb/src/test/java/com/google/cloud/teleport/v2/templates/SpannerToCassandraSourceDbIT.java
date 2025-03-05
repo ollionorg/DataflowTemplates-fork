@@ -1461,13 +1461,26 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                     Map.of(
                         UUID.fromString("321e4567-e89b-12d3-a456-426614174000"),
                         UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))),
-        () ->
-            assertThat(row.getMap("map_inet_column", InetAddress.class, InetAddress.class))
-                .isEqualTo(
-                    Map.of(
-                        "48.49.50.51",
-                        "::1",
-                        "3031:3233:3435:3637:3839:4041:4243:4445",
-                        "::ffff:192.0.2.128")));
+        () -> {
+          try {
+            Map<InetAddress, InetAddress> expected =
+                Map.of(
+                    InetAddress.getByName("48.49.50.51"), InetAddress.getByName("::1"),
+                    InetAddress.getByName("3031:3233:3435:3637:3839:4041:4243:4445"),
+                        InetAddress.getByName("::ffff:192.0.2.128"));
+
+            Map<InetAddress, InetAddress> actual =
+                row.getMap("map_inet_column", InetAddress.class, InetAddress.class);
+
+            Assertions.assertThat(actual)
+                .as(
+                    "Checking the mapping of IP addresses between Cassandra and the expected output")
+                .isEqualTo(expected);
+          } catch (Exception e) {
+            throw new RuntimeException(
+                "Failed to convert String to InetAddress, possibly due to an invalid IP format.",
+                e);
+          }
+        });
   }
 }

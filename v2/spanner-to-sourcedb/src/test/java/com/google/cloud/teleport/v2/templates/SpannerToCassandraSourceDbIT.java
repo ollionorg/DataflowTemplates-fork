@@ -1475,9 +1475,9 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                     Map.of(
                         java.time.Instant.parse("2025-01-01T00:00:00Z"),
                         java.time.Instant.parse("9999-12-31T23:59:59.999Z"))),
-        // () ->
-        //     assertThat(row.getMap("map_duration_column", String.class, String.class))
-        //         .isEqualTo(Map.of("P4DT1H", "P4DT1H")),
+        () ->
+            assertThat(row.getMap("map_duration_column", String.class, String.class))
+                .isEqualTo(Map.of("P4DT1H", "P4DT1H")),
         () ->
             assertThat(row.getMap("map_uuid_column", UUID.class, UUID.class))
                 .isEqualTo(

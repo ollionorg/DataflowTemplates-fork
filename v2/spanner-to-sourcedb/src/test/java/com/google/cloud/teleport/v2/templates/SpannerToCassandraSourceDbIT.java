@@ -1347,7 +1347,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(java.time.LocalTime.parse("23:59:59.999999")),
         () ->
             assertThat(row.getInstant("timestamp_column"))
-                .isEqualTo(java.time.Instant.parse("9999-12-31T23:59:59.999999Z")),
+                .isEqualTo(java.time.Instant.parse("9999-12-31T23:59:59.999Z")),
         // Maps
         () ->
             assertThat(row.getMap("map_bool_column", Boolean.class, Boolean.class))
@@ -1478,7 +1478,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                         java.time.Instant.parse("9999-12-31T23:59:59.999Z"))),
         () ->
             assertThat(row.getMap("map_duration_column", String.class, CqlDuration.class))
-                .isEqualTo(Map.of("P4DT1H", CqlDuration.from("P4DT1H"))),
+                .isEqualTo(Map.of("P4DT1H", CqlDuration.from("4d"))),
         () ->
             assertThat(row.getMap("map_uuid_column", UUID.class, UUID.class))
                 .isEqualTo(

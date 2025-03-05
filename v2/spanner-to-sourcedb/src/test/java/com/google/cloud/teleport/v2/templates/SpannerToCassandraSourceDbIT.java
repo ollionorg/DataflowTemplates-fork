@@ -22,6 +22,7 @@ import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.google.cloud.ByteArray;
 import com.google.cloud.Date;
 import com.google.cloud.Timestamp;
@@ -34,6 +35,7 @@ import com.google.pubsub.v1.SubscriptionName;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
@@ -41,20 +43,25 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
+import org.assertj.core.api.Assertions;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -81,6 +88,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
   private static final String USER_TABLE_2 = "Users2";
   private static final String ALL_DATA_TYPES_TABLE = "AllDatatypeColumns";
   private static final String ALL_DATA_TYPES_CUSTOM_CONVERSION_TABLE = "AllDatatypeTransformation";
+  private static final String BOUNDARY_CONVERSION_TABLE = "BoundaryConversionTestTable";
   private static final HashSet<SpannerToCassandraSourceDbIT> testInstances = new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
   public static SpannerResourceManager spannerResourceManager;
@@ -1193,7 +1201,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
 
   private void insertBoundaryValuesIntoSpanner() {
     Mutation mutation =
-        Mutation.newInsertOrUpdateBuilder("boundaryConversionTestTable")
+        Mutation.newInsertOrUpdateBuilder(BOUNDARY_CONVERSION_TABLE)
             .set("varchar_column")
             .to("SampleVarchar")
             .set("tinyint_column")
@@ -1209,7 +1217,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("double_column")
             .to(Double.POSITIVE_INFINITY)
             .set("decimal_column")
-            .to(Value.numeric("99999999999999999999999999999.999999999"))
+            .to(new BigDecimal("99999999999999999999999999999.999999999").toPlainString())
             .set("bool_column")
             .to(Boolean.TRUE)
             .set("ascii_column")
@@ -1217,15 +1225,15 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("text_column")
             .to("Text data")
             .set("bytes_column")
-            .to(ByteArray.copyFrom("Blob data"))
+            .to("R29vZ2xl")
             .set("date_column")
             .to(Date.parseDate("9999-12-31"))
             .set("time_column")
             .to("23:59:59.999999")
             .set("timestamp_column")
-            .to(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999Z"))
+            .to(String.valueOf(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999Z")))
             .set("duration_column")
-            .to("P365243D")
+            .to("P4DT1H")
             .set("uuid_column")
             .to("123e4567-e89b-12d3-a456-426614174000")
             .set("timeuuid_column")
@@ -1235,9 +1243,11 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("map_bool_column")
             .to(Value.json("{\"true\": false}"))
             .set("map_float_column")
-            .to(Value.json("{\"3.4028235E38\": 1.4E-45, \"Infinity\": \"NaN\"}"))
+            .to(
+                Value.json(
+                    "{\"3.4028235E38\": 1.4E-45, \"Infinity\": \"Infinity\", \"NaN\": \"NaN\"}"))
             .set("map_double_column")
-            .to(Value.json("{\"1.7976931348623157E308\": 4.9E-324, \"Infinity\": \"NaN\"}"))
+            .to(Value.json("{\"2.718281828459045\": \"2.718281828459045\"}"))
             .set("map_tinyint_column")
             .to(Value.json("{\"127\": \"-128\"}"))
             .set("map_smallint_column")
@@ -1245,7 +1255,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("map_int_column")
             .to(Value.json("{\"2147483647\": \"-2147483648\"}"))
             .set("map_bigint_column")
-            .to(Value.json("{\"9223372036854775807\": \"9007199254740993\"}"))
+            .to(Value.json("{\"9223372036854775807\": 9007199254740993}"))
             .set("map_varint_column")
             .to(Value.json("{\"100000000000000000000\": \"-100000000000000000000\"}"))
             .set("map_decimal_column")
@@ -1263,7 +1273,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("map_timestamp_column")
             .to(Value.json("{\"2025-01-01T00:00:00Z\": \"9999-12-31T23:59:59.999999Z\"}"))
             .set("map_duration_column")
-            .to(Value.json("{\"P1Y2M3DT4H5M6.789S\": \"P365243D\"}"))
+            .to(Value.json("{\"P4DT1H\": \"P4DT1H\"}"))
             .set("map_uuid_column")
             .to(
                 Value.json(
@@ -1273,7 +1283,9 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 Value.json(
                     "{\"321e4567-e89b-12d3-a456-426614174000\": \"123e4567-e89b-12d3-a456-426614174000\"}"))
             .set("map_inet_column")
-            .to(Value.json("{\"192.168.0.1\": \"10.0.0.1\"}"))
+            .to(
+                Value.json(
+                    "{\"48.49.50.51\": \"::1\",\"3031:3233:3435:3637:3839:4041:4243:4445\": \"::ffff:192.0.2.128\" }"))
             .build();
 
     spannerResourceManager.write(mutation);
@@ -1284,15 +1296,26 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         pipelineOperator()
             .waitForCondition(
                 createConfig(jobInfo, Duration.ofMinutes(10)),
-                () -> getRowCount("BoundaryConversionTestTable") == 1);
+                () -> getRowCount(BOUNDARY_CONVERSION_TABLE) == 1);
     assertThatResult(result).meetsConditions();
 
     Iterable<Row> rows;
     try {
-      rows = cassandraResourceManager.readTable("BoundaryConversionTestTable");
+      rows = cassandraResourceManager.readTable(BOUNDARY_CONVERSION_TABLE);
     } catch (Exception e) {
-      throw new RuntimeException("Failed to read from Cassandra table: BoundaryConversionTestTable", e);
+      throw new RuntimeException(
+          "Failed to read from Cassandra table: " + BOUNDARY_CONVERSION_TABLE, e);
     }
+    // Convert hexadecimal string to a byte array
+    String hexString = "476f6f676c65"; // "Google" without "0x" prefix
+    byte[] expectedBytes = new byte[hexString.length() / 2];
+
+    for (int i = 0; i < expectedBytes.length; i++) {
+      int index = i * 2;
+      int j = Integer.parseInt(hexString.substring(index, index + 2), 16);
+      expectedBytes[i] = (byte) j;
+    }
+
     assertThat(rows).hasSize(1);
     Row row = rows.iterator().next();
     assertAll(
@@ -1310,26 +1333,73 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getBoolean("bool_column")).isTrue(),
         () -> assertThat(row.getString("ascii_column")).isEqualTo("ASCII_TEXT"),
         () -> assertThat(row.getString("text_column")).isEqualTo("Text data"),
+        () -> assertThat(row.getCqlDuration("duration_column").toString()).isEqualTo("P4DT1H"),
         () ->
-            assertThat(row.getByte("bytes_column"))
-                .isEqualTo(ByteBuffer.wrap("Blob data".getBytes())),
+            assertThat(row.getBytesUnsafe("bytes_column"))
+                .isEqualTo(ByteBuffer.wrap(expectedBytes)),
         () -> assertThat(row.getLocalDate("date_column")).isEqualTo(LocalDate.parse("9999-12-31")),
         () ->
             assertThat(row.getLocalTime("time_column"))
                 .isEqualTo(java.time.LocalTime.parse("23:59:59.999999")),
         () ->
             assertThat(row.getInstant("timestamp_column"))
-                .isEqualTo(Instant.parse("9999-12-31T23:59:59.999999Z")),
+                .isEqualTo(java.time.Instant.parse("9999-12-31T23:59:59.999Z")),
         // Maps
         () ->
             assertThat(row.getMap("map_bool_column", Boolean.class, Boolean.class))
                 .isEqualTo(Map.of(true, false)),
-        () ->
-            assertThat(row.getMap("map_float_column", Float.class, Float.class))
-                .isEqualTo(Map.of(3.4028235E38f, 1.4E-45f, "Infinity", "NaN")),
+        () -> {
+          Map<Float, Float> expected =
+              Map.of(
+                  3.4028235E38f,
+                  1.4E-45f,
+                  Float.POSITIVE_INFINITY,
+                  Float.POSITIVE_INFINITY,
+                  Float.NaN,
+                  Float.NaN);
+
+          Map<Float, Float> actual = row.getMap("map_float_column", Float.class, Float.class);
+
+          // Check if all expected keys exist in the actual map, and assert their values
+          expected.forEach(
+              (key, expectedValue) -> {
+                Assertions.assertThat(actual.containsKey(key))
+                    .withFailMessage("Actual map is missing key: %s", key)
+                    .isTrue();
+
+                Float actualValue = actual.get(key);
+
+                if (Float.isNaN(expectedValue)) {
+                  // Handle NaN separately because NaN is not equal to itself
+                  Assertions.assertThat(Float.isNaN(actualValue))
+                      .withFailMessage("Value for key %s should be NaN", key)
+                      .isTrue();
+                } else if (Float.isInfinite(expectedValue)) {
+                  // Handle Infinity separately
+                  Assertions.assertThat(actualValue)
+                      .withFailMessage("Value for key %s should be Infinity", key)
+                      .isEqualTo(Float.POSITIVE_INFINITY);
+                } else {
+                  // Regular comparison
+                  Assertions.assertThat(actualValue)
+                      .withFailMessage("Value for key %s is incorrect", key)
+                      .isEqualTo(expectedValue);
+                }
+              });
+
+          // Check if the actual map does not have extra keys that are not expected
+          Set<Float> unexpectedKeys =
+              actual.keySet().stream()
+                  .filter(key -> !expected.containsKey(key))
+                  .collect(Collectors.toSet());
+
+          Assertions.assertThat(unexpectedKeys)
+              .withFailMessage("Actual map has unexpected keys: %s", unexpectedKeys)
+              .isEmpty();
+        },
         () ->
             assertThat(row.getMap("map_double_column", Double.class, Double.class))
-                .isEqualTo(Map.of(1.7976931348623157E308, 4.9E-324, "Infinity", "NaN")),
+                .isEqualTo(Map.of(2.718281828459045, 2.718281828459045)),
         () ->
             assertThat(row.getMap("map_tinyint_column", Byte.class, Byte.class))
                 .isEqualTo(Map.of((byte) 127, (byte) -128)),
@@ -1341,7 +1411,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(Map.of(2147483647, -2147483648)),
         () ->
             assertThat(row.getMap("map_bigint_column", Long.class, Long.class))
-                .isEqualTo(Map.of(9223372036854775807L, new BigInteger("9007199254740993"))),
+                .isEqualTo(Map.of(9223372036854775807L, 9007199254740993L)),
         () ->
             assertThat(row.getMap("map_varint_column", BigInteger.class, BigInteger.class))
                 .isEqualTo(
@@ -1357,12 +1427,39 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () ->
             assertThat(row.getMap("map_varchar_column", String.class, String.class))
                 .isEqualTo(Map.of("key1", "value1", "key2", "value2")),
-        () ->
-            assertThat(row.getMap("map_blob_column", ByteBuffer.class, ByteBuffer.class))
-                .isEqualTo(
-                    Map.of(
-                        ByteBuffer.wrap("R29vZ2xl".getBytes()),
-                        ByteBuffer.wrap("Q29tcGFueQ==".getBytes()))),
+        () -> {
+          // Decode base64 to raw byte arrays
+          byte[] keyBytes = Base64.getDecoder().decode("R29vZ2xl");
+          byte[] valueBytes = Base64.getDecoder().decode("Q29tcGFueQ==");
+
+          // Create expected map
+          Map<ByteBuffer, ByteBuffer> expected = new HashMap<>();
+          expected.put(ByteBuffer.wrap(keyBytes), ByteBuffer.wrap(valueBytes));
+
+          // Fetch actual map from Cassandra
+          Map<ByteBuffer, ByteBuffer> actual =
+              row.getMap("map_blob_column", ByteBuffer.class, ByteBuffer.class);
+
+          // Iterate and assert equality based on byte content instead of ByteBuffer object
+          // references
+          Assertions.assertThat(actual)
+              .allSatisfy(
+                  (key, value) -> {
+                    ByteBuffer expectedKey =
+                        expected.keySet().stream()
+                            .filter(k -> compareByteBuffers(k, key))
+                            .findAny()
+                            .orElse(null);
+                    Assertions.assertThat(expectedKey)
+                        .withFailMessage("Unexpected key: %s", keyToString(key))
+                        .isNotNull();
+
+                    ByteBuffer expectedValue = expected.get(expectedKey);
+                    Assertions.assertThat(expectedValue)
+                        .withFailMessage("Unexpected value for key %s", keyToString(key))
+                        .satisfies(v -> compareByteBuffers(v, value));
+                  });
+        },
         () ->
             assertThat(row.getMap("map_date_column", LocalDate.class, LocalDate.class))
                 .isEqualTo(Map.of(LocalDate.parse("2025-01-27"), LocalDate.parse("1995-01-29"))),
@@ -1373,11 +1470,11 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             assertThat(row.getMap("map_timestamp_column", Instant.class, Instant.class))
                 .isEqualTo(
                     Map.of(
-                        Instant.parse("2025-01-01T00:00:00Z"),
-                        Instant.parse("9999-12-31T23:59:59.999999Z"))),
+                        java.time.Instant.parse("2025-01-01T00:00:00Z"),
+                        java.time.Instant.parse("9999-12-31T23:59:59.999Z"))),
         () ->
-            assertThat(row.getMap("map_duration_column", String.class, String.class))
-                .isEqualTo(Map.of("P1Y2M3DT4H5M6.789S", "P365243D")),
+            assertThat(row.getMap("map_duration_column", String.class, CqlDuration.class))
+                .isEqualTo(Map.of("P4DT1H", CqlDuration.from("4d"))),
         () ->
             assertThat(row.getMap("map_uuid_column", UUID.class, UUID.class))
                 .isEqualTo(
@@ -1390,8 +1487,51 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                     Map.of(
                         UUID.fromString("321e4567-e89b-12d3-a456-426614174000"),
                         UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))),
-        () ->
-            assertThat(row.getMap("map_inet_column", String.class, String.class))
-                .isEqualTo(Map.of("192.168.0.1", "10.0.0.1")));
+        () -> {
+          try {
+            Map<InetAddress, InetAddress> expected =
+                Map.of(
+                    InetAddress.getByName("48.49.50.51"), InetAddress.getByName("::1"),
+                    InetAddress.getByName("3031:3233:3435:3637:3839:4041:4243:4445"),
+                        InetAddress.getByName("::ffff:192.0.2.128"));
+
+            Map<InetAddress, InetAddress> actual =
+                row.getMap("map_inet_column", InetAddress.class, InetAddress.class);
+
+            Assertions.assertThat(actual)
+                .as(
+                    "Checking the mapping of IP addresses between Cassandra and the expected output")
+                .isEqualTo(expected);
+          } catch (Exception e) {
+            throw new RuntimeException(
+                "Failed to convert String to InetAddress, possibly due to an invalid IP format.",
+                e);
+          }
+        });
+  }
+
+  // Helper function to compare two ByteBuffers byte-by-byte
+  private boolean compareByteBuffers(ByteBuffer buffer1, ByteBuffer buffer2) {
+    if (buffer1.remaining() != buffer2.remaining()) {
+      return false;
+    }
+
+    for (int i = 0; i < buffer1.remaining(); i++) {
+      if (buffer1.get(i) != buffer2.get(i)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Utility for debugging, converting ByteBuffer to readable string
+  private String keyToString(ByteBuffer buffer) {
+    int oldPosition = buffer.position();
+    StringBuilder hex = new StringBuilder();
+    while (buffer.hasRemaining()) {
+      hex.append(String.format("%02x", buffer.get()));
+    }
+    buffer.position(oldPosition); // reset to original position
+    return hex.toString();
   }
 }

@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS alldatatypecolumns (
     inet_column STRING(MAX)
 ) PRIMARY KEY(varchar_column);
 
-CREATE TABLE IF NOT EXISTS boundaryConversionTestTable (
+CREATE TABLE IF NOT EXISTS boundaryconversiontesttable (
     varchar_column STRING(20) NOT NULL,
     tinyint_column INT64,
     smallint_column INT64,
@@ -118,9 +118,9 @@ CREATE TABLE IF NOT EXISTS boundaryConversionTestTable (
     ascii_column STRING(MAX),
     text_column STRING(MAX),
     bytes_column BYTES(MAX),
-    date_column DATE,
+     date_column STRING(MAX),
     time_column STRING(MAX),
-    timestamp_column TIMESTAMP,
+    timestamp_column STRING(MAX),
     duration_column STRING(MAX),
     uuid_column STRING(MAX),
     timeuuid_column STRING(MAX),

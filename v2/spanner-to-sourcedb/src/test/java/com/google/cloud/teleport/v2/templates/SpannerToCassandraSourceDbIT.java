@@ -1233,8 +1233,8 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .to("23:59:59.999999")
             .set("timestamp_column")
             .to(String.valueOf(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999Z")))
-            // .set("duration_column")
-            // .to("P4DT1H")
+            .set("duration_column")
+            .to("P4DT1H")
             .set("uuid_column")
             .to("123e4567-e89b-12d3-a456-426614174000")
             .set("timeuuid_column")
@@ -1273,8 +1273,8 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .to(Value.json("{\"12:30:00\": \"02:45:00\"}"))
             .set("map_timestamp_column")
             .to(Value.json("{\"2025-01-01T00:00:00Z\": \"9999-12-31T23:59:59.999999Z\"}"))
-            // .set("map_duration_column")
-            // .to(Value.json("{\"P4DT1H\": \"P4DT1H\"}"))
+            .set("map_duration_column")
+            .to(Value.json("{\"P4DT1H\": \"P4DT1H\"}"))
             .set("map_uuid_column")
             .to(
                 Value.json(
@@ -1334,7 +1334,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getBoolean("bool_column")).isTrue(),
         () -> assertThat(row.getString("ascii_column")).isEqualTo("ASCII_TEXT"),
         () -> assertThat(row.getString("text_column")).isEqualTo("Text data"),
-        // () -> assertThat(row.getString("duration_column")).isEqualTo("P4DT1H"),
+        () -> assertThat(row.getString("duration_column")).isEqualTo("P4DT1H"),
         () ->
             assertThat(row.getBytesUnsafe("bytes_column"))
                 .isEqualTo(ByteBuffer.wrap(expectedBytes)),
@@ -1446,9 +1446,9 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                     Map.of(
                         Instant.parse("2025-01-01T00:00:00Z"),
                         Instant.parse("9999-12-31T23:59:59.999999Z"))),
-        // () ->
-        //     assertThat(row.getMap("map_duration_column", String.class, String.class))
-        //         .isEqualTo(Map.of("P4DT1H", "P4DT1H")),
+        () ->
+            assertThat(row.getMap("map_duration_column", String.class, String.class))
+                .isEqualTo(Map.of("P4DT1H", "P4DT1H")),
         () ->
             assertThat(row.getMap("map_uuid_column", UUID.class, UUID.class))
                 .isEqualTo(

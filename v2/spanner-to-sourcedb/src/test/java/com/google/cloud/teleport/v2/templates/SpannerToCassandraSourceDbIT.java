@@ -1302,6 +1302,16 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
       throw new RuntimeException(
           "Failed to read from Cassandra table: " + BOUNDARY_CONVERSION_TABLE, e);
     }
+    // Convert hexadecimal string to a byte array
+    String hexString = "476f6f676c65"; // "Google" without "0x" prefix
+    byte[] expectedBytes = new byte[hexString.length() / 2];
+
+    for (int i = 0; i < expectedBytes.length; i++) {
+      int index = i * 2;
+      int j = Integer.parseInt(hexString.substring(index, index + 2), 16);
+      expectedBytes[i] = (byte) j;
+    }
+
     assertThat(rows).hasSize(1);
     Row row = rows.iterator().next();
     assertAll(
@@ -1320,8 +1330,8 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getString("ascii_column")).isEqualTo("ASCII_TEXT"),
         () -> assertThat(row.getString("text_column")).isEqualTo("Text data"),
         () ->
-            assertThat(row.getByte("bytes_column"))
-                .isEqualTo(ByteBuffer.wrap(ByteArray.copyFrom("Google").toByteArray())),
+            assertThat(row.getBytesUnsafe("bytes_column"))
+                .isEqualTo(ByteBuffer.wrap(expectedBytes)),
         () -> assertThat(row.getLocalDate("date_column")).isEqualTo(LocalDate.parse("9999-12-31")),
         () ->
             assertThat(row.getLocalTime("time_column"))

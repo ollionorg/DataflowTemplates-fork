@@ -31,11 +31,11 @@ import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.Value;
 import com.google.cloud.teleport.metadata.SkipDirectRunnerTest;
 import com.google.cloud.teleport.metadata.TemplateIntegrationTest;
+import com.google.common.net.InetAddresses;
 import com.google.pubsub.v1.SubscriptionName;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
@@ -1237,7 +1237,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("timestamp_column")
             .to(String.valueOf(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999Z")))
             .set("duration_column")
-            .to("P1Y2M3DT4H5M6.789S")
+            .to("P1Y2M3DT14706789000000S")
             .set("uuid_column")
             .to("123e4567-e89b-12d3-a456-426614174000")
             .set("timeuuid_column")
@@ -1277,7 +1277,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("map_timestamp_column")
             .to(Value.json("{\"2025-01-01T00:00:00Z\": \"9999-12-31T23:59:59.999999Z\"}"))
             .set("map_duration_column")
-            .to(Value.json("{\"P4DT1H\": \"P1Y2M3DT4H5M6.789S\"}"))
+            .to(Value.json("{\"P4DT1H\": \"P1Y2M3DT14706789000000S\"}"))
             .set("map_uuid_column")
             .to(
                 Value.json(
@@ -1337,7 +1337,9 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getBoolean("bool_column")).isTrue(),
         () -> assertThat(row.getString("ascii_column")).isEqualTo("ASCII_TEXT"),
         () -> assertThat(row.getString("text_column")).isEqualTo("Text data"),
-        () -> assertThat(row.getCqlDuration("duration_column").toString()).isEqualTo("1y2mo3d"),
+        () ->
+            assertThat(row.getCqlDuration("duration_column").toString())
+                .isEqualTo("1y2mo3d 14706789000000ns"),
         () ->
             assertThat(row.getBytesUnsafe("bytes_column"))
                 .isEqualTo(ByteBuffer.wrap(expectedBytes)),
@@ -1478,7 +1480,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                         java.time.Instant.parse("9999-12-31T23:59:59.999Z"))),
         () ->
             assertThat(row.getMap("map_duration_column", String.class, CqlDuration.class))
-                .isEqualTo(Map.of("P4DT1H", CqlDuration.from("1y2mo3d"))),
+                .isEqualTo(Map.of("P4DT1H", CqlDuration.from("1y2mo3d 14706789000000ns"))),
         () ->
             assertThat(row.getMap("map_uuid_column", UUID.class, UUID.class))
                 .isEqualTo(
@@ -1491,27 +1493,14 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                     Map.of(
                         UUID.fromString("321e4567-e89b-12d3-a456-426614174000"),
                         UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))),
-        () -> {
-          try {
-            Map<InetAddress, InetAddress> expected =
-                Map.of(
-                    InetAddress.getByName("48.49.50.51"), InetAddress.getByName("::1"),
-                    InetAddress.getByName("3031:3233:3435:3637:3839:4041:4243:4445"),
-                        InetAddress.getByName("::ffff:192.0.2.128"));
-
-            Map<InetAddress, InetAddress> actual =
-                row.getMap("map_inet_column", InetAddress.class, InetAddress.class);
-
-            Assertions.assertThat(actual)
-                .as(
-                    "Checking the mapping of IP addresses between Cassandra and the expected output")
-                .isEqualTo(expected);
-          } catch (Exception e) {
-            throw new RuntimeException(
-                "Failed to convert String to InetAddress, possibly due to an invalid IP format.",
-                e);
-          }
-        });
+        () ->
+            assertThat(row.getMap("map_inet_column", InetAddresses.class, InetAddresses.class))
+                .isEqualTo(
+                    Map.of(
+                        InetAddresses.forString("48.49.50.51"),
+                        InetAddresses.forString("::1"),
+                        InetAddresses.forString("3031:3233:3435:3637:3839:4041:4243:4445"),
+                        InetAddresses.forString("::ffff:192.0.2.128"))));
   }
 
   // Helper function to compare two ByteBuffers byte-by-byte

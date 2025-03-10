@@ -81,13 +81,13 @@ public class DurationCodecTest {
   @Test
   public void testParse() {
     String durationString =
-        "2mo15d"; // this should match whatever CqlDuration's parseable format is
+        "2mo15d";
     Duration parsed = durationCodec.parse(durationString);
 
     assertNotNull(parsed);
     assertEquals(
         Duration.ofDays(75),
-        parsed); // this result is hypothetical; adjust it to match actual logic
+        parsed);
   }
 
   @Test

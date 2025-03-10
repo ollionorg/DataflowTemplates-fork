@@ -13,6 +13,8 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+package com.google.cloud.teleport.v2.templates.codec;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -22,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import com.google.cloud.teleport.v2.templates.codec.DurationCodec;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import org.junit.Before;

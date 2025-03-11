@@ -1122,7 +1122,7 @@ public class CassandraTypeHandlerTest {
     Object localTime1 = castToExpectedType("time", "14:30:45");
     assertTrue(localTime1 instanceof LocalTime);
     assertEquals(
-            CqlDuration.from("5h"), castToExpectedType("duration", CqlDuration.from("5h").toString()));
+        CqlDuration.from("5h"), castToExpectedType("duration", CqlDuration.from("5h").toString()));
   }
 
   @Test

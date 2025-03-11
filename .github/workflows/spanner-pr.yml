@@ -187,7 +187,7 @@ jobs:
 #    - name: Cleanup Java Environment
 #      uses: ./.github/actions/cleanup-java-env
   java_load_tests_templates:
-    if: contains(github.event.pull_request.labels.*.name, 'run-load-tests')
+#    if: contains(github.event.pull_request.labels.*.name, 'run-load-tests')
     name: Dataflow Templates Load Tests
     needs: [spotless_check, checkstyle_check, java_build]
 #    java_unit_tests, java_integration_tests_templates

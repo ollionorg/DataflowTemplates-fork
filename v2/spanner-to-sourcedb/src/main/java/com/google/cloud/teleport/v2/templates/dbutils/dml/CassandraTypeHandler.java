@@ -15,6 +15,7 @@
  */
 package com.google.cloud.teleport.v2.templates.dbutils.dml;
 
+import com.datastax.oss.driver.api.core.data.CqlDuration;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceColumnDefinition;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerColumnDefinition;
 import com.google.cloud.teleport.v2.templates.models.PreparedStatementValueObject;
@@ -135,12 +136,12 @@ public class CassandraTypeHandler {
    * should be in the ISO-8601 duration format (e.g., "PT20.345S").
    *
    * @param durationString - The column value used to fetched from {@code valuesJson}.
-   * @return A {@link Duration} object representing the duration value from the Cassandra data.
+   * @return A {@link CqlDuration} object representing the duration value from the Cassandra data.
    * @throws IllegalArgumentException if the value is not a valid duration string.
    */
-  private static Duration handleCassandraDurationType(String durationString) {
+  private static CqlDuration handleCassandraDurationType(String durationString) {
     try {
-      return Duration.parse(durationString);
+      return CqlDuration.from(durationString);
     } catch (Exception e) {
       throw new IllegalArgumentException("Invalid duration format for: " + durationString, e);
     }

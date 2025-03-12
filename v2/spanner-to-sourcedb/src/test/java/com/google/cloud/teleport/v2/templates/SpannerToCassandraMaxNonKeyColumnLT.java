@@ -42,7 +42,6 @@ public class SpannerToCassandraMaxNonKeyColumnLT extends SpannerToCassandraLTBas
   private String artifactBucket = TestProperties.artifactBucket();
   private String spannerDDLResource = "SpannerToCassandraMaxNonKeyColumnLT/spanner-schema.sql";
   private String cassandraDDLResource = "SpannerToCassandraMaxNonKeyColumnLT/cassandra-schema.sql";
-  ;
   private String dataGeneratorResource = "SpannerToCassandraMaxNonKeyColumnLT/data-generator.json";
   private final int maxWorkers = 50;
   private final int numWorkers = 20;
@@ -92,7 +91,7 @@ public class SpannerToCassandraMaxNonKeyColumnLT extends SpannerToCassandraLTBas
             .setSinkType("SPANNER")
             .setProjectId(project)
             .setBatchSizeBytes("0")
-            .setWorkerMachineType("n2-standard-2")
+            .setWorkerMachineType("n2-standard-4")
             .build();
     dataGenerator.execute(Duration.ofMinutes(90));
     assertThatPipeline(jobInfo).isRunning();

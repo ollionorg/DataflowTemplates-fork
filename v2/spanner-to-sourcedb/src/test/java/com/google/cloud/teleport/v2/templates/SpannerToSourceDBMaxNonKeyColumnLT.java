@@ -96,6 +96,7 @@ public class SpannerToSourceDBMaxNonKeyColumnLT extends SpannerToSourceDbLTBase 
             .setSinkType("SPANNER")
             .setProjectId(project)
             .setBatchSizeBytes("0")
+            .setWorkerMachineType("n2-standard-4")
             .build();
 
     dataGenerator.execute(Duration.ofMinutes(90));

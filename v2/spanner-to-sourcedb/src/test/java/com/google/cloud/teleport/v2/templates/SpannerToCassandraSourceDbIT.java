@@ -1245,9 +1245,9 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("text_column")
             .to("Text data")
             .set("bytes_column")
-            .to("R29vZ2xl")
+            .to("////////")
             .set("min_bytes_column")
-            .to("Q29tcGFueQ==")
+            .to("AAAAAAAAAAA=")
             .set("date_column")
             .to(Date.parseDate("9999-12-31"))
             .set("min_date_column")
@@ -1338,13 +1338,6 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
       throw new RuntimeException(
           "Failed to read from Cassandra table: " + BOUNDARY_CONVERSION_TABLE, e);
     }
-    // Convert hexadecimal string to a byte array
-    String hexString = "476f6f676c65"; // "Google" without "0x" prefix
-    for (int i = 0; i < expectedBytes.length; i++) {
-      int index = i * 2;
-      int j = Integer.parseInt(hexString.substring(index, index + 2), 16);
-      expectedBytes[i] = (byte) j;
-    }
     assertThat(rows).hasSize(1);
     Row row = rows.iterator().next();
     assertAll(
@@ -1379,13 +1372,14 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             assertThat(row.getCqlDuration("min_duration_column"))
                 .isEqualTo(CqlDuration.from("-10675199d2h48m5s")),
         () -> {
-          byte[] expectedBytes = new byte[hexString.length() / 2];
-          assertThat(row.getBytesUnsafe("bytes_column")).isEqualTo(ByteBuffer.wrap(expectedBytes));
+          byte[] expectedBytes = Base64.getDecoder().decode("////////");
+          ByteBuffer actualBytes = row.getBytesUnsafe("bytes_column");
+          assertThat(actualBytes).isEqualTo(ByteBuffer.wrap(expectedBytes));
         },
         () -> {
-          byte[] expectedMinBytes = Base64.getDecoder().decode("Q29tcGFueQ==");
-          assertThat(row.getBytesUnsafe("min_bytes_column"))
-              .isEqualTo(ByteBuffer.wrap(expectedMinBytes));
+          byte[] expectedMinBytes = Base64.getDecoder().decode("AAAAAAAAAAA=");
+          ByteBuffer actualMinBytes = row.getBytesUnsafe("min_bytes_column");
+          assertThat(actualMinBytes).isEqualTo(ByteBuffer.wrap(expectedMinBytes));
         },
         () -> assertThat(row.getLocalDate("date_column")).isEqualTo(LocalDate.parse("9999-12-31")),
         () ->

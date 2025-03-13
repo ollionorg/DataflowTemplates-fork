@@ -83,6 +83,7 @@ CREATE TABLE BoundaryConversionTestTable (
     duration_column duration,
     min_duration_column duration,
     uuid_column uuid,
+    min_uuid_column uuid,
     timeuuid_column timeuuid,
     min_timeuuid_column timeuuid,
     inet_column inet,

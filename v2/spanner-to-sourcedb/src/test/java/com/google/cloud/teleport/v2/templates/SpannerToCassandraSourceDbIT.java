@@ -1265,11 +1265,13 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("min_duration_column")
             .to("-PT0S")
             .set("uuid_column")
-            .to("123e4567-e89b-12d3-a456-426614174000")
-            .set("timeuuid_column")
-            .to("123e4567-e89b-12d3-a456-426614174000")
-            .set("min_timeuuid_column")
+            .to("ffffffff-ffff-4fff-9fff-ffffffffffff")
+            .set("min_uuid_column")
             .to("00000000-0000-0000-0000-000000000000")
+            .set("timeuuid_column")
+            .to("ffffffff-ffff-1fff-9fff-ffffffffffff")
+            .set("min_timeuuid_column")
+            .to("00000000-0000-1000-9000-000000000000")
             .set("inet_column")
             .to("192.168.0.1")
             .set("min_inet_column")
@@ -1371,6 +1373,18 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () ->
             assertThat(row.getCqlDuration("min_duration_column"))
                 .isEqualTo(CqlDuration.from("-PT0S")),
+        () ->
+            assertThat(row.getUuid("timeuuid_column"))
+                .isEqualTo(UUID.fromString("ffffffff-ffff-1fff-9fff-ffffffffffff")),
+        () ->
+            assertThat(row.getUuid("min_timeuuid_column"))
+                .isEqualTo(UUID.fromString("00000000-0000-1000-9000-000000000000")),
+        () ->
+            assertThat(row.getUuid("uuid_column"))
+                .isEqualTo(UUID.fromString("ffffffff-ffff-4fff-9fff-ffffffffffff")),
+        () ->
+            assertThat(row.getUuid("min_uuid_column"))
+                .isEqualTo(UUID.fromString("00000000-0000-0000-0000-000000000000")),
         () -> {
           byte[] expectedBytes = Base64.getDecoder().decode("////////");
           ByteBuffer actualBytes = row.getBytesUnsafe("bytes_column");

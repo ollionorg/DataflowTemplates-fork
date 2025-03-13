@@ -136,6 +136,7 @@ CREATE TABLE IF NOT EXISTS boundaryconversiontesttable (
     duration_column STRING(MAX),
     min_duration_column STRING(MAX),
     uuid_column STRING(MAX),
+    min_uuid_column STRING(MAX),
     timeuuid_column STRING(MAX),
     min_timeuuid_column STRING(MAX),
     inet_column STRING(MAX),

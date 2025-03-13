@@ -57,14 +57,14 @@ import org.slf4j.LoggerFactory;
 public class SpannerToMySqlSourceDbWideRow10MbIT extends SpannerToSourceDbITBase {
 
   private static final Logger LOG =
-          LoggerFactory.getLogger(SpannerToMySqlSourceDbWideRow10MbIT.class);
+      LoggerFactory.getLogger(SpannerToMySqlSourceDbWideRow10MbIT.class);
   private static final String SPANNER_DDL_RESOURCE =
-          "SpannerToSourceDbWideRowIT/spanner-16mb-schema.sql";
+      "SpannerToSourceDbWideRowIT/spanner-16mb-schema.sql";
   private static final String SESSION_FILE_RESOURCE =
-          "SpannerToSourceDbWideRowIT/col-mb-session.json";
+      "SpannerToSourceDbWideRowIT/col-mb-session.json";
   private static final String TABLE1 = "large_data";
   private static final String MYSQL_SCHEMA_FILE_RESOURCE =
-          "SpannerToSourceDbWideRowIT/mysql-10mb-schema.sql";
+      "SpannerToSourceDbWideRowIT/mysql-10mb-schema.sql";
 
   private static HashSet<SpannerToMySqlSourceDbWideRow10MbIT> testInstances = new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
@@ -87,38 +87,38 @@ public class SpannerToMySqlSourceDbWideRow10MbIT extends SpannerToSourceDbITBase
       testInstances.add(this);
       if (jobInfo == null) {
         spannerResourceManager =
-                createSpannerDatabase(SpannerToMySqlSourceDbWideRow10MbIT.SPANNER_DDL_RESOURCE);
+            createSpannerDatabase(SpannerToMySqlSourceDbWideRow10MbIT.SPANNER_DDL_RESOURCE);
         spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
         jdbcResourceManager = MySQLResourceManager.builder(testName).build();
 
         createMySQLSchema(
-                jdbcResourceManager, SpannerToMySqlSourceDbWideRow10MbIT.MYSQL_SCHEMA_FILE_RESOURCE);
+            jdbcResourceManager, SpannerToMySqlSourceDbWideRow10MbIT.MYSQL_SCHEMA_FILE_RESOURCE);
 
         gcsResourceManager =
-                GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
-                        .build();
+            GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
+                .build();
         createAndUploadShardConfigToGcs(gcsResourceManager, jdbcResourceManager);
         gcsResourceManager.uploadArtifact(
-                "input/session.json", Resources.getResource(SESSION_FILE_RESOURCE).getPath());
+            "input/session.json", Resources.getResource(SESSION_FILE_RESOURCE).getPath());
         pubsubResourceManager = setUpPubSubResourceManager();
         subscriptionName =
-                createPubsubResources(
-                        getClass().getSimpleName(),
-                        pubsubResourceManager,
-                        getGcsPath("dlq", gcsResourceManager).replace("gs://" + artifactBucketName, ""));
+            createPubsubResources(
+                getClass().getSimpleName(),
+                pubsubResourceManager,
+                getGcsPath("dlq", gcsResourceManager).replace("gs://" + artifactBucketName, ""));
         jobInfo =
-                launchDataflowJob(
-                        gcsResourceManager,
-                        spannerResourceManager,
-                        spannerMetadataResourceManager,
-                        subscriptionName.toString(),
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        MYSQL_SOURCE_TYPE);
+            launchDataflowJob(
+                gcsResourceManager,
+                spannerResourceManager,
+                spannerMetadataResourceManager,
+                subscriptionName.toString(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                MYSQL_SOURCE_TYPE);
       }
     }
   }
@@ -134,16 +134,16 @@ public class SpannerToMySqlSourceDbWideRow10MbIT extends SpannerToSourceDbITBase
       instance.tearDownBase();
     }
     ResourceManagerUtils.cleanResources(
-            spannerResourceManager,
-            jdbcResourceManager,
-            spannerMetadataResourceManager,
-            gcsResourceManager,
-            pubsubResourceManager);
+        spannerResourceManager,
+        jdbcResourceManager,
+        spannerMetadataResourceManager,
+        gcsResourceManager,
+        pubsubResourceManager);
   }
 
   @Test
   public void spannerToMYSQLSourceDB10MBTest()
-          throws IOException, InterruptedException, MultipleFailureException {
+      throws IOException, InterruptedException, MultipleFailureException {
     assertThatPipeline(jobInfo).isRunning();
     // Write row in Spanner
     writeBasicRowInSpanner();
@@ -160,12 +160,12 @@ public class SpannerToMySqlSourceDbWideRow10MbIT extends SpannerToSourceDbITBase
     try {
       byte[] blobData = new byte[safeBlobSize];
       Mutation mutation =
-              Mutation.newInsertBuilder("large_data")
-                      .set("id")
-                      .to(UUID.randomUUID().toString())
-                      .set("large_blob")
-                      .to(ByteArray.copyFrom(blobData)) // Ensures ≤10MB limit
-                      .build();
+          Mutation.newInsertBuilder("large_data")
+              .set("id")
+              .to(UUID.randomUUID().toString())
+              .set("large_blob")
+              .to(ByteArray.copyFrom(blobData)) // Ensures ≤10MB limit
+              .build();
 
       spannerResourceManager.write(mutation);
       LOG.info("✅ Successfully inserted a 9.9MB row into Spanner.");
@@ -181,17 +181,17 @@ public class SpannerToMySqlSourceDbWideRow10MbIT extends SpannerToSourceDbITBase
     final int maxBlobSize = 10 * 1024 * 1024; // 10MB
     final int safeBlobSize = maxBlobSize - 1024; // 9.9MB to avoid limit issues
     PipelineOperator.Result result =
-            pipelineOperator()
-                    .waitForCondition(
-                            createConfig(jobInfo, Duration.ofMinutes(10)),
-                            () -> {
-                              try {
-                                return jdbcResourceManager.getRowCount(TABLE1) == 1;
-                              } catch (Exception e) {
-                                LOG.error("Error while getting row count from MySQL", e);
-                                return false;
-                              }
-                            });
+        pipelineOperator()
+            .waitForCondition(
+                createConfig(jobInfo, Duration.ofMinutes(10)),
+                () -> {
+                  try {
+                    return jdbcResourceManager.getRowCount(TABLE1) == 1;
+                  } catch (Exception e) {
+                    LOG.error("Error while getting row count from MySQL", e);
+                    return false;
+                  }
+                });
 
     assertThatResult(result).meetsConditions();
 

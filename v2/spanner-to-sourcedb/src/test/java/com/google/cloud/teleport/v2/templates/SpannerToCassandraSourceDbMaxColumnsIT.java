@@ -27,7 +27,9 @@ import com.google.cloud.spanner.Mutation;
 import com.google.pubsub.v1.SubscriptionName;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
@@ -150,7 +152,7 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
     Mutation.WriteBuilder mutationBuilder =
         Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("Id").to("SampleTest");
 
-    for (int i = 1; i <= 1024; i++) {
+    for (int i = 1; i < 1024; i++) {
       mutationBuilder.set("Col_" + i).to("TestValue_" + i);
     }
 
@@ -179,7 +181,7 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
       LOG.info("Cassandra Row to Assert for All Data Types: {}", row.getFormattedContents());
       String primaryKeyColumn = row.getString("Col_0");
       assertEquals("SampleTest", primaryKeyColumn);
-      for (int i = 1; i <= 1024; i++) {
+      for (int i = 1; i < 1024; i++) {
         assertEquals("TestValue_" + i, row.getString("Col_" + i));
       }
     }

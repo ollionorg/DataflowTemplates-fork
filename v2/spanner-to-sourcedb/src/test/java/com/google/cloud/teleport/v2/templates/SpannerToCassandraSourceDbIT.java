@@ -1263,7 +1263,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("duration_column")
             .to("P10675199DT2H48M5S")
             .set("min_duration_column")
-            .to("P-10675199DT-2H-48M-5S")
+            .to("-PT0S")
             .set("uuid_column")
             .to("123e4567-e89b-12d3-a456-426614174000")
             .set("timeuuid_column")
@@ -1367,10 +1367,10 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getString("text_column")).isEqualTo("Text data"),
         () ->
             assertThat(row.getCqlDuration("duration_column"))
-                .isEqualTo(CqlDuration.from("10675199d2h48m5s")),
+                .isEqualTo(CqlDuration.from("P10675199DT2H48M5S")),
         () ->
             assertThat(row.getCqlDuration("min_duration_column"))
-                .isEqualTo(CqlDuration.from("-10675199d2h48m5s")),
+                .isEqualTo(CqlDuration.from("-PT0S")),
         () -> {
           byte[] expectedBytes = Base64.getDecoder().decode("////////");
           ByteBuffer actualBytes = row.getBytesUnsafe("bytes_column");

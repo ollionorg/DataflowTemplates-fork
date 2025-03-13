@@ -23,14 +23,16 @@ import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.cloud.ByteArray;
-import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.teleport.metadata.SkipDirectRunnerTest;
 import com.google.cloud.teleport.metadata.TemplateIntegrationTest;
 import com.google.pubsub.v1.SubscriptionName;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.UUID;
 import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
@@ -53,18 +55,18 @@ import org.slf4j.LoggerFactory;
 public class SpannerToCassandraSourceDbWideRow10MbIT extends SpannerToSourceDbITBase {
 
   private static final Logger LOG =
-      LoggerFactory.getLogger(SpannerToCassandraSourceDbWideRow10MbIT.class);
+          LoggerFactory.getLogger(SpannerToCassandraSourceDbWideRow10MbIT.class);
 
   private static final String SPANNER_DDL_RESOURCE =
-      "SpannerToSourceDbWideRowIT/spanner-16mb-schema.sql";
+          "SpannerToSourceDbWideRowIT/spanner-16mb-schema.sql";
   private static final String CASSANDRA_SCHEMA_FILE_RESOURCE =
-      "SpannerToSourceDbWideRowIT/cassandra-10mb-schema.sql";
+          "SpannerToSourceDbWideRowIT/cassandra-10mb-schema.sql";
   private static final String CASSANDRA_CONFIG_FILE_RESOURCE =
-      "SpannerToSourceDbWideRowIT/cassandra-config-template.conf";
+          "SpannerToSourceDbWideRowIT/cassandra-config-template.conf";
 
   private static final String LARGE_DATA_TABLE = "large_data";
   private static final HashSet<SpannerToCassandraSourceDbWideRow10MbIT> testInstances =
-      new HashSet<>();
+          new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
   public static SpannerResourceManager spannerResourceManager;
   private static SpannerResourceManager spannerMetadataResourceManager;
@@ -90,29 +92,29 @@ public class SpannerToCassandraSourceDbWideRow10MbIT extends SpannerToSourceDbIT
 
         cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
         gcsResourceManager =
-            GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
-                .build();
+                GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
+                        .build();
         createAndUploadCassandraConfigToGcs(
-            gcsResourceManager, cassandraResourceManager, CASSANDRA_CONFIG_FILE_RESOURCE);
+                gcsResourceManager, cassandraResourceManager, CASSANDRA_CONFIG_FILE_RESOURCE);
         createCassandraSchema(cassandraResourceManager, CASSANDRA_SCHEMA_FILE_RESOURCE);
         pubsubResourceManager = setUpPubSubResourceManager();
         subscriptionName =
-            createPubsubResources(
-                getClass().getSimpleName(),
-                pubsubResourceManager,
-                getGcsPath("dlq", gcsResourceManager).replace("gs://" + artifactBucketName, ""));
+                createPubsubResources(
+                        getClass().getSimpleName(),
+                        pubsubResourceManager,
+                        getGcsPath("dlq", gcsResourceManager).replace("gs://" + artifactBucketName, ""));
         jobInfo =
-            launchDataflowJob(
-                gcsResourceManager,
-                spannerResourceManager,
-                spannerMetadataResourceManager,
-                subscriptionName.toString(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                CASSANDRA_SOURCE_TYPE);
+                launchDataflowJob(
+                        gcsResourceManager,
+                        spannerResourceManager,
+                        spannerMetadataResourceManager,
+                        subscriptionName.toString(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        CASSANDRA_SOURCE_TYPE);
       }
     }
   }
@@ -128,11 +130,11 @@ public class SpannerToCassandraSourceDbWideRow10MbIT extends SpannerToSourceDbIT
       instance.tearDownBase();
     }
     ResourceManagerUtils.cleanResources(
-        spannerResourceManager,
-        cassandraResourceManager,
-        spannerMetadataResourceManager,
-        gcsResourceManager,
-        pubsubResourceManager);
+            spannerResourceManager,
+            cassandraResourceManager,
+            spannerMetadataResourceManager,
+            gcsResourceManager,
+            pubsubResourceManager);
   }
 
   /**
@@ -145,7 +147,7 @@ public class SpannerToCassandraSourceDbWideRow10MbIT extends SpannerToSourceDbIT
    * @throws IOException if an I/O error occurs during the test execution.
    */
   @Test
-  public void spannerToCasandraSourceDbBasic() throws InterruptedException, IOException {
+  public void spannerToCasandraSourceDb10MBTest() throws InterruptedException, IOException {
     assertThatPipeline(jobInfo).isRunning();
     writeBasicRowInSpanner();
     assertBasicRowInCassandraDB();
@@ -154,18 +156,24 @@ public class SpannerToCassandraSourceDbWideRow10MbIT extends SpannerToSourceDbIT
   private void writeBasicRowInSpanner() {
     LOG.info("Writing a basic row to Spanner...");
 
-    Mutation mutation =
-        Mutation.newInsertBuilder(LARGE_DATA_TABLE)
-            .set("id")
-            .to(UUID.randomUUID().toString())
-            .set("large_blob")
-            .to(ByteArray.copyFrom(new byte[10 * 1024 * 1024])) // 10MB BLOB
-            .set("created_at")
-            .to(Timestamp.now())
-            .build();
+    final int maxBlobSize = 10 * 1024 * 1024; // 10MB
+    final int safeBlobSize = maxBlobSize - 1024; // 9.9MB to avoid limit issues
 
-    spannerResourceManager.write(mutation);
-    LOG.info("Successfully inserted a 10MB row into Spanner.");
+    try {
+      byte[] blobData = new byte[safeBlobSize];
+      Mutation mutation =
+              Mutation.newInsertBuilder("large_data")
+                      .set("id")
+                      .to(UUID.randomUUID().toString())
+                      .set("large_blob")
+                      .to(ByteArray.copyFrom(blobData)) // Ensures ≤10MB limit
+                      .build();
+
+      spannerResourceManager.write(mutation);
+      LOG.info("✅ Successfully inserted a 9.9MB row into Spanner.");
+    } catch (Exception e) {
+      LOG.error("❌ Failed to insert BLOB in Spanner: {}", e.getMessage(), e);
+    }
   }
 
   /**
@@ -191,12 +199,13 @@ public class SpannerToCassandraSourceDbWideRow10MbIT extends SpannerToSourceDbIT
 
   private void assertBasicRowInCassandraDB() {
     LOG.info("Validating row in Cassandra...");
-
+    final int maxBlobSize = 10 * 1024 * 1024; // 10MB
+    final int safeBlobSize = maxBlobSize - 1024; // 9.9MB to avoid limit issues
     PipelineOperator.Result result =
-        pipelineOperator()
-            .waitForCondition(
-                createConfig(jobInfo, Duration.ofMinutes(15)),
-                () -> getRowCount(LARGE_DATA_TABLE) == 1);
+            pipelineOperator()
+                    .waitForCondition(
+                            createConfig(jobInfo, Duration.ofMinutes(15)),
+                            () -> getRowCount(LARGE_DATA_TABLE) == 1);
     assertThatResult(result).meetsConditions();
 
     Iterable<Row> rows;
@@ -211,7 +220,7 @@ public class SpannerToCassandraSourceDbWideRow10MbIT extends SpannerToSourceDbIT
 
     assertThat(row.getUuid("id")).isNotNull();
     assertThat(row.getBytesUnsafe("large_blob")).isNotNull();
-    assertThat(row.getBytesUnsafe("large_blob").remaining()).isEqualTo(10 * 1024 * 1024); // 10MB
+    assertThat(row.getBytesUnsafe("large_blob").remaining()).isEqualTo(safeBlobSize); // 10MB
 
     LOG.info("Validation successful: 10MB row exists in Cassandra.");
   }

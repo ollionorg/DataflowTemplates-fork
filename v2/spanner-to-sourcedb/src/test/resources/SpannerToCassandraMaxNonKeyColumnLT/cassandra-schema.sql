@@ -1,4 +1,4 @@
-CREATE TABLE your_keyspace.your_table (
+CREATE TABLE maxNonKeyCol (
     id uuid PRIMARY KEY,
     col1 text,
     col2 text,

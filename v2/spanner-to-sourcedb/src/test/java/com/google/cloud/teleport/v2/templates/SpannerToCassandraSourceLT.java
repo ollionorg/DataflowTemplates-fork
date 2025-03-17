@@ -32,7 +32,6 @@ import org.apache.beam.it.common.TestProperties;
 import org.apache.beam.it.gcp.datagenerator.DataGenerator;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,7 +42,6 @@ import org.slf4j.LoggerFactory;
 @Category(TemplateLoadTest.class)
 @TemplateLoadTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
-@Ignore("ignore")
 public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(SpannerToCassandraSourceLT.class);
@@ -117,12 +115,12 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
 
     PipelineOperator.Result result =
         pipelineOperator.waitForCondition(
-            createConfig(jobInfo, Duration.ofMinutes(30), Duration.ofSeconds(30)), check);
+            createConfig(jobInfo, Duration.ofMinutes(10), Duration.ofSeconds(30)), check);
 
     assertThatResult(result).meetsConditions();
 
     PipelineOperator.Result result1 =
-        pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(30)));
+        pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(20)));
 
     assertThatResult(result1).isLaunchFinished();
 

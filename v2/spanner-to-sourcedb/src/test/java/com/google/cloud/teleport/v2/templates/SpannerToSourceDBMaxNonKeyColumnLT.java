@@ -20,6 +20,7 @@ import static org.apache.beam.it.gcp.artifacts.utils.ArtifactUtils.getFullGcsPat
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
+import com.google.cloud.teleport.metadata.TemplateLoadTest;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -34,6 +35,14 @@ import org.apache.beam.it.jdbc.conditions.JDBCRowsCheck;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+
+@Category(TemplateLoadTest.class)
+@TemplateLoadTest(SpannerToSourceDb.class)
+@RunWith(JUnit4.class)
 
 public class SpannerToSourceDBMaxNonKeyColumnLT extends SpannerToSourceDbLTBase {
   private String generatorSchemaPath;

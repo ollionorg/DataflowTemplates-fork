@@ -20,6 +20,7 @@ import static org.apache.beam.it.gcp.artifacts.utils.ArtifactUtils.getFullGcsPat
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
+import com.google.cloud.teleport.metadata.TemplateLoadTest;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.text.ParseException;
@@ -32,8 +33,15 @@ import org.apache.beam.it.gcp.datagenerator.DataGenerator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+@Category(TemplateLoadTest.class)
+@TemplateLoadTest(SpannerToSourceDb.class)
+@RunWith(JUnit4.class)
 
 public class SpannerToCassandraMaxNonKeyColumnLT extends SpannerToCassandraLTBase {
   private static final Logger LOG =

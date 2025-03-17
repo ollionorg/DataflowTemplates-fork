@@ -41,10 +41,10 @@ public class SpannerToSourceDBMaxNonKeyColumnLT extends SpannerToSourceDbLTBase 
   private final String spannerDdlResource = "SpannerToSourceDBMaxNonKeyColumnLT/spanner-schema.sql";
   private final String mysqlDdlResource = "SpannerToSourceDBMaxNonKeyColumnLT/mysql-schema.sql";
   private final String sessionFileResource =
-      "SpannerToSourceDBMaxNonKeyColumnLT/maxNonKeyColumnSession.json";
+      "SpannerToSourceDBMaxNonKeyColumnLT/session_mysql_max_col.json";
   private final String dataGeneratorSchemaResource =
       "SpannerToMySqlSourceLT/datagenerator-schema.json";
-  private final String table = "Person";
+  private final String table = "maxNonKeyCol";
   private final int maxWorkers = 50;
   private final int numWorkers = 20;
   private PipelineLauncher.LaunchInfo jobInfo;

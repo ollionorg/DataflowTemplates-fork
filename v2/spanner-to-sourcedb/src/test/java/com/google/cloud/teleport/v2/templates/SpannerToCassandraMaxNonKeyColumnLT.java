@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
 @Category(TemplateLoadTest.class)
 @TemplateLoadTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
-
 public class SpannerToCassandraMaxNonKeyColumnLT extends SpannerToCassandraLTBase {
   private static final Logger LOG =
       LoggerFactory.getLogger(SpannerToCassandraMaxNonKeyColumnLT.class);

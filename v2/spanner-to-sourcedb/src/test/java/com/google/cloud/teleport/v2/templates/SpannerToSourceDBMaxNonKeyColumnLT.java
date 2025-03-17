@@ -39,11 +39,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-
 @Category(TemplateLoadTest.class)
 @TemplateLoadTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
-
 public class SpannerToSourceDBMaxNonKeyColumnLT extends SpannerToSourceDbLTBase {
   private String generatorSchemaPath;
   private final String artifactBucket = TestProperties.artifactBucket();

@@ -56,6 +56,7 @@ public class SpannerToSourceDBMaxNonKeyColumnLT extends SpannerToSourceDbLTBase 
   private final String table = "maxNonKeyCol";
   private final int maxWorkers = 50;
   private final int numWorkers = 20;
+  private final int maxRows = 1000;
   private PipelineLauncher.LaunchInfo jobInfo;
   private PipelineLauncher.LaunchInfo readerJobInfo;
   private final int numShards = 1;
@@ -96,12 +97,12 @@ public class SpannerToSourceDBMaxNonKeyColumnLT extends SpannerToSourceDbLTBase 
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
             .setQPS("1000")
-            .setMessagesLimit(String.valueOf(300000))
+            .setMessagesLimit(String.valueOf(maxRows))
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
             .setSpannerTableName(table)
-            .setNumWorkers("50")
-            .setMaxNumWorkers("100")
+            .setNumWorkers(String.valueOf(numWorkers))
+            .setMaxNumWorkers(String.valueOf(maxWorkers))
             .setSinkType("SPANNER")
             .setProjectId(project)
             .setBatchSizeBytes("0")

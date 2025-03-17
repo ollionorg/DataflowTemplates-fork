@@ -94,7 +94,7 @@ public class SpannerToSourceDBMaxNonKeyColumnLT extends SpannerToSourceDbLTBase 
     // Start data generator
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-            .setQPS("1000")
+            .setQPS("1")
             .setMessagesLimit(String.valueOf(maxRows))
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())

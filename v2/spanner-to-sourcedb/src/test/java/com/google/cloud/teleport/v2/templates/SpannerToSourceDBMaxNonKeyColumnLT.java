@@ -94,7 +94,7 @@ public class SpannerToSourceDBMaxNonKeyColumnLT extends SpannerToSourceDbLTBase 
     // Start data generator
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-            .setQPS("1")
+            .setQPS("1000")
             .setMessagesLimit(String.valueOf(maxRows))
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
@@ -112,8 +112,8 @@ public class SpannerToSourceDBMaxNonKeyColumnLT extends SpannerToSourceDbLTBase 
 
     JDBCRowsCheck check =
         JDBCRowsCheck.builder(jdbcResourceManagers.get(0), table)
-            .setMinRows(300000)
-            .setMaxRows(300000)
+            .setMinRows(maxRows)
+            .setMaxRows(maxRows)
             .build();
 
     PipelineOperator.Result result =

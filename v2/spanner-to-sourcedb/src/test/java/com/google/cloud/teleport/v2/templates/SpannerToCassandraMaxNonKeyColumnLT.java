@@ -88,7 +88,7 @@ public class SpannerToCassandraMaxNonKeyColumnLT extends SpannerToCassandraLTBas
       throws IOException, ParseException, InterruptedException {
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-            .setQPS("1")
+            .setQPS("1000")
             .setMessagesLimit(String.valueOf(maxRows))
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())

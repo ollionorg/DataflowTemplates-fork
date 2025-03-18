@@ -60,11 +60,7 @@ public class SpannerToCassandraLTBase extends SpannerToSourceDbLTBase {
      * That's why we need to take a smaller subsequence of the testName.
      */
     String uniqueId = testName.substring(0, Math.min(20, testName.length()));
-    return CassandraResourceManager.builder(uniqueId)
-        .useStaticContainer()
-        .setHost("10.0.0.25")
-        .setPort(9042)
-        .build();
+    return CassandraResourceManager.builder(uniqueId).build();
   }
 
   public void cleanupResourceManagers() {

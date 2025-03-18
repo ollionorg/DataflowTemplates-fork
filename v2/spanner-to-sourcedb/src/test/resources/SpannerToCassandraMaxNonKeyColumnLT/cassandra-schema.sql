@@ -9,5 +9,15 @@ CREATE TABLE maxNonKeyCol (
     col7 text,
     col8 text,
     col9 text,
-    col10 text
+    col10 text,
+    col11 text,
+    col12 text,
+    col13 text,
+    col14 text,
+    col15 text,
+    col16 text,
+    col17 text,
+    col18 text,
+    col19 text,
+    col20 text
 );

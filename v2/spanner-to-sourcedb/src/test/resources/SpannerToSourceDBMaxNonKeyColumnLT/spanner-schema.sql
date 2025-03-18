@@ -19,26 +19,7 @@ CREATE TABLE maxNonKeyCol (
   col17 STRING(MAX),
   col18 STRING(MAX),
   col19 STRING(MAX),
-  col20 STRING(MAX),
-  col21 STRING(MAX),
-  col22 STRING(MAX),
-  col23 STRING(MAX),
-  col24 STRING(MAX),
-  col25 STRING(MAX),
-  col26 STRING(MAX),
-  col27 STRING(MAX),
-  col28 STRING(MAX),
-  col29 STRING(MAX),
-  col30 STRING(MAX),
-  col31 STRING(MAX),
-  col32 STRING(MAX),
-  col33 STRING(MAX),
-  col34 STRING(MAX),
-  col35 STRING(MAX),
-  col36 STRING(MAX),
-  col37 STRING(MAX),
-  col38 STRING(MAX),
-  col39 STRING(MAX)
+  col20 STRING(MAX)
 ) PRIMARY KEY (id);
 
 CREATE CHANGE STREAM allstream

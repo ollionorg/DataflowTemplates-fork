@@ -48,7 +48,7 @@ public class SpannerToSourceDBMaxNonKeyColumnLT extends SpannerToSourceDbLTBase 
   private final String spannerDdlResource = "SpannerToSourceDBMaxNonKeyColumnLT/spanner-schema.sql";
   private final String mysqlDdlResource = "SpannerToSourceDBMaxNonKeyColumnLT/mysql-schema.sql";
   private final String sessionFileResource =
-      "SpannerToSourceDBMaxNonKeyColumnLT/session_mysql_max_col.json";
+      "SpannerToSourceDBMaxNonKeyColumnLT/NewSession_mysql_max_col.json";
   private final String dataGeneratorSchemaResource =
       "SpannerToMySqlSourceLT/datagenerator-schema.json";
   private final String table = "maxNonKeyCol";

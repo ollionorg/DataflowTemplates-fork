@@ -217,7 +217,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
             put("dlqGcsPubSubSubscription", subscriptionName.toString());
             put("deadLetterQueueDirectory", getGcsPath(artifactBucket, "dlq", gcsResourceManager));
             put("maxShardConnections", "30000");
-            put("minNumWorkers", numWorkers);
+            put("minNumWorkers", "200");
             put("sourceType", sourceType);
           }
         };

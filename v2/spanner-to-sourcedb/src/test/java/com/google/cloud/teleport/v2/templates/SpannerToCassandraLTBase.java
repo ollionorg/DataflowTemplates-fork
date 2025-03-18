@@ -61,6 +61,7 @@ public class SpannerToCassandraLTBase extends SpannerToSourceDbLTBase {
      */
     String uniqueId = testName.substring(0, Math.min(20, testName.length()));
     return CassandraResourceManager.builder(uniqueId)
+        .useStaticContainer()
         .setHost("35.244.28.164")
         .setPort(9042)
         .build();

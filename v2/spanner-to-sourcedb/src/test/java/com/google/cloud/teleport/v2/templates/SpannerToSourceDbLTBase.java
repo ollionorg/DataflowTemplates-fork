@@ -134,7 +134,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
     SpannerResourceManager spannerResourceManager =
         SpannerResourceManager.builder("rr-loadtest-" + testName, project, region)
             .maybeUseStaticInstance()
-            .setNodeCount(3)
+            .setNodeCount(5)
             .build();
     String ddl =
         String.join(
@@ -155,7 +155,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
     SpannerResourceManager spannerMetadataResourceManager =
         SpannerResourceManager.builder("rr-meta-" + testName, project, region)
             .maybeUseStaticInstance()
-            .setNodeCount(3)
+            .setNodeCount(5)
             .build();
     String dummy = "create table t1(id INT64 ) primary key(id)";
     spannerMetadataResourceManager.executeDdlStatement(dummy);
@@ -216,7 +216,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
             put("changeStreamName", "allstream");
             put("dlqGcsPubSubSubscription", subscriptionName.toString());
             put("deadLetterQueueDirectory", getGcsPath(artifactBucket, "dlq", gcsResourceManager));
-            put("maxShardConnections", "10000");
+            put("maxShardConnections", "30000");
             put("sourceType", sourceType);
           }
         };

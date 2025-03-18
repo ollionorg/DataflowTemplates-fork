@@ -52,7 +52,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   private final String dataGeneratorSchemaResource =
       "SpannerToCassandraSourceLT/datagenerator-schema.json";
   private final String table = "person";
-  private final int maxWorkers = 200;
+  private final int maxWorkers = 300;
   private final int numWorkers = 100;
   private PipelineLauncher.LaunchInfo jobInfo;
   private final int numShards = 1;
@@ -102,7 +102,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
             .setBatchSizeBytes("0")
             .build();
 
-    dataGenerator.execute(Duration.ofMinutes(60));
+    dataGenerator.execute(Duration.ofMinutes(180));
     assertThatPipeline(jobInfo).isRunning();
 
     //    CassandraRowsCheck check =
@@ -119,7 +119,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     //    assertThatResult(result).meetsConditions();
 
     PipelineOperator.Result result1 =
-        pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(20)));
+        pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(10)));
 
     assertThatResult(result1).isLaunchFinished();
 

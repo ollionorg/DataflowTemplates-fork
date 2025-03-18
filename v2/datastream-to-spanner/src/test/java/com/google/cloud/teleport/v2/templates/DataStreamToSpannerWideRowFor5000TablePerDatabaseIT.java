@@ -77,10 +77,6 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends SpannerTemplateITBase {
 
-  enum JDBCType {
-    MYSQL
-  }
-
   private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 5000;
   private static final String SESSION_OUTPUT_FILE_PATH =

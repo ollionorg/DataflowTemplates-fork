@@ -34,12 +34,10 @@ import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.conditions.ChainedConditionCheck;
 import org.apache.beam.it.conditions.ConditionCheck;
 import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
-import org.apache.beam.it.gcp.cloudsql.CloudOracleResourceManager;
 import org.apache.beam.it.gcp.cloudsql.CloudSqlResourceManager;
 import org.apache.beam.it.gcp.datastream.DatastreamResourceManager;
 import org.apache.beam.it.gcp.datastream.JDBCSource;
 import org.apache.beam.it.gcp.datastream.MySQLSource;
-import org.apache.beam.it.gcp.datastream.OracleSource;
 import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerTemplateITBase;
@@ -55,14 +53,20 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.Objects;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.function.Function;
 
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
@@ -161,7 +165,6 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
       throws IOException {
 
     simpleJdbcToSpannerTest(
-        JDBCType.MYSQL,
         fileFormat,
         spannerDialect,
         config ->
@@ -172,17 +175,13 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   }
 
   private void simpleJdbcToSpannerTest(
-      JDBCType jdbcType,
       DatastreamResourceManager.DestinationOutputFormat fileFormat,
       Dialect spannerDialect,
       Function<LaunchConfig.Builder, LaunchConfig.Builder> paramsAdder)
       throws IOException {
 
     // Create JDBC Resource manager
-    cloudSqlResourceManager =
-        jdbcType.equals(JDBCType.MYSQL)
-            ? CloudMySQLResourceManager.builder(testName).build()
-            : CloudOracleResourceManager.builder(testName).build();
+    cloudSqlResourceManager = CloudMySQLResourceManager.builder(testName).build();
 
     // Create Spanner Resource Manager
     SpannerResourceManager.Builder spannerResourceManagerBuilder =
@@ -198,15 +197,12 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
       tableNames.add("DataStreamToSpanner_"+ i+ "_" + RandomStringUtils.randomAlphanumeric(5));
     }
 
-    // Generate session file
-    if (jdbcType.equals(JDBCType.MYSQL)) {
-      gcsResourceManager.createArtifact(
-          "input/mysql-session.json",
-          generateSessionFile(
-              cloudSqlResourceManager.getDatabaseName(),
-              spannerResourceManager.getDatabaseId(),
-              tableNames));
-    }
+    gcsResourceManager.createArtifact(
+            "input/mysql-session.json",
+            generateSessionFile(
+                    cloudSqlResourceManager.getDatabaseName(),
+                    spannerResourceManager.getDatabaseId(),
+                    tableNames));
 
     // Create JDBC tables
     tableNames.forEach(
@@ -223,7 +219,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
             .build();
 
     // Create Spanner tables
-    createSpannerTables(tableNames, spannerDialect);
+    createSpannerTables(tableNames);
 
     // Create Datastream JDBC Source Connection profile and config
     SourceConfig sourceConfig =
@@ -422,9 +418,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     gcsResourceManager.createNotification(dlqTopic.toString(), dlqGcsPrefix.substring(1));
   }
 
-  private void createSpannerTables(List<String> tableNames, Dialect spannerDialect) {
-    boolean usingPg = Dialect.POSTGRESQL.equals(spannerDialect);
-    // Create Spanner dataset
+  private void createSpannerTables(List<String> tableNames) {
     tableNames.forEach(
         tableName ->
             spannerResourceManager.executeDdlStatement(
@@ -432,21 +426,21 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                     + tableName
                     + " ("
                     + ROW_ID
-                    + (usingPg ? " bigint " : " INT64 ")
+                    + (" INT64 ")
                     + "NOT NULL, "
                     + NAME
-                    + (usingPg ? " character varying(50), " : " STRING(1024), ")
+                    + (" STRING(1024), ")
                     + AGE
-                    + (usingPg ? " bigint, " : " INT64, ")
+                    + (" INT64, ")
                     + MEMBER
-                    + (usingPg ? " character varying(50), " : " STRING(1024), ")
+                    + (" STRING(1024), ")
                     + ENTRY_ADDED
-                    + (usingPg ? " character varying(50)" : " STRING(1024)")
-                    + (usingPg ? ", " : ") ")
+                    + (" STRING(1024)")
+                    + (") ")
                     + "PRIMARY KEY ("
                     + ROW_ID
-                    + ")"
-                    + (usingPg ? ")" : "")));
+                    + "))"
+            ));
   }
 
   /**

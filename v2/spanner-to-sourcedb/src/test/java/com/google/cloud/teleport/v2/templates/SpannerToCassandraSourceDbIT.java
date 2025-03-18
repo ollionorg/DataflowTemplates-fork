@@ -1382,7 +1382,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         pipelineOperator()
             .waitForCondition(
                 createConfig(jobInfo, Duration.ofMinutes(10)),
-                () -> getRowCount(BOUNDARY_CONVERSION_TABLE) == 1);
+                () -> getRowCount(BOUNDARY_CONVERSION_TABLE) == 2);
     assertThatResult(result).meetsConditions();
     Iterable<Row> rows;
     try {
@@ -1584,8 +1584,8 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 assertThat(row.getBigDecimal("decimal_column"))
                     .isEqualTo(new BigDecimal("-99999999999999999999999999999.999999999")),
             () -> assertThat(row.getBoolean("bool_column")).isFalse(),
-            () -> assertThat(row.getString("ascii_column")).isEqualTo(""),
-            () -> assertThat(row.getString("text_column")).isEqualTo(""),
+            () -> assertThat(row.isNull("ascii_column")).isTrue(),
+            () -> assertThat(row.isNull("text_column")).isTrue(),
             () ->
                 assertThat(row.getCqlDuration("duration_column"))
                     .isEqualTo(CqlDuration.from("-PT0S")),

@@ -1237,7 +1237,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("time_column")
             .to("23:59:59.999999")
             .set("timestamp_column")
-            .to(String.valueOf(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999Z")))
+            .to(String.valueOf(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999000Z")))
             .set("duration_column")
             .to("P10675199DT2H48M5S")
             .set("uuid_column")
@@ -1360,7 +1360,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("map_time_column")
             .to(Value.json("{\"00:00:00\": \"01:00:00\"}"))
             .set("map_timestamp_column")
-            .to(Value.json("{\"0001-01-01T00:00:00Z\": \"1900-01-01T00:00:00Z\"}"))
+            .to(Value.json("{\"0001-01-01T00:00:00Z\": \"1900-01-01T00:00:000Z\"}"))
             .set("map_duration_column")
             .to(Value.json("{\"-P4DT1H\": \"-P10675199DT2H48M5S\"}"))
             .set("map_uuid_column")
@@ -1714,7 +1714,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                     .isEqualTo(
                         Map.of(
                             java.time.Instant.parse("0001-01-01T00:00:00Z"),
-                            java.time.Instant.parse("1900-01-01T00:00:00Z"))),
+                            java.time.Instant.parse("1900-01-01T00:00:000Z"))),
             () ->
                 assertThat(row.getMap("map_duration_column", String.class, CqlDuration.class))
                     .isEqualTo(Map.of("-P4DT1H", CqlDuration.from("-P10675199DT2H48M5S"))),

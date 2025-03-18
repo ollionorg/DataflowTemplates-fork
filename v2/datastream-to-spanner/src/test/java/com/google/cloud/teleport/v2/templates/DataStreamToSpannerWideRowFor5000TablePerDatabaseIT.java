@@ -15,6 +15,9 @@
  */
 package com.google.cloud.teleport.v2.templates;
 
+import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
+import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
+
 import com.google.cloud.datastream.v1.DestinationConfig;
 import com.google.cloud.datastream.v1.SourceConfig;
 import com.google.cloud.datastream.v1.Stream;
@@ -26,6 +29,21 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.pubsub.v1.SubscriptionName;
 import com.google.pubsub.v1.TopicName;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
+import java.util.function.Function;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
 import org.apache.beam.it.common.PipelineOperator;
@@ -53,25 +71,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.Objects;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.function.Function;
-
-import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
-import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
-
 /** Integration test for {@link DataStreamToSpanner} Flex template. */
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
@@ -84,7 +83,8 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
   private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 5000;
-  private static final String SESSION_OUTPUT_FILE_PATH = "DataStreamToSpannerWideRowFor5000TablePerDatabaseIT/mysql-session.json";
+  private static final String SESSION_OUTPUT_FILE_PATH =
+      "DataStreamToSpannerWideRowFor5000TablePerDatabaseIT/mysql-session.json";
 
   private static final String ROW_ID = "row_id";
   private static final String NAME = "name";
@@ -193,28 +193,27 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
     // Generate 5000 table names
     List<String> tableNames = new ArrayList<>();
-    for(int i=1; i<=NUM_TABLES; i++){
-      tableNames.add("DataStreamToSpanner_"+ i+ "_" + RandomStringUtils.randomAlphanumeric(5));
+    for (int i = 1; i <= NUM_TABLES; i++) {
+      tableNames.add("DataStreamToSpanner_" + i + "_" + RandomStringUtils.randomAlphanumeric(5));
     }
 
     gcsResourceManager.createArtifact(
-            "input/mysql-session.json",
-            generateSessionFile(
-                    cloudSqlResourceManager.getDatabaseName(),
-                    spannerResourceManager.getDatabaseId(),
-                    tableNames));
+        "input/mysql-session.json",
+        generateSessionFile(
+            cloudSqlResourceManager.getDatabaseName(),
+            spannerResourceManager.getDatabaseId(),
+            tableNames));
 
     // Create JDBC tables
     tableNames.forEach(
-        tableName ->
-            cloudSqlResourceManager.createTable(
-                tableName, createJdbcSchema()));
+        tableName -> cloudSqlResourceManager.createTable(tableName, createJdbcSchema()));
 
-    JDBCSource jdbcSource = MySQLSource.builder(
-                    cloudSqlResourceManager.getHost(),
-                    cloudSqlResourceManager.getUsername(),
-                    cloudSqlResourceManager.getPassword(),
-                    cloudSqlResourceManager.getPort())
+    JDBCSource jdbcSource =
+        MySQLSource.builder(
+                cloudSqlResourceManager.getHost(),
+                cloudSqlResourceManager.getUsername(),
+                cloudSqlResourceManager.getPassword(),
+                cloudSqlResourceManager.getPort())
             .setAllowedTables(Map.of(cloudSqlResourceManager.getDatabaseName(), tableNames))
             .build();
 
@@ -296,12 +295,14 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     generateBaseSchema();
     String sessionFile =
         Files.readString(
-            Paths.get(Resources.getResource("DataStreamToSpannerWideRowFor5000TablePerDatabaseIT/mysql-session.json").getPath()));
-    String sessionFileContent = sessionFile
-            .replaceAll("SRC_DATABASE", srcDb)
-            .replaceAll("SP_DATABASE", spannerDb);
-    for(int i=1; i<=NUM_TABLES; i++){
-      sessionFileContent = sessionFileContent.replaceAll("TABLE"+i, tableNames.get(i));
+            Paths.get(
+                Resources.getResource(
+                        "DataStreamToSpannerWideRowFor5000TablePerDatabaseIT/mysql-session.json")
+                    .getPath()));
+    String sessionFileContent =
+        sessionFile.replaceAll("SRC_DATABASE", srcDb).replaceAll("SP_DATABASE", spannerDb);
+    for (int i = 1; i <= NUM_TABLES; i++) {
+      sessionFileContent = sessionFileContent.replaceAll("TABLE" + i, tableNames.get(i));
     }
     return sessionFileContent;
   }
@@ -355,7 +356,8 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
         column.put("Name", "column_" + j);
         column.put("T", colType);
         column.put("NotNull", (j == 1));
-        column.put("Comment", "From: column_" + j + ((j % 2 == 0) ? " varchar(200)" : " decimal(10)"));
+        column.put(
+            "Comment", "From: column_" + j + ((j % 2 == 0) ? " varchar(200)" : " decimal(10)"));
         column.put("Id", colIds.get(j - 1));
 
         colDefs.put(colIds.get(j - 1), column);
@@ -439,8 +441,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                     + (") ")
                     + "PRIMARY KEY ("
                     + ROW_ID
-                    + "))"
-            ));
+                    + "))"));
   }
 
   /**

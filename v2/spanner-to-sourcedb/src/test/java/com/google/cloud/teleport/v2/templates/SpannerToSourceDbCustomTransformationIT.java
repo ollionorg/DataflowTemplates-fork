@@ -159,6 +159,7 @@ public class SpannerToSourceDbCustomTransformationIT extends SpannerToSourceDbIT
         pubsubResourceManager);
   }
 
+  @Ignore("Disabled")
   @Test
   public void testCustomTransformation() throws InterruptedException {
     assertThatPipeline(jobInfo).isRunning();

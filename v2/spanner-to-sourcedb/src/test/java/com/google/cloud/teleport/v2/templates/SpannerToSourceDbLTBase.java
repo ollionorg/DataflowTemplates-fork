@@ -218,6 +218,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
             put("deadLetterQueueDirectory", getGcsPath(artifactBucket, "dlq", gcsResourceManager));
             put("maxShardConnections", "30000");
             put("sourceType", sourceType);
+            put("autoscalingAlgorithm", "NONE");
           }
         };
 
@@ -230,7 +231,6 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
 
     LaunchConfig.Builder options =
         LaunchConfig.builder(getClass().getSimpleName(), TEMPLATE_SPEC_PATH);
-    options.addParameter("autoscalingAlgorithm", "NONE");
     options
         .addEnvironment("maxWorkers", maxWorkers)
         .addEnvironment("numWorkers", numWorkers)

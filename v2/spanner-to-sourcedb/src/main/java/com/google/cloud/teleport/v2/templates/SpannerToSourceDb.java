@@ -456,7 +456,7 @@ public class SpannerToSourceDb {
     pipeline
         .getOptions()
         .as(DataflowPipelineWorkerPoolOptions.class)
-        .setAutoscalingAlgorithm(AutoscalingAlgorithmType.THROUGHPUT_BASED);
+        .setAutoscalingAlgorithm(AutoscalingAlgorithmType.NONE);
 
     // calculate the max connections per worker
     int maxNumWorkers =

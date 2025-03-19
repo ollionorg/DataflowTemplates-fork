@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import org.apache.beam.it.common.PipelineLauncher;
@@ -378,7 +377,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
     HashMap<String, String> columns = new HashMap<>();
     columns.put("Col_1", "NUMERIC NOT NULL");
     for (int i = 2; i <= NUM_COLUMNS; i++) {
-     columns.put("Col_" + i, "NUMERIC");
+      columns.put("Col_" + i, "NUMERIC");
     }
     return new JDBCResourceManager.JDBCSchema(columns, "Col_1");
   }
@@ -456,13 +455,13 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
       List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
     tableNames.forEach(
         tableName -> {
-          List<String> COLUMNS =  new ArrayList<>();
-          for(int i=1; i<=NUM_COLUMNS; i++){
-            COLUMNS.add("Col_"+i);
+          List<String> COLUMNS = new ArrayList<>();
+          for (int i = 1; i <= NUM_COLUMNS; i++) {
+            COLUMNS.add("Col_" + i);
           }
           SpannerAsserts.assertThatStructs(
-                          spannerResourceManager.readTableRecords(tableName, COLUMNS))
-                  .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName));
+                  spannerResourceManager.readTableRecords(tableName, COLUMNS))
+              .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName));
         });
   }
 
@@ -489,8 +488,8 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
           List<Map<String, Object>> rows = new ArrayList<>();
           for (int i = 0; i < NUM_EVENTS; i++) {
             Map<String, Object> values = new HashMap<>();
-            for(int ci=1; ci<= NUM_COLUMNS; ci++){
-              values.put("Col_"+ci, ci);
+            for (int ci = 1; ci <= NUM_COLUMNS; ci++) {
+              values.put("Col_" + ci, ci);
             }
             rows.add(values);
           }

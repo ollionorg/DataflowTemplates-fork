@@ -117,8 +117,8 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
   }
 
   @Test
-  public void testDataStreamMySqlToSpannerFor5000TablesPerDatabase() throws IOException {
-    simpleMaxMySqlTablesPerDatabaseToSpannerTest(
+  public void testDataStreamMySqlToSpannerFor1017ColumnsPerTables() throws IOException {
+    simpleMaxMySqlColumnsPerTablesToSpannerTest(
         DatastreamResourceManager.DestinationOutputFormat.AVRO_FILE_FORMAT,
         Dialect.GOOGLE_STANDARD_SQL,
         Function.identity());
@@ -126,7 +126,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
 
   @Test
   public void testDataStreamMySqlToSpannerStreamingEngine() throws IOException {
-    simpleMaxMySqlTablesPerDatabaseToSpannerTest(
+    simpleMaxMySqlColumnsPerTablesToSpannerTest(
         DatastreamResourceManager.DestinationOutputFormat.AVRO_FILE_FORMAT,
         Dialect.GOOGLE_STANDARD_SQL,
         config -> config.addEnvironment("enableStreamingEngine", true));
@@ -134,13 +134,13 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
 
   @Test
   public void testDataStreamMySqlToSpannerJson() throws IOException {
-    simpleMaxMySqlTablesPerDatabaseToSpannerTest(
+    simpleMaxMySqlColumnsPerTablesToSpannerTest(
         DatastreamResourceManager.DestinationOutputFormat.JSON_FILE_FORMAT,
         Dialect.GOOGLE_STANDARD_SQL,
         Function.identity());
   }
 
-  private void simpleMaxMySqlTablesPerDatabaseToSpannerTest(
+  private void simpleMaxMySqlColumnsPerTablesToSpannerTest(
       DatastreamResourceManager.DestinationOutputFormat fileFormat,
       Dialect spannerDialect,
       Function<LaunchConfig.Builder, LaunchConfig.Builder> paramsAdder)
@@ -255,10 +255,6 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
                     SpannerRowsCheck.builder(spannerResourceManager, tableNames.get(0))
                         .setMinRows(NUM_EVENTS)
                         .build(),
-                    SpannerRowsCheck.builder(spannerResourceManager, tableNames.get(1))
-                        .setMinRows(NUM_EVENTS)
-                        .build(),
-                    changeJdbcData(tableNames, cdcEvents),
                     checkDestinationRows(tableNames, cdcEvents)))
             .build();
 
@@ -459,10 +455,15 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
   private void checkSpannerTables(
       List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
     tableNames.forEach(
-        tableName ->
-            SpannerAsserts.assertThatStructs(
-                    spannerResourceManager.readTableRecords(tableName, COLUMNS))
-                .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName)));
+        tableName -> {
+          List<String> COLUMNS =  new ArrayList<>();
+          for(int i=1; i<=NUM_COLUMNS; i++){
+            COLUMNS.add("Col_"+i);
+          }
+          SpannerAsserts.assertThatStructs(
+                          spannerResourceManager.readTableRecords(tableName, COLUMNS))
+                  .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName));
+        });
   }
 
   /**
@@ -488,11 +489,9 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
           List<Map<String, Object>> rows = new ArrayList<>();
           for (int i = 0; i < NUM_EVENTS; i++) {
             Map<String, Object> values = new HashMap<>();
-            values.put(COLUMNS.get(0), i);
-            values.put(COLUMNS.get(1), RandomStringUtils.randomAlphabetic(10));
-            values.put(COLUMNS.get(2), new Random().nextInt(100));
-            values.put(COLUMNS.get(3), new Random().nextInt() % 2 == 0 ? "Y" : "N");
-            values.put(COLUMNS.get(4), Instant.now().toString());
+            for(int ci=1; ci<= NUM_COLUMNS; ci++){
+              values.put("Col_"+ci, ci);
+            }
             rows.add(values);
           }
           cdcEvents.put(tableName, rows);
@@ -500,71 +499,6 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
           messages.add(String.format("%d rows to %s", rows.size(), tableName));
         }
         return new CheckResult(success, "Sent " + String.join(", ", messages) + ".");
-      }
-    };
-  }
-
-  /**
-   * Helper function for constructing a ConditionCheck whose check() method changes rows of data in
-   * the JDBC database according to the common schema for the IT's in this class. Half the rows are
-   * mutated and half are removed completely.
-   *
-   * @return A ConditionCheck containing the JDBC mutate operation.
-   */
-  private ConditionCheck changeJdbcData(
-      List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
-    return new ConditionCheck() {
-      @Override
-      protected String getDescription() {
-        return "Send JDBC changes.";
-      }
-
-      @Override
-      protected CheckResult check() {
-        List<String> messages = new ArrayList<>();
-        for (String tableName : tableNames) {
-
-          List<Map<String, Object>> newCdcEvents = new ArrayList<>();
-          for (int i = 0; i < NUM_EVENTS; i++) {
-            if (i % 2 == 0) {
-              Map<String, Object> values = cdcEvents.get(tableName).get(i);
-              values.put(COLUMNS.get(1), values.get(COLUMNS.get(1)).toString().toUpperCase());
-              values.put(COLUMNS.get(2), new Random().nextInt(100));
-              values.put(
-                  COLUMNS.get(3),
-                  (Objects.equals(values.get(COLUMNS.get(3)).toString(), "Y") ? "N" : "Y"));
-
-              String updateSql =
-                  "UPDATE "
-                      + tableName
-                      + " SET "
-                      + COLUMNS.get(1)
-                      + " = '"
-                      + values.get(COLUMNS.get(1))
-                      + "',"
-                      + COLUMNS.get(2)
-                      + " = "
-                      + values.get(COLUMNS.get(2))
-                      + ","
-                      + COLUMNS.get(3)
-                      + " = '"
-                      + values.get(COLUMNS.get(3))
-                      + "'"
-                      + " WHERE "
-                      + COLUMNS.get(0)
-                      + " = "
-                      + i;
-              cloudSqlResourceManager.runSQLUpdate(updateSql);
-              newCdcEvents.add(values);
-            } else {
-              cloudSqlResourceManager.runSQLUpdate(
-                  "DELETE FROM " + tableName + " WHERE " + COLUMNS.get(0) + "=" + i);
-            }
-          }
-          cdcEvents.put(tableName, newCdcEvents);
-          messages.add(String.format("%d changes to %s", newCdcEvents.size(), tableName));
-        }
-        return new CheckResult(true, "Sent " + String.join(", ", messages) + ".");
       }
     };
   }

@@ -230,11 +230,11 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
 
     LaunchConfig.Builder options =
         LaunchConfig.builder(getClass().getSimpleName(), TEMPLATE_SPEC_PATH);
+    options.addParameter("autoscalingAlgorithm", "NONE");
     options
         .addEnvironment("maxWorkers", maxWorkers)
         .addEnvironment("numWorkers", numWorkers)
-        .addEnvironment("additionalExperiments", Collections.singletonList("use_runner_v2"))
-        .addParameter("autoscalingAlgorithm", "NONE");
+        .addEnvironment("additionalExperiments", Collections.singletonList("use_runner_v2"));
 
     options.setParameters(params);
     PipelineLauncher.LaunchInfo jobInfo = pipelineLauncher.launch(project, region, options.build());

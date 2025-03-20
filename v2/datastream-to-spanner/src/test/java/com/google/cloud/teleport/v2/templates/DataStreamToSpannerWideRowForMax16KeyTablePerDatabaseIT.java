@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import org.apache.beam.it.common.PipelineLauncher;
@@ -57,6 +56,7 @@ import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.beam.it.jdbc.JDBCResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,28 +68,27 @@ import org.junit.runners.Parameterized;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(Parameterized.class)
-public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends SpannerTemplateITBase {
+public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends SpannerTemplateITBase {
 
   private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 1;
   private static final String SESSION_OUTPUT_FILE_PATH =
       "DataStreamToSpannerWideRowFor5000TablePerDatabaseIT/mysql-session.json";
 
-  private static final String ROW_ID = "row_id";
-  private static final String NAME = "name";
-  private static final String AGE = "age";
-  private static final String MEMBER = "member";
-  private static final String ENTRY_ADDED = "entry_added";
-  private static final String LARGE_BLOB_ADDED = "large_blob";
+  private static final int NUM_COLUMNS = 16;
+  private static final List<String> COLUMNS = new ArrayList<>();
+
+  static {
+    for (int i = 1; i <= NUM_COLUMNS; i++) {
+      COLUMNS.add("col_" + i);
+    }
+  }
 
   private String gcsPrefix;
   private String dlqGcsPrefix;
 
   private SubscriptionName subscription;
   private SubscriptionName dlqSubscription;
-
-  private static final List<String> COLUMNS =
-      List.of(ROW_ID, NAME, AGE, MEMBER, ENTRY_ADDED, LARGE_BLOB_ADDED);
 
   private CloudSqlResourceManager cloudSqlResourceManager;
   private DatastreamResourceManager datastreamResourceManager;
@@ -305,9 +304,7 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends Span
   }
 
   public static Map<String, Object> createSessionTemplate() {
-    final int NUM_TABLES = 5000;
     final int STRING_LENGTH = 200;
-
     Map<String, Object> sessionTemplate = new LinkedHashMap<>();
     sessionTemplate.put("SessionName", "NewSession");
     sessionTemplate.put("EditorName", "");
@@ -332,15 +329,15 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends Span
 
     for (int i = 1; i <= NUM_TABLES; i++) {
       String tableName = "TABLE" + i;
-      List<String> colIds = Arrays.asList("c1", "c2", "c3", "c4", "c5", "c6");
+      List<String> colIds = new ArrayList<>();
 
       Map<String, Object> colDefs = new LinkedHashMap<>();
-      for (int j = 1; j <= colIds.size(); j++) {
+      for (int j = 1; j <= NUM_COLUMNS; j++) {
+        String colId = "c" + j;
+        colIds.add(colId);
+
         Map<String, Object> colType = new LinkedHashMap<>();
-        if (j == 6) {
-          colType.put("Name", "LONGBLOB");
-          colType.put("Len", 0);
-        } else if (j % 2 == 0) {
+        if (j % 2 == 0) {
           colType.put("Name", "STRING");
           colType.put("Len", STRING_LENGTH);
         } else {
@@ -352,20 +349,24 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends Span
         Map<String, Object> column = new LinkedHashMap<>();
         column.put("Name", "column_" + j);
         column.put("T", colType);
-        column.put("NotNull", (j == 1));
+        column.put("NotNull", true); // Making all columns NOT NULL as they are part of PK
         column.put("Comment", "From: column_" + j + " " + colType.get("Name"));
-        column.put("Id", colIds.get(j - 1));
+        column.put("Id", colId);
 
-        colDefs.put(colIds.get(j - 1), column);
+        colDefs.put(colId, column);
       }
 
+      // Create Composite Primary Key with all 16 columns
       List<Map<String, Object>> primaryKeys = new ArrayList<>();
-      Map<String, Object> primaryKey = new LinkedHashMap<>();
-      primaryKey.put("ColId", "c1");
-      primaryKey.put("Desc", false);
-      primaryKey.put("Order", 1);
-      primaryKeys.add(primaryKey);
+      for (String colId : colIds) {
+        Map<String, Object> primaryKey = new LinkedHashMap<>();
+        primaryKey.put("ColId", colId);
+        primaryKey.put("Desc", false);
+        primaryKey.put("Order", colIds.indexOf(colId) + 1);
+        primaryKeys.add(primaryKey);
+      }
 
+      // Spanner Schema Entry
       Map<String, Object> spSchemaEntry = new LinkedHashMap<>();
       spSchemaEntry.put("Name", tableName);
       spSchemaEntry.put("ColIds", colIds);
@@ -378,36 +379,29 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends Span
       spSchemaEntry.put("Comment", "Spanner schema for source table " + tableName);
       spSchemaEntry.put("Id", "t" + i);
 
-      Map<String, Object> spSchemaMap = (Map<String, Object>) sessionTemplate.get("SpSchema");
-      spSchemaMap.put("t" + i, spSchemaEntry);
+      ((Map<String, Object>) sessionTemplate.get("SpSchema")).put("t" + i, spSchemaEntry);
 
+      // Source Schema Entry
       Map<String, Object> srcSchemaEntry = new LinkedHashMap<>(spSchemaEntry);
       srcSchemaEntry.put("Schema", "SRC_DATABASE");
+      ((Map<String, Object>) sessionTemplate.get("SrcSchema")).put("t" + i, srcSchemaEntry);
 
-      Map<String, Object> srcSchemaMap = (Map<String, Object>) sessionTemplate.get("SrcSchema");
-      srcSchemaMap.put("t" + i, srcSchemaEntry);
-
+      // Schema Issues Entry
       Map<String, Object> schemaIssuesEntry = new LinkedHashMap<>();
       schemaIssuesEntry.put("ColumnLevelIssues", new LinkedHashMap<>());
       schemaIssuesEntry.put("TableLevelIssues", null);
-
-      Map<String, Object> schemaIssuesMap =
-          (Map<String, Object>) sessionTemplate.get("SchemaIssues");
-      schemaIssuesMap.put("t" + i, schemaIssuesEntry);
+      ((Map<String, Object>) sessionTemplate.get("SchemaIssues")).put("t" + i, schemaIssuesEntry);
     }
-
     return sessionTemplate;
   }
 
   private JDBCResourceManager.JDBCSchema createJdbcSchema() {
     HashMap<String, String> columns = new HashMap<>();
-    columns.put(ROW_ID, "NUMERIC NOT NULL");
-    columns.put(NAME, "VARCHAR(200)");
-    columns.put(AGE, "NUMERIC");
-    columns.put(MEMBER, "VARCHAR(200)");
-    columns.put(ENTRY_ADDED, "VARCHAR(200)");
-    columns.put(LARGE_BLOB_ADDED, "LONGBLOB");
-    return new JDBCResourceManager.JDBCSchema(columns, ROW_ID);
+    for (int i = 0; i < NUM_COLUMNS; i++) {
+      columns.put(COLUMNS.get(i), "VARCHAR(200) NOT NULL");
+    }
+
+    return new JDBCResourceManager.JDBCSchema(columns, String.join(", ", COLUMNS));
   }
 
   private void createPubSubNotifications() throws IOException {
@@ -424,28 +418,28 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends Span
     gcsResourceManager.createNotification(dlqTopic.toString(), dlqGcsPrefix.substring(1));
   }
 
+  /** Creates Spanner tables dynamically with 16 columns as a composite primary key. */
   private void createSpannerTables(List<String> tableNames) {
     tableNames.forEach(
-        tableName ->
-            spannerResourceManager.executeDdlStatement(
-                "CREATE TABLE IF NOT EXISTS "
-                    + tableName
-                    + " ("
-                    + ROW_ID
-                    + " INT64 NOT NULL, "
-                    + NAME
-                    + " STRING(1024), "
-                    + AGE
-                    + " INT64, "
-                    + MEMBER
-                    + " STRING(1024), "
-                    + ENTRY_ADDED
-                    + " STRING(1024), "
-                    + LARGE_BLOB_ADDED
-                    + " BYTES(9437184)" // 9 MiB
-                    + ") PRIMARY KEY ("
-                    + ROW_ID
-                    + "))"));
+        tableName -> {
+          StringBuilder sb = new StringBuilder();
+          sb.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append(" (");
+
+          for (int i = 1; i <= NUM_COLUMNS; i++) {
+            sb.append(COLUMNS.get(i - 1)).append(" STRING(1024) NOT NULL, ");
+          }
+
+          sb.append("PRIMARY KEY (");
+          for (int i = 1; i <= NUM_COLUMNS; i++) {
+            sb.append(COLUMNS.get(i - 1));
+            if (i != NUM_COLUMNS) {
+              sb.append(", ");
+            }
+          }
+          sb.append("))");
+
+          spannerResourceManager.executeDdlStatement(sb.toString());
+        });
   }
 
   /**
@@ -458,12 +452,12 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends Span
       List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
     return new ConditionCheck() {
       @Override
-      protected String getDescription() {
+      protected @NotNull String getDescription() {
         return "Check Spanner rows.";
       }
 
       @Override
-      protected CheckResult check() {
+      protected @NotNull CheckResult check() {
         // First, check that correct number of rows were deleted.
         for (String tableName : tableNames) {
           long totalRows = spannerResourceManager.getRowCount(tableName);
@@ -505,29 +499,23 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends Span
       List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
     return new ConditionCheck() {
       @Override
-      protected String getDescription() {
+      protected @NotNull String getDescription() {
         return "Send initial JDBC events.";
       }
 
       @Override
-      protected CheckResult check() {
+      protected @NotNull CheckResult check() {
         boolean success = true;
         List<String> messages = new ArrayList<>();
-
-        byte[] largeData = new byte[9 * 1024 * 1024];
-        new Random().nextBytes(largeData);
 
         for (String tableName : tableNames) {
           List<Map<String, Object>> rows = new ArrayList<>();
 
           for (int i = 0; i < NUM_EVENTS; i++) {
             Map<String, Object> values = new HashMap<>();
-            values.put(COLUMNS.get(0), i);
-            values.put(COLUMNS.get(1), RandomStringUtils.randomAlphabetic(10));
-            values.put(COLUMNS.get(2), new Random().nextInt(100));
-            values.put(COLUMNS.get(3), new Random().nextInt() % 2 == 0 ? "Y" : "N");
-            values.put(COLUMNS.get(4), Instant.now().toString());
-            values.put(COLUMNS.get(5), largeData);
+            for (int j = 1; j <= NUM_COLUMNS; j++) {
+              values.put(COLUMNS.get(j - 1), RandomStringUtils.randomAlphabetic(10));
+            }
             rows.add(values);
           }
 

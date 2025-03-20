@@ -62,6 +62,7 @@ import java.util.Map;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineDebugOptions;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineWorkerPoolOptions;
+import org.apache.beam.runners.dataflow.options.DataflowPipelineWorkerPoolOptions.AutoscalingAlgorithmType;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.KvCoder;
@@ -452,7 +453,10 @@ public class SpannerToSourceDb {
   public static PipelineResult run(Options options) {
 
     Pipeline pipeline = Pipeline.create(options);
-    pipeline.getOptions().as(DataflowPipelineWorkerPoolOptions.class);
+    pipeline
+        .getOptions()
+        .as(DataflowPipelineWorkerPoolOptions.class)
+        .setAutoscalingAlgorithm(AutoscalingAlgorithmType.THROUGHPUT_BASED);
 
     // calculate the max connections per worker
     int maxNumWorkers =

@@ -331,7 +331,6 @@ In case your job fails due to many exceptions like the above, here are a few ste
 #### Throughput on Spanner raises and falls in sharp bursts
 It's possible that the default configuration could lead to spanner throughput raise and fall in sharp bursts. In case this is observed, you can disable spanner batch writes by setting `batchSizeForSpannerMutations` as 0.
 
-
 ## Terraform
 
 Dataflow supports the utilization of Terraform to manage template jobs,

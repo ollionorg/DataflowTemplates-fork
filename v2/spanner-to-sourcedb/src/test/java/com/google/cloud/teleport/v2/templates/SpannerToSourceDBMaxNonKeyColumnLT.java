@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Google LLC
+ * Copyright (C) 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -23,44 +23,38 @@ import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 import com.google.cloud.teleport.metadata.TemplateLoadTest;
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.TestProperties;
 import org.apache.beam.it.gcp.datagenerator.DataGenerator;
 import org.apache.beam.it.jdbc.JDBCResourceManager;
-import org.apache.beam.it.jdbc.MySQLResourceManager;
 import org.apache.beam.it.jdbc.conditions.JDBCRowsCheck;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Category(TemplateLoadTest.class)
 @TemplateLoadTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
-@Ignore("ignore")
-public class SpannerToMySqlSourceLT extends SpannerToSourceDbLTBase {
-
-  private static final Logger LOG = LoggerFactory.getLogger(SpannerToMySqlSourceLT.class);
-
+public class SpannerToSourceDBMaxNonKeyColumnLT extends SpannerToSourceDbLTBase {
   private String generatorSchemaPath;
   private final String artifactBucket = TestProperties.artifactBucket();
-  private final String spannerDdlResource = "SpannerToMySqlSourceLT/spanner-schema.sql";
-  private final String sessionFileResource = "SpannerToMySqlSourceLT/session.json";
+  private final String spannerDdlResource = "SpannerToSourceDBMaxNonKeyColumnLT/spanner-schema.sql";
+  private final String mysqlDdlResource = "SpannerToSourceDBMaxNonKeyColumnLT/mysql-schema.sql";
+  private final String sessionFileResource =
+      "SpannerToSourceDBMaxNonKeyColumnLT/NewSession_mysql_max_col.json";
   private final String dataGeneratorSchemaResource =
       "SpannerToMySqlSourceLT/datagenerator-schema.json";
-  private final String table = "Person";
+  private final String table = "maxNonKeyCol";
   private final int maxWorkers = 50;
   private final int numWorkers = 20;
+  private final int maxRows = 1000;
   private PipelineLauncher.LaunchInfo jobInfo;
   private PipelineLauncher.LaunchInfo readerJobInfo;
   private final int numShards = 1;
@@ -78,7 +72,7 @@ public class SpannerToMySqlSourceLT extends SpannerToSourceDbLTBase {
                     Resources.getResource(dataGeneratorSchemaResource).getPath())
                 .name());
 
-    createMySQLSchema(jdbcResourceManagers);
+    createMySQLSchema(jdbcResourceManagers.get(0), mysqlDdlResource);
     jobInfo =
         launchDataflowJob(
             artifactBucket,
@@ -101,15 +95,16 @@ public class SpannerToMySqlSourceLT extends SpannerToSourceDbLTBase {
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
             .setQPS("1000")
-            .setMessagesLimit(String.valueOf(300000))
+            .setMessagesLimit(String.valueOf(maxRows))
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
             .setSpannerTableName(table)
-            .setNumWorkers("50")
-            .setMaxNumWorkers("100")
+            .setNumWorkers(String.valueOf(numWorkers))
+            .setMaxNumWorkers(String.valueOf(maxWorkers))
             .setSinkType("SPANNER")
             .setProjectId(project)
             .setBatchSizeBytes("0")
+            .setWorkerMachineType("n2-standard-4")
             .build();
 
     dataGenerator.execute(Duration.ofMinutes(90));
@@ -117,8 +112,8 @@ public class SpannerToMySqlSourceLT extends SpannerToSourceDbLTBase {
 
     JDBCRowsCheck check =
         JDBCRowsCheck.builder(jdbcResourceManagers.get(0), table)
-            .setMinRows(300000)
-            .setMaxRows(300000)
+            .setMinRows(maxRows)
+            .setMaxRows(maxRows)
             .build();
 
     PipelineOperator.Result result =
@@ -136,22 +131,18 @@ public class SpannerToMySqlSourceLT extends SpannerToSourceDbLTBase {
     exportMetrics(jobInfo, numShards);
   }
 
-  private void createMySQLSchema(List<JDBCResourceManager> jdbcResourceManagers) {
-    if (!(jdbcResourceManagers.get(0) instanceof MySQLResourceManager)) {
-      throw new IllegalArgumentException(jdbcResourceManagers.get(0).getClass().getSimpleName());
+  protected void createMySQLSchema(JDBCResourceManager jdbcResourceManager, String mySqlSchemaFile)
+      throws IOException {
+    String ddl =
+        String.join(
+            " ",
+            Resources.readLines(Resources.getResource(mySqlSchemaFile), StandardCharsets.UTF_8));
+    ddl = ddl.trim();
+    String[] ddls = ddl.split(";");
+    for (String d : ddls) {
+      if (!d.isBlank()) {
+        jdbcResourceManager.runSQLUpdate(d);
+      }
     }
-    MySQLResourceManager jdbcResourceManager = (MySQLResourceManager) jdbcResourceManagers.get(0);
-    HashMap<String, String> columns = new HashMap<>();
-    columns.put("first_name1", "varchar(500)");
-    columns.put("last_name1", "varchar(500)");
-    columns.put("first_name2", "varchar(500)");
-    columns.put("last_name2", "varchar(500)");
-    columns.put("first_name3", "varchar(500)");
-    columns.put("last_name3", "varchar(500)");
-    columns.put("ID", "varchar(100) NOT NULL");
-
-    JDBCResourceManager.JDBCSchema schema = new JDBCResourceManager.JDBCSchema(columns, "ID");
-
-    jdbcResourceManager.createTable(table, schema);
   }
 }

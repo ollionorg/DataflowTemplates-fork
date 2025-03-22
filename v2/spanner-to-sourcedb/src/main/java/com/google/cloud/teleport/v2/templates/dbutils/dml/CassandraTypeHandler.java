@@ -34,15 +34,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import org.apache.commons.lang3.BooleanUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -650,11 +642,8 @@ public class CassandraTypeHandler {
 
     Object columnValue = handleSpannerColumnType(spannerType, columnName, valuesJson);
 
-    if (columnValue == null) {
-      LOG.warn("Column value is null for column: {}, type: {}", columnName, spannerType);
-      return PreparedStatementValueObject.create(cassandraType, NullClass.INSTANCE);
-    }
-    return PreparedStatementValueObject.create(cassandraType, columnValue);
+    return PreparedStatementValueObject.create(
+        cassandraType, Objects.requireNonNullElse(columnValue, NullClass.INSTANCE));
   }
 
   /**

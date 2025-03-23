@@ -32,6 +32,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
@@ -57,6 +60,10 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
 
   private static final Logger LOG =
       LoggerFactory.getLogger(SpannerToCassandraSourceDbMaxColumnsSizeIT.class);
+
+  private static final int INPUT_SIZE = 2_621_440;
+  private static final int BATCH_SIZE = 20;
+  private static final int NUM_THREADS = 4;
 
   private static final String SPANNER_DDL_RESOURCE =
       "SpannerToSourceDbWideRowIT/spanner-max-col-size-schema.sql";
@@ -159,18 +166,51 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
   }
 
   private void writeRowWithMaxColumnsInSpanner() {
-    List<Mutation> mutations = new ArrayList<>();
-    Mutation.WriteBuilder mutationBuilder =
-        Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("Id").to("SampleTest");
+    try (ExecutorService executors = Executors.newFixedThreadPool(NUM_THREADS)) {
+      String inputData = "A".repeat(INPUT_SIZE);
+      List<Future<Void>> futures = new ArrayList<>();
+      for (int i = 1; i <= 159; i += BATCH_SIZE) {
+        final int start = i;
+        futures.add(
+            executors.submit(
+                () -> {
+                  try {
+                    List<Mutation> mutations = new ArrayList<>();
+                    Mutation.WriteBuilder mutationBuilder =
+                        Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("Id").to("SampleTest");
 
-    String inputData = "A".repeat(2_621_440);
-    for (int i = 1; i <= 159; i++) {
-      mutationBuilder.set("Col_" + i).to(inputData);
+                    for (int j = start; j < start + BATCH_SIZE && j <= 159; j++) {
+                      mutationBuilder.set("Col_" + j).to(inputData);
+                    }
+                    mutations.add(mutationBuilder.build());
+                    spannerResourceManager.write(mutations);
+                    LOG.info(
+                        "✅ Inserted batch: Columns {} to {} into Spanner.",
+                        start,
+                        start + BATCH_SIZE - 1);
+                  } catch (Exception e) {
+                    LOG.error(
+                        "❌ Failed to insert batch: Columns {} to {} - {}",
+                        start,
+                        start + BATCH_SIZE - 1,
+                        e.getMessage(),
+                        e);
+                  }
+                  return null;
+                }));
+      }
+
+      futures.forEach(
+          future -> {
+            try {
+              future.get();
+            } catch (Exception e) {
+              LOG.error("❌ Error in parallel execution: {}", e.getMessage(), e);
+            }
+          });
+
+      executors.shutdown();
     }
-
-    mutations.add(mutationBuilder.build());
-    spannerResourceManager.write(mutations);
-    LOG.info("Inserted row with 159 columns into Spanner using Mutations");
   }
 
   private void assertRowWithMaxColumnsInCassandra() {

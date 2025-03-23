@@ -57,18 +57,18 @@ import org.slf4j.LoggerFactory;
 public class SpannerToCassandraSourceDbWideRow10MbIT extends SpannerToSourceDbITBase {
 
   private static final Logger LOG =
-          LoggerFactory.getLogger(SpannerToCassandraSourceDbWideRow10MbIT.class);
+      LoggerFactory.getLogger(SpannerToCassandraSourceDbWideRow10MbIT.class);
 
   private static final String SPANNER_DDL_RESOURCE =
-          "SpannerToSourceDbWideRowIT/spanner-16mb-schema.sql";
+      "SpannerToSourceDbWideRowIT/spanner-16mb-schema.sql";
   private static final String CASSANDRA_SCHEMA_FILE_RESOURCE =
-          "SpannerToSourceDbWideRowIT/cassandra-10mb-schema.sql";
+      "SpannerToSourceDbWideRowIT/cassandra-10mb-schema.sql";
   private static final String CASSANDRA_CONFIG_FILE_RESOURCE =
-          "SpannerToSourceDbWideRowIT/cassandra-config-template.conf";
+      "SpannerToSourceDbWideRowIT/cassandra-config-template.conf";
 
   private static final String LARGE_DATA_TABLE = "large_data";
   private static final HashSet<SpannerToCassandraSourceDbWideRow10MbIT> testInstances =
-          new HashSet<>();
+      new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
   public static SpannerResourceManager spannerResourceManager;
   private static SpannerResourceManager spannerMetadataResourceManager;
@@ -94,30 +94,30 @@ public class SpannerToCassandraSourceDbWideRow10MbIT extends SpannerToSourceDbIT
 
         cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
         gcsResourceManager =
-                GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
-                        .build();
+            GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
+                .build();
         createAndUploadCassandraConfigToGcs(
-                gcsResourceManager, cassandraResourceManager, CASSANDRA_CONFIG_FILE_RESOURCE);
+            gcsResourceManager, cassandraResourceManager, CASSANDRA_CONFIG_FILE_RESOURCE);
         createCassandraSchema(cassandraResourceManager, CASSANDRA_SCHEMA_FILE_RESOURCE);
         pubsubResourceManager = setUpPubSubResourceManager();
         subscriptionName =
-                createPubsubResources(
-                        getClass().getSimpleName(),
-                        pubsubResourceManager,
-                        getGcsPath("dlq", gcsResourceManager).replace("gs://" + artifactBucketName, ""),
-                        gcsResourceManager);
+            createPubsubResources(
+                getClass().getSimpleName(),
+                pubsubResourceManager,
+                getGcsPath("dlq", gcsResourceManager).replace("gs://" + artifactBucketName, ""),
+                gcsResourceManager);
         jobInfo =
-                launchDataflowJob(
-                        gcsResourceManager,
-                        spannerResourceManager,
-                        spannerMetadataResourceManager,
-                        subscriptionName.toString(),
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        CASSANDRA_SOURCE_TYPE);
+            launchDataflowJob(
+                gcsResourceManager,
+                spannerResourceManager,
+                spannerMetadataResourceManager,
+                subscriptionName.toString(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                CASSANDRA_SOURCE_TYPE);
       }
     }
   }
@@ -133,11 +133,11 @@ public class SpannerToCassandraSourceDbWideRow10MbIT extends SpannerToSourceDbIT
       instance.tearDownBase();
     }
     ResourceManagerUtils.cleanResources(
-            spannerResourceManager,
-            cassandraResourceManager,
-            spannerMetadataResourceManager,
-            gcsResourceManager,
-            pubsubResourceManager);
+        spannerResourceManager,
+        cassandraResourceManager,
+        spannerMetadataResourceManager,
+        gcsResourceManager,
+        pubsubResourceManager);
   }
 
   /**
@@ -166,12 +166,12 @@ public class SpannerToCassandraSourceDbWideRow10MbIT extends SpannerToSourceDbIT
       byte[] blobData = new byte[safeBlobSize];
       new Random().nextBytes(blobData);
       Mutation mutation =
-              Mutation.newInsertOrUpdateBuilder(LARGE_DATA_TABLE)
-                      .set("id")
-                      .to(UUID.randomUUID().toString())
-                      .set("large_blob")
-                      .to(ByteArray.copyFrom(blobData)) // Ensures ≤10MB limit
-                      .build();
+          Mutation.newInsertOrUpdateBuilder(LARGE_DATA_TABLE)
+              .set("id")
+              .to(UUID.randomUUID().toString())
+              .set("large_blob")
+              .to(ByteArray.copyFrom(blobData)) // Ensures ≤10MB limit
+              .build();
 
       spannerResourceManager.write(mutation);
       LOG.info("✅ Successfully inserted a 9.9MB row into Spanner.");
@@ -206,10 +206,10 @@ public class SpannerToCassandraSourceDbWideRow10MbIT extends SpannerToSourceDbIT
     final int maxBlobSize = 10 * 1024 * 1024; // 10MB
     final int safeBlobSize = maxBlobSize - 1024; // 9.9MB to avoid limit issues
     PipelineOperator.Result result =
-            pipelineOperator()
-                    .waitForCondition(
-                            createConfig(jobInfo, Duration.ofMinutes(15)),
-                            () -> getRowCount(LARGE_DATA_TABLE) == 1);
+        pipelineOperator()
+            .waitForCondition(
+                createConfig(jobInfo, Duration.ofMinutes(15)),
+                () -> getRowCount(LARGE_DATA_TABLE) == 1);
     assertThatResult(result).meetsConditions();
 
     Iterable<Row> rows;

@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
 public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceDbITBase {
 
   private static final Logger LOG =
-          LoggerFactory.getLogger(SpannerToCassandraSourceDbMaxColumnsSizeIT.class);
+      LoggerFactory.getLogger(SpannerToCassandraSourceDbMaxColumnsSizeIT.class);
 
   private static final int INPUT_SIZE = 500_000;
   private static final int BATCH_SIZE = 3;
@@ -67,15 +67,15 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
   private static final String SECONDARY_KEY_PREFIX = "col_";
 
   private static final String SPANNER_DDL_RESOURCE =
-          "SpannerToSourceDbWideRowIT/spanner-max-col-size-schema.sql";
+      "SpannerToSourceDbWideRowIT/spanner-max-col-size-schema.sql";
   private static final String CASSANDRA_SCHEMA_FILE_RESOURCE =
-          "SpannerToSourceDbWideRowIT/cassandra-max-col-size-schema.sql";
+      "SpannerToSourceDbWideRowIT/cassandra-max-col-size-schema.sql";
   private static final String CASSANDRA_CONFIG_FILE_RESOURCE =
-          "SpannerToSourceDbWideRowIT/cassandra-config-template.conf";
+      "SpannerToSourceDbWideRowIT/cassandra-config-template.conf";
 
   private static final String TEST_TABLE = "TestTable";
   private static final HashSet<SpannerToCassandraSourceDbMaxColumnsSizeIT> testInstances =
-          new HashSet<>();
+      new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
   public static SpannerResourceManager spannerResourceManager;
   private static SpannerResourceManager spannerMetadataResourceManager;
@@ -96,30 +96,30 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
 
         cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
         gcsResourceManager =
-                GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
-                        .build();
+            GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
+                .build();
         createAndUploadCassandraConfigToGcs(
-                gcsResourceManager, cassandraResourceManager, CASSANDRA_CONFIG_FILE_RESOURCE);
+            gcsResourceManager, cassandraResourceManager, CASSANDRA_CONFIG_FILE_RESOURCE);
         createCassandraSchema(cassandraResourceManager, CASSANDRA_SCHEMA_FILE_RESOURCE);
         pubsubResourceManager = setUpPubSubResourceManager();
         subscriptionName =
-                createPubsubResources(
-                        getClass().getSimpleName(),
-                        pubsubResourceManager,
-                        getGcsPath("dlq", gcsResourceManager).replace("gs://" + artifactBucketName, ""),
-                        gcsResourceManager);
+            createPubsubResources(
+                getClass().getSimpleName(),
+                pubsubResourceManager,
+                getGcsPath("dlq", gcsResourceManager).replace("gs://" + artifactBucketName, ""),
+                gcsResourceManager);
         jobInfo =
-                launchDataflowJob(
-                        gcsResourceManager,
-                        spannerResourceManager,
-                        spannerMetadataResourceManager,
-                        subscriptionName.toString(),
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        CASSANDRA_SOURCE_TYPE);
+            launchDataflowJob(
+                gcsResourceManager,
+                spannerResourceManager,
+                spannerMetadataResourceManager,
+                subscriptionName.toString(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                CASSANDRA_SOURCE_TYPE);
       }
     }
   }
@@ -130,11 +130,11 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
       instance.tearDownBase();
     }
     ResourceManagerUtils.cleanResources(
-            spannerResourceManager,
-            cassandraResourceManager,
-            spannerMetadataResourceManager,
-            gcsResourceManager,
-            pubsubResourceManager);
+        spannerResourceManager,
+        cassandraResourceManager,
+        spannerMetadataResourceManager,
+        gcsResourceManager,
+        pubsubResourceManager);
   }
 
   /**
@@ -161,7 +161,7 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
   /** Writes a row with 1,024 columns in Spanner and verifies replication to Cassandra. */
   @Test
   public void testSpannerToCassandraWithMaxInSizeColumns()
-          throws InterruptedException, IOException {
+      throws InterruptedException, IOException {
     assertThatPipeline(jobInfo).isRunning();
     writeRowWithMaxColumnsInSpanner();
     assertRowWithMaxColumnsInCassandra();
@@ -175,41 +175,41 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
       System.out.println("Inserting for the iTh Record " + i);
       final int start = i;
       futures.add(
-              executors.submit(
-                      () -> {
-                        try {
-                          List<Mutation> mutations = new ArrayList<>();
-                          Mutation.WriteBuilder mutationBuilder =
-                                  Mutation.newInsertOrUpdateBuilder(TEST_TABLE)
-                                          .set(PRIMARY_KEY)
-                                          .to("SampleTest");
+          executors.submit(
+              () -> {
+                try {
+                  List<Mutation> mutations = new ArrayList<>();
+                  Mutation.WriteBuilder mutationBuilder =
+                      Mutation.newInsertOrUpdateBuilder(TEST_TABLE)
+                          .set(PRIMARY_KEY)
+                          .to("SampleTest");
 
-                          for (int j = start; j < start + BATCH_SIZE && j <= NUM_COLS; j++) {
-                            mutationBuilder.set(SECONDARY_KEY_PREFIX + j).to(inputData);
-                          }
-                          mutations.add(mutationBuilder.build());
-                          spannerResourceManager.write(mutations);
-                          System.out.printf(
-                                  "✅ Inserted batch: Columns %d to %d into Spanner%n",
-                                  start, Math.min(start + BATCH_SIZE - 1, NUM_COLS));
-                        } catch (Exception e) {
-                          System.out.printf(
-                                  "❌ Failed to insert batch: Columns %d to %d - %s%n",
-                                  start, start + BATCH_SIZE - 1, e.getMessage());
-                        }
-                        return null;
-                      }));
+                  for (int j = start; j < start + BATCH_SIZE && j <= NUM_COLS; j++) {
+                    mutationBuilder.set(SECONDARY_KEY_PREFIX + j).to(inputData);
+                  }
+                  mutations.add(mutationBuilder.build());
+                  spannerResourceManager.write(mutations);
+                  System.out.printf(
+                      "✅ Inserted batch: Columns %d to %d into Spanner%n",
+                      start, Math.min(start + BATCH_SIZE - 1, NUM_COLS));
+                } catch (Exception e) {
+                  System.out.printf(
+                      "❌ Failed to insert batch: Columns %d to %d - %s%n",
+                      start, start + BATCH_SIZE - 1, e.getMessage());
+                }
+                return null;
+              }));
     }
 
     futures.forEach(
-            future -> {
-              try {
-                future.get();
-              } catch (Exception e) {
-                System.out.printf("❌ Error in parallel execution: %s", e.getMessage());
-                System.out.println(e);
-              }
-            });
+        future -> {
+          try {
+            future.get();
+          } catch (Exception e) {
+            System.out.printf("❌ Error in parallel execution: %s", e.getMessage());
+            System.out.println(e);
+          }
+        });
 
     executors.shutdown();
   }
@@ -217,9 +217,9 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
   private void assertRowWithMaxColumnsInCassandra() {
 
     PipelineOperator.Result result =
-            pipelineOperator()
-                    .waitForCondition(
-                            createConfig(jobInfo, Duration.ofMinutes(30)), () -> getRowCount(TEST_TABLE) == 1);
+        pipelineOperator()
+            .waitForCondition(
+                createConfig(jobInfo, Duration.ofMinutes(30)), () -> getRowCount(TEST_TABLE) == 1);
     assertThatResult(result).meetsConditions();
     LOG.info("Successfully validated 1,024 columns in Cassandra");
   }

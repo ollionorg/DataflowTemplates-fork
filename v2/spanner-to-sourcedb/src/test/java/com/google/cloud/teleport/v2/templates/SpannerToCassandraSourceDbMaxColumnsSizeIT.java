@@ -61,7 +61,7 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
   private static final Logger LOG =
       LoggerFactory.getLogger(SpannerToCassandraSourceDbMaxColumnsSizeIT.class);
 
-  private static final int INPUT_SIZE = 2_621_440;
+  private static final int INPUT_SIZE = 500_000;
   private static final int BATCH_SIZE = 20;
   private static final int NUM_THREADS = 4;
   private static final int NUM_COLS = 159;

@@ -173,7 +173,7 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
     String inputData = "A".repeat(INPUT_SIZE);
     List<Future<Void>> futures = new ArrayList<>();
     for (int i = 1; i <= NUM_COLS; i += BATCH_SIZE) {
-      System.out.println("Inserting for the Batch " + i % BATCH_SIZE);
+      System.out.println("Inserting for the iTh Record " + i);
       final int start = i;
       futures.add(
           executors.submit(

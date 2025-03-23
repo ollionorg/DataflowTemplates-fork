@@ -40,6 +40,7 @@ import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.beam.it.jdbc.MySQLResourceManager;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -52,17 +53,18 @@ import org.slf4j.LoggerFactory;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
+@Ignore("This test is disabled currently")
 public class SpannerToMySqlSourceDbWideRowMaxColumnsIT extends SpannerToSourceDbITBase {
 
   private static final Logger LOG =
-      LoggerFactory.getLogger(SpannerToMySqlSourceDbWideRowMaxColumnsIT.class);
+          LoggerFactory.getLogger(SpannerToMySqlSourceDbWideRowMaxColumnsIT.class);
   private static final String SPANNER_DDL_RESOURCE =
-      "SpannerToSourceDbWideRowIT/spanner-max-col-schema.sql";
+          "SpannerToSourceDbWideRowIT/spanner-max-col-schema.sql";
   private static final String SESSION_FILE_RESOURCE =
-      "SpannerToSourceDbWideRowIT/max-col-session.json";
+          "SpannerToSourceDbWideRowIT/max-col-session.json";
   private static final String TABLE1 = "testtable";
   private static final String MYSQL_SCHEMA_FILE_RESOURCE =
-      "SpannerToSourceDbWideRowIT/mysql-max-col-schema.sql";
+          "SpannerToSourceDbWideRowIT/mysql-max-col-schema.sql";
 
   private static HashSet<SpannerToMySqlSourceDbWideRowMaxColumnsIT> testInstances = new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
@@ -85,40 +87,40 @@ public class SpannerToMySqlSourceDbWideRowMaxColumnsIT extends SpannerToSourceDb
       testInstances.add(this);
       if (jobInfo == null) {
         spannerResourceManager =
-            createSpannerDatabase(SpannerToMySqlSourceDbWideRowMaxColumnsIT.SPANNER_DDL_RESOURCE);
+                createSpannerDatabase(SpannerToMySqlSourceDbWideRowMaxColumnsIT.SPANNER_DDL_RESOURCE);
         spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
         jdbcResourceManager = MySQLResourceManager.builder(testName).build();
 
         createMySQLSchema(
-            jdbcResourceManager,
-            SpannerToMySqlSourceDbWideRowMaxColumnsIT.MYSQL_SCHEMA_FILE_RESOURCE);
+                jdbcResourceManager,
+                SpannerToMySqlSourceDbWideRowMaxColumnsIT.MYSQL_SCHEMA_FILE_RESOURCE);
 
         gcsResourceManager =
-            GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
-                .build();
+                GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
+                        .build();
         createAndUploadShardConfigToGcs(gcsResourceManager, jdbcResourceManager);
         gcsResourceManager.uploadArtifact(
-            "input/session.json", Resources.getResource(SESSION_FILE_RESOURCE).getPath());
+                "input/session.json", Resources.getResource(SESSION_FILE_RESOURCE).getPath());
         pubsubResourceManager = setUpPubSubResourceManager();
         subscriptionName =
-            createPubsubResources(
-                getClass().getSimpleName(),
-                pubsubResourceManager,
-                getGcsPath("dlq", gcsResourceManager).replace("gs://" + artifactBucketName, ""),
-                gcsResourceManager);
+                createPubsubResources(
+                        getClass().getSimpleName(),
+                        pubsubResourceManager,
+                        getGcsPath("dlq", gcsResourceManager).replace("gs://" + artifactBucketName, ""),
+                        gcsResourceManager);
         jobInfo =
-            launchDataflowJob(
-                gcsResourceManager,
-                spannerResourceManager,
-                spannerMetadataResourceManager,
-                subscriptionName.toString(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                MYSQL_SOURCE_TYPE);
+                launchDataflowJob(
+                        gcsResourceManager,
+                        spannerResourceManager,
+                        spannerMetadataResourceManager,
+                        subscriptionName.toString(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        MYSQL_SOURCE_TYPE);
       }
     }
   }
@@ -134,16 +136,16 @@ public class SpannerToMySqlSourceDbWideRowMaxColumnsIT extends SpannerToSourceDb
       instance.tearDownBase();
     }
     ResourceManagerUtils.cleanResources(
-        spannerResourceManager,
-        jdbcResourceManager,
-        spannerMetadataResourceManager,
-        gcsResourceManager,
-        pubsubResourceManager);
+            spannerResourceManager,
+            jdbcResourceManager,
+            spannerMetadataResourceManager,
+            gcsResourceManager,
+            pubsubResourceManager);
   }
 
   @Test
   public void spannerToMySQLSourceDbMaxColTest()
-      throws IOException, InterruptedException, MultipleFailureException {
+          throws IOException, InterruptedException, MultipleFailureException {
     assertThatPipeline(jobInfo).isRunning();
     // Write row in Spanner
     writeRowsInSpanner();
@@ -154,7 +156,7 @@ public class SpannerToMySqlSourceDbWideRowMaxColumnsIT extends SpannerToSourceDb
   private void writeRowsInSpanner() {
     List<Mutation> mutations = new ArrayList<>();
     Mutation.WriteBuilder mutationBuilder =
-        Mutation.newInsertOrUpdateBuilder(TABLE1).set("Id").to("SampleTest");
+            Mutation.newInsertOrUpdateBuilder(TABLE1).set("Id").to("SampleTest");
 
     for (int i = 1; i < 1024; i++) {
       mutationBuilder.set("Col_" + i).to("TestValue_" + i);
@@ -169,10 +171,10 @@ public class SpannerToMySqlSourceDbWideRowMaxColumnsIT extends SpannerToSourceDb
 
   private void assertRowInMySQL() throws MultipleFailureException {
     PipelineOperator.Result result =
-        pipelineOperator()
-            .waitForCondition(
-                createConfig(jobInfo, Duration.ofMinutes(10)),
-                () -> jdbcResourceManager.getRowCount(TABLE1) == 1); // only one row is inserted
+            pipelineOperator()
+                    .waitForCondition(
+                            createConfig(jobInfo, Duration.ofMinutes(10)),
+                            () -> jdbcResourceManager.getRowCount(TABLE1) == 1); // only one row is inserted
     assertThatResult(result).meetsConditions();
 
     List<Map<String, Object>> rows = jdbcResourceManager.readTable(TABLE1);

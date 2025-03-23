@@ -48,24 +48,25 @@ import org.junit.runners.JUnit4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** Integration test for {@link SpannerToSourceDb} Flex template for all data types. */
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
 public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITBase {
 
   private static final Logger LOG =
-      LoggerFactory.getLogger(SpannerToCassandraSourceDbMaxColumnsIT.class);
+          LoggerFactory.getLogger(SpannerToCassandraSourceDbMaxColumnsIT.class);
 
   private static final String SPANNER_DDL_RESOURCE =
-      "SpannerToSourceDbWideRowIT/spanner-max-col-schema.sql";
+          "SpannerToSourceDbWideRowIT/spanner-max-col-schema.sql";
   private static final String CASSANDRA_SCHEMA_FILE_RESOURCE =
-      "SpannerToSourceDbWideRowIT/cassandra-max-col-schema.sql";
+          "SpannerToSourceDbWideRowIT/cassandra-max-col-schema.sql";
   private static final String CASSANDRA_CONFIG_FILE_RESOURCE =
-      "SpannerToSourceDbWideRowIT/cassandra-config-template.conf";
+          "SpannerToSourceDbWideRowIT/cassandra-config-template.conf";
 
   private static final String TEST_TABLE = "TestTable";
   private static final HashSet<SpannerToCassandraSourceDbMaxColumnsIT> testInstances =
-      new HashSet<>();
+          new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
   public static SpannerResourceManager spannerResourceManager;
   private static SpannerResourceManager spannerMetadataResourceManager;
@@ -86,30 +87,30 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
 
         cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
         gcsResourceManager =
-            GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
-                .build();
+                GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)
+                        .build();
         createAndUploadCassandraConfigToGcs(
-            gcsResourceManager, cassandraResourceManager, CASSANDRA_CONFIG_FILE_RESOURCE);
+                gcsResourceManager, cassandraResourceManager, CASSANDRA_CONFIG_FILE_RESOURCE);
         createCassandraSchema(cassandraResourceManager, CASSANDRA_SCHEMA_FILE_RESOURCE);
         pubsubResourceManager = setUpPubSubResourceManager();
         subscriptionName =
-            createPubsubResources(
-                getClass().getSimpleName(),
-                pubsubResourceManager,
-                getGcsPath("dlq", gcsResourceManager).replace("gs://" + artifactBucketName, ""),
-                gcsResourceManager);
+                createPubsubResources(
+                        getClass().getSimpleName(),
+                        pubsubResourceManager,
+                        getGcsPath("dlq", gcsResourceManager).replace("gs://" + artifactBucketName, ""),
+                        gcsResourceManager);
         jobInfo =
-            launchDataflowJob(
-                gcsResourceManager,
-                spannerResourceManager,
-                spannerMetadataResourceManager,
-                subscriptionName.toString(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                CASSANDRA_SOURCE_TYPE);
+                launchDataflowJob(
+                        gcsResourceManager,
+                        spannerResourceManager,
+                        spannerMetadataResourceManager,
+                        subscriptionName.toString(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        CASSANDRA_SOURCE_TYPE);
       }
     }
   }
@@ -120,11 +121,11 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
       instance.tearDownBase();
     }
     ResourceManagerUtils.cleanResources(
-        spannerResourceManager,
-        cassandraResourceManager,
-        spannerMetadataResourceManager,
-        gcsResourceManager,
-        pubsubResourceManager);
+            spannerResourceManager,
+            cassandraResourceManager,
+            spannerMetadataResourceManager,
+            gcsResourceManager,
+            pubsubResourceManager);
   }
 
   /**
@@ -159,10 +160,10 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
   private void writeRowWithMaxColumnsInSpanner() {
     List<Mutation> mutations = new ArrayList<>();
     Mutation.WriteBuilder mutationBuilder =
-        Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("Id").to("SampleTest");
+            Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("id").to("SampleTest");
 
     for (int i = 1; i < 1024; i++) {
-      mutationBuilder.set("Col_" + i).to("TestValue_" + i);
+      mutationBuilder.set("col_" + i).to("TestValue_" + i);
     }
 
     mutations.add(mutationBuilder.build());
@@ -173,9 +174,9 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
   private void assertRowWithMaxColumnsInCassandra() {
 
     PipelineOperator.Result result =
-        pipelineOperator()
-            .waitForCondition(
-                createConfig(jobInfo, Duration.ofMinutes(15)), () -> getRowCount(TEST_TABLE) == 2);
+            pipelineOperator()
+                    .waitForCondition(
+                            createConfig(jobInfo, Duration.ofMinutes(15)), () -> getRowCount(TEST_TABLE) == 1);
     assertThatResult(result).meetsConditions();
 
     Iterable<Row> rows;
@@ -188,10 +189,10 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
     assertThat(rows).hasSize(1);
     for (Row row : rows) {
       LOG.info("Cassandra Row to Assert for All Data Types: {}", row.getFormattedContents());
-      String primaryKeyColumn = row.getString("Col_0");
+      String primaryKeyColumn = row.getString("id");
       assertEquals("SampleTest", primaryKeyColumn);
       for (int i = 1; i < 1024; i++) {
-        assertEquals("TestValue_" + i, row.getString("Col_" + i));
+        assertEquals("TestValue_" + i, row.getString("col_" + i));
       }
     }
     LOG.info("Successfully validated 1,024 columns in Cassandra");

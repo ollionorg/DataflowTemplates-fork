@@ -166,51 +166,50 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
   }
 
   private void writeRowWithMaxColumnsInSpanner() {
-    try (ExecutorService executors = Executors.newFixedThreadPool(NUM_THREADS)) {
-      String inputData = "A".repeat(INPUT_SIZE);
-      List<Future<Void>> futures = new ArrayList<>();
-      for (int i = 1; i <= 159; i += BATCH_SIZE) {
-        final int start = i;
-        futures.add(
-            executors.submit(
-                () -> {
-                  try {
-                    List<Mutation> mutations = new ArrayList<>();
-                    Mutation.WriteBuilder mutationBuilder =
-                        Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("Id").to("SampleTest");
+    ExecutorService executors = Executors.newFixedThreadPool(NUM_THREADS);
+    String inputData = "A".repeat(INPUT_SIZE);
+    List<Future<Void>> futures = new ArrayList<>();
+    for (int i = 1; i <= 159; i += BATCH_SIZE) {
+      final int start = i;
+      futures.add(
+          executors.submit(
+              () -> {
+                try {
+                  List<Mutation> mutations = new ArrayList<>();
+                  Mutation.WriteBuilder mutationBuilder =
+                      Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("Id").to("SampleTest");
 
-                    for (int j = start; j < start + BATCH_SIZE && j <= 159; j++) {
-                      mutationBuilder.set("Col_" + j).to(inputData);
-                    }
-                    mutations.add(mutationBuilder.build());
-                    spannerResourceManager.write(mutations);
-                    LOG.info(
-                        "✅ Inserted batch: Columns {} to {} into Spanner.",
-                        start,
-                        start + BATCH_SIZE - 1);
-                  } catch (Exception e) {
-                    LOG.error(
-                        "❌ Failed to insert batch: Columns {} to {} - {}",
-                        start,
-                        start + BATCH_SIZE - 1,
-                        e.getMessage(),
-                        e);
+                  for (int j = start; j < start + BATCH_SIZE && j <= 159; j++) {
+                    mutationBuilder.set("Col_" + j).to(inputData);
                   }
-                  return null;
-                }));
-      }
-
-      futures.forEach(
-          future -> {
-            try {
-              future.get();
-            } catch (Exception e) {
-              LOG.error("❌ Error in parallel execution: {}", e.getMessage(), e);
-            }
-          });
-
-      executors.shutdown();
+                  mutations.add(mutationBuilder.build());
+                  spannerResourceManager.write(mutations);
+                  LOG.info(
+                      "✅ Inserted batch: Columns {} to {} into Spanner.",
+                      start,
+                      start + BATCH_SIZE - 1);
+                } catch (Exception e) {
+                  LOG.error(
+                      "❌ Failed to insert batch: Columns {} to {} - {}",
+                      start,
+                      start + BATCH_SIZE - 1,
+                      e.getMessage(),
+                      e);
+                }
+                return null;
+              }));
     }
+
+    futures.forEach(
+        future -> {
+          try {
+            future.get();
+          } catch (Exception e) {
+            LOG.error("❌ Error in parallel execution: {}", e.getMessage(), e);
+          }
+        });
+
+    executors.shutdown();
   }
 
   private void assertRowWithMaxColumnsInCassandra() {

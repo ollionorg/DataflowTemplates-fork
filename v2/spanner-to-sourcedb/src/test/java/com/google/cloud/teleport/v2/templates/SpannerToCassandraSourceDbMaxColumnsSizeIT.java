@@ -64,6 +64,9 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
   private static final int INPUT_SIZE = 2_621_440;
   private static final int BATCH_SIZE = 20;
   private static final int NUM_THREADS = 4;
+  private static final int NUM_COLS = 159;
+  private static final String PRIMARY_KEY = "id";
+  private static final String SECONDARY_KEY_PREFIX = "col_";
 
   private static final String SPANNER_DDL_RESOURCE =
       "SpannerToSourceDbWideRowIT/spanner-max-col-size-schema.sql";
@@ -169,7 +172,8 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
     ExecutorService executors = Executors.newFixedThreadPool(NUM_THREADS);
     String inputData = "A".repeat(INPUT_SIZE);
     List<Future<Void>> futures = new ArrayList<>();
-    for (int i = 1; i <= 159; i += BATCH_SIZE) {
+    for (int i = 1; i <= NUM_COLS; i += BATCH_SIZE) {
+      System.out.println("Inserting for the Batch " + i % BATCH_SIZE);
       final int start = i;
       futures.add(
           executors.submit(
@@ -177,24 +181,22 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
                 try {
                   List<Mutation> mutations = new ArrayList<>();
                   Mutation.WriteBuilder mutationBuilder =
-                      Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("Id").to("SampleTest");
+                      Mutation.newInsertOrUpdateBuilder(TEST_TABLE)
+                          .set(PRIMARY_KEY)
+                          .to("SampleTest");
 
-                  for (int j = start; j < start + BATCH_SIZE && j <= 159; j++) {
-                    mutationBuilder.set("Col_" + j).to(inputData);
+                  for (int j = start; j < start + BATCH_SIZE && j <= NUM_COLS; j++) {
+                    mutationBuilder.set(SECONDARY_KEY_PREFIX + j).to(inputData);
                   }
                   mutations.add(mutationBuilder.build());
                   spannerResourceManager.write(mutations);
-                  LOG.info(
-                      "✅ Inserted batch: Columns {} to {} into Spanner.",
-                      start,
-                      start + BATCH_SIZE - 1);
+                  System.out.printf(
+                      "✅ Inserted batch: Columns %d to %d into Spanner%n",
+                      start, Math.min(start + BATCH_SIZE - 1, NUM_COLS));
                 } catch (Exception e) {
-                  LOG.error(
-                      "❌ Failed to insert batch: Columns {} to {} - {}",
-                      start,
-                      start + BATCH_SIZE - 1,
-                      e.getMessage(),
-                      e);
+                  System.out.printf(
+                      "❌ Failed to insert batch: Columns %d to %d - %s%n",
+                      start, start + BATCH_SIZE - 1, e.getMessage());
                 }
                 return null;
               }));
@@ -205,7 +207,8 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
           try {
             future.get();
           } catch (Exception e) {
-            LOG.error("❌ Error in parallel execution: {}", e.getMessage(), e);
+            System.out.printf("❌ Error in parallel execution: %s", e.getMessage());
+            System.out.println(e);
           }
         });
 
@@ -231,10 +234,10 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
     String inputData = "A".repeat(2_621_440);
     for (Row row : rows) {
       LOG.info("Cassandra Row to Assert for All Data Types: {}", row.getFormattedContents());
-      String primaryKeyColumn = row.getString("Col_0");
+      String primaryKeyColumn = row.getString(PRIMARY_KEY);
       assertEquals("SampleTest", primaryKeyColumn);
-      for (int i = 1; i <= 159; i++) {
-        assertEquals(inputData, row.getString("Col_" + i));
+      for (int i = 1; i <= NUM_COLS; i++) {
+        assertEquals(inputData, row.getString(SECONDARY_KEY_PREFIX + i));
       }
     }
     LOG.info("Successfully validated 1,024 columns in Cassandra");

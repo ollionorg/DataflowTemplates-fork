@@ -53,7 +53,6 @@ import org.slf4j.LoggerFactory;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
-@Ignore("This test is disabled currently")
 public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITBase {
 
   private static final Logger LOG =
@@ -162,10 +161,10 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
   private void writeRowWithMaxColumnsInSpanner() {
     List<Mutation> mutations = new ArrayList<>();
     Mutation.WriteBuilder mutationBuilder =
-        Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("Id").to("SampleTest");
+        Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("id").to("SampleTest");
 
     for (int i = 1; i < 1024; i++) {
-      mutationBuilder.set("Col_" + i).to("TestValue_" + i);
+      mutationBuilder.set("col_" + i).to("TestValue_" + i);
     }
 
     mutations.add(mutationBuilder.build());
@@ -191,10 +190,10 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
     assertThat(rows).hasSize(1);
     for (Row row : rows) {
       LOG.info("Cassandra Row to Assert for All Data Types: {}", row.getFormattedContents());
-      String primaryKeyColumn = row.getString("Col_0");
+      String primaryKeyColumn = row.getString("id");
       assertEquals("SampleTest", primaryKeyColumn);
       for (int i = 1; i < 1024; i++) {
-        assertEquals("TestValue_" + i, row.getString("Col_" + i));
+        assertEquals("TestValue_" + i, row.getString("col_" + i));
       }
     }
     LOG.info("Successfully validated 1,024 columns in Cassandra");

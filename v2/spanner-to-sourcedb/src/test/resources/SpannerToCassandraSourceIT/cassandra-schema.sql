@@ -152,7 +152,7 @@ CREATE TABLE EmptyStringJsonTable (
     varchar_list_col LIST<VARCHAR>,
     inet_list_col LIST<INET>,
     bigint_list_col LIST<BIGINT>,
-    tinyint_varint_map_col MAP<TINYINT, VARINT>,
+    tinyint_varint_map_col MAP<TEXT, TEXT>,
     text_set_col SET<TEXT>,
     double_set_col SET<DOUBLE>,
     time_list_col LIST<TIME>,

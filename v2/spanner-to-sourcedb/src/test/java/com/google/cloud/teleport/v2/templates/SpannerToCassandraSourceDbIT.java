@@ -366,8 +366,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getMap("uuid_ascii_map_col", UUID.class, String.class)).isEmpty(),
         () -> assertThat(row.getMap("ascii_text_map_col", String.class, String.class)).isEmpty(),
         () ->
-            assertThat(row.getMap("tinyint_varint_map_col", Integer.class, BigInteger.class))
-                .isEmpty(),
+            assertThat(row.getMap("tinyint_varint_map_col", String.class, String.class)).isEmpty(),
         () ->
             assertThat(row.getMap("time_tinyint_map_col", LocalTime.class, Integer.class))
                 .isEmpty(),

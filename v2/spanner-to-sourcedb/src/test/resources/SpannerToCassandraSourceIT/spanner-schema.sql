@@ -211,9 +211,8 @@ CREATE TABLE IF NOT EXISTS emptystringjsontable (
     inet_set_col ARRAY<STRING>,
     timeuuid_varchar_map_col JSON,
     duration_list_col ARRAY<STRING>,
-    frozen_ascii_set_col ARRAY<STRING>,
-    PRIMARY KEY (varchar_column)
-);
+    frozen_ascii_set_col ARRAY<STRING>
+) PRIMARY KEY(varchar_column);
 
 
 CREATE CHANGE STREAM allstream

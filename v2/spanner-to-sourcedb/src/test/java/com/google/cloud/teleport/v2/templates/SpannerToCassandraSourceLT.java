@@ -102,7 +102,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
             .setBatchSizeBytes("0")
             .build();
 
-    dataGenerator.execute(Duration.ofMinutes(180));
+    dataGenerator.execute(Duration.ofMinutes(60));
     assertThatPipeline(jobInfo).isRunning();
 
     //    CassandraRowsCheck check =

@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.commons.lang3.BooleanUtils;
@@ -548,7 +549,7 @@ public class CassandraTypeHandler {
    * @param columnType the Cassandra column type
    * @return the extracted inner type as a {@link String}
    */
-  public static String extractInnerType(String columnType) {
+  private static String extractInnerType(String columnType) {
     return columnType.substring(columnType.indexOf('<') + 1, columnType.lastIndexOf('>'));
   }
 
@@ -650,12 +651,8 @@ public class CassandraTypeHandler {
 
     Object columnValue = handleSpannerColumnType(spannerType, columnName, valuesJson);
 
-    if (columnValue == null) {
-      LOG.info("Column value is null for column: {}, type: {}", columnName, spannerType);
-      return PreparedStatementValueObject.create(cassandraType, NullClass.INSTANCE);
-    }
-    LOG.info("Column value is {} for column: {}, type: {}", columnValue, columnName, spannerType);
-    return PreparedStatementValueObject.create(cassandraType, columnValue);
+    return PreparedStatementValueObject.create(
+        cassandraType, Objects.requireNonNullElse(columnValue, NullClass.INSTANCE));
   }
 
   /**

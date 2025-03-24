@@ -367,15 +367,12 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getMap("ascii_text_map_col", String.class, String.class)).isEmpty(),
         () ->
             assertThat(row.getMap("tinyint_varint_map_col", String.class, String.class)).isEmpty(),
-        () ->
-            assertThat(row.getMap("time_tinyint_map_col", LocalTime.class, Integer.class))
-                .isEmpty(),
+        () -> assertThat(row.getMap("time_tinyint_map_col", String.class, Short.class)).isEmpty(),
         () -> assertThat(row.getMap("bigint_boolean_map_col", Long.class, Boolean.class)).isEmpty(),
         () -> assertThat(row.getMap("varchar_bigint_map_col", String.class, Long.class)).isEmpty(),
         () -> assertThat(row.getMap("blob_int_map_col", ByteBuffer.class, Integer.class)).isEmpty(),
         () ->
-            assertThat(row.getMap("varint_blob_map_col", BigInteger.class, ByteBuffer.class))
-                .isEmpty(),
+            assertThat(row.getMap("varint_blob_map_col", String.class, ByteBuffer.class)).isEmpty(),
         () -> assertThat(row.getMap("float_smallint_map_col", Float.class, Short.class)).isEmpty(),
         () ->
             assertThat(row.getMap("smallint_timestamp_map_col", Short.class, Instant.class))
@@ -383,7 +380,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getMap("text_timeuuid_map_col", String.class, UUID.class)).isEmpty(),
         () ->
             assertThat(row.getMap("inet_text_map_col", InetAddress.class, String.class)).isEmpty(),
-        () -> assertThat(row.getMap("timestamp_uuid_map_col", Instant.class, UUID.class)).isEmpty(),
+        () -> assertThat(row.getMap("timestamp_uuid_map_col", String.class, UUID.class)).isEmpty(),
         () ->
             assertThat(row.getMap("boolean_decimal_map_col", Boolean.class, BigDecimal.class))
                 .isEmpty(),
@@ -395,12 +392,12 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEmpty(),
         () ->
             assertThat(row.getMap("timeuuid_varchar_map_col", UUID.class, String.class)).isEmpty(),
-        () -> assertThat(row.getMap("int_time_map_col", Integer.class, LocalTime.class)).isEmpty(),
+        () -> assertThat(row.getMap("int_time_map_col", Integer.class, String.class)).isEmpty(),
         () -> assertThat(row.getList("timestamp_list_col", Instant.class)).isEmpty(),
         () -> assertThat(row.getList("varchar_list_col", String.class)).isEmpty(),
-        () -> assertThat(row.getList("inet_list_col", String.class)).isEmpty(),
+        () -> assertThat(row.getList("inet_list_col", InetAddress.class)).isEmpty(),
         () -> assertThat(row.getList("bigint_list_col", Long.class)).isEmpty(),
-        () -> assertThat(row.getList("time_list_col", Instant.class)).isEmpty(),
+        () -> assertThat(row.getList("time_list_col", String.class)).isEmpty(),
         () -> assertThat(row.getList("frozen_ascii_list_col", String.class)).isEmpty(),
         () -> assertThat(row.getList("int_list_col", Integer.class)).isEmpty(),
         () -> assertThat(row.getList("ascii_list_col", String.class)).isEmpty(),
@@ -408,29 +405,29 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getList("double_list_col", Double.class)).isEmpty(),
         () -> assertThat(row.getList("float_list_col", Float.class)).isEmpty(),
         () -> assertThat(row.getList("smallint_list_col", Short.class)).isEmpty(),
-        () -> assertThat(row.getList("varint_list_col", BigInteger.class)).isEmpty(),
+        () -> assertThat(row.getList("varint_list_col", String.class)).isEmpty(),
         () -> assertThat(row.getList("text_list_col", String.class)).isEmpty(),
         () -> assertThat(row.getList("boolean_list_col", Boolean.class)).isEmpty(),
         () -> assertThat(row.getList("blob_list_col", ByteBuffer.class)).isEmpty(),
         () -> assertThat(row.getList("timeuuid_list_col", UUID.class)).isEmpty(),
         () -> assertThat(row.getList("duration_list_col", String.class)).isEmpty(),
         () -> assertThat(row.getList("decimal_list_col", BigDecimal.class)).isEmpty(),
-        () -> assertThat(row.getList("tinyint_list_col", Integer.class)).isEmpty(),
+        () -> assertThat(row.getList("tinyint_list_col", Short.class)).isEmpty(),
         () -> assertThat(row.getSet("decimal_set_col", BigDecimal.class)).isEmpty(),
         () -> assertThat(row.getSet("int_set_col", Integer.class)).isEmpty(),
         () -> assertThat(row.getSet("smallint_set_col", Short.class)).isEmpty(),
         () -> assertThat(row.getSet("text_set_col", String.class)).isEmpty(),
         () -> assertThat(row.getSet("double_set_col", Double.class)).isEmpty(),
         () -> assertThat(row.getSet("date_set_col", LocalDate.class)).isEmpty(),
-        () -> assertThat(row.getSet("timestamp_set_col", Instant.class)).isEmpty(),
+        () -> assertThat(row.getSet("timestamp_set_col", String.class)).isEmpty(),
         () -> assertThat(row.getSet("bigint_set_col", Long.class)).isEmpty(),
         () -> assertThat(row.getSet("varchar_set_col", String.class)).isEmpty(),
-        () -> assertThat(row.getSet("tinyint_set_col", Integer.class)).isEmpty(),
+        () -> assertThat(row.getSet("tinyint_set_col", Short.class)).isEmpty(),
         () -> assertThat(row.getSet("boolean_set_col", Boolean.class)).isEmpty(),
         () -> assertThat(row.getSet("float_set_col", Float.class)).isEmpty(),
         () -> assertThat(row.getSet("ascii_set_col", String.class)).isEmpty(),
         () -> assertThat(row.getSet("uuid_set_col", UUID.class)).isEmpty(),
-        () -> assertThat(row.getSet("varint_set_col", BigInteger.class)).isEmpty(),
+        () -> assertThat(row.getSet("varint_set_col", String.class)).isEmpty(),
         () -> assertThat(row.getSet("blob_set_col", ByteBuffer.class)).isEmpty(),
         () -> assertThat(row.getSet("inet_set_col", InetAddress.class)).isEmpty(),
         () -> assertThat(row.getSet("frozen_ascii_set_col", String.class)).isEmpty());

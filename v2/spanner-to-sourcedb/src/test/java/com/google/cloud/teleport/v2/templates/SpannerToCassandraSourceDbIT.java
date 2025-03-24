@@ -362,23 +362,20 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getString("empty_column")).isEmpty(),
         () -> assertThat(row.getMap("double_float_map_col", Double.class, Float.class)).isEmpty(),
         () ->
-            assertThat(row.getMap("date_double_map_col", java.time.LocalDate.class, Double.class))
-                .isEmpty(),
-        () -> assertThat(row.getMap("uuid_ascii_map_col", String.class, String.class)).isEmpty(),
+            assertThat(row.getMap("date_double_map_col", LocalDate.class, Double.class)).isEmpty(),
+        () -> assertThat(row.getMap("uuid_ascii_map_col", UUID.class, String.class)).isEmpty(),
         () -> assertThat(row.getMap("ascii_text_map_col", String.class, String.class)).isEmpty(),
         () ->
-            assertThat(
-                    row.getMap("tinyint_varint_map_col", Integer.class, java.math.BigInteger.class))
+            assertThat(row.getMap("tinyint_varint_map_col", Integer.class, BigInteger.class))
                 .isEmpty(),
         () ->
-            assertThat(row.getMap("time_tinyint_map_col", java.time.LocalTime.class, Integer.class))
+            assertThat(row.getMap("time_tinyint_map_col", LocalTime.class, Integer.class))
                 .isEmpty(),
         () -> assertThat(row.getMap("bigint_boolean_map_col", Long.class, Boolean.class)).isEmpty(),
         () -> assertThat(row.getMap("varchar_bigint_map_col", String.class, Long.class)).isEmpty(),
         () -> assertThat(row.getMap("blob_int_map_col", ByteBuffer.class, Integer.class)).isEmpty(),
         () ->
-            assertThat(
-                    row.getMap("varint_blob_map_col", java.math.BigInteger.class, ByteBuffer.class))
+            assertThat(row.getMap("varint_blob_map_col", BigInteger.class, ByteBuffer.class))
                 .isEmpty(),
         () -> assertThat(row.getMap("float_smallint_map_col", Float.class, Short.class)).isEmpty(),
         () ->
@@ -399,9 +396,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEmpty(),
         () ->
             assertThat(row.getMap("timeuuid_varchar_map_col", UUID.class, String.class)).isEmpty(),
-        () ->
-            assertThat(row.getMap("int_time_map_col", Integer.class, java.time.LocalTime.class))
-                .isEmpty(),
+        () -> assertThat(row.getMap("int_time_map_col", Integer.class, LocalTime.class)).isEmpty(),
         () -> assertThat(row.getList("timestamp_list_col", Instant.class)).isEmpty(),
         () -> assertThat(row.getList("varchar_list_col", String.class)).isEmpty(),
         () -> assertThat(row.getList("inet_list_col", String.class)).isEmpty(),
@@ -410,11 +405,11 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getList("frozen_ascii_list_col", String.class)).isEmpty(),
         () -> assertThat(row.getList("int_list_col", Integer.class)).isEmpty(),
         () -> assertThat(row.getList("ascii_list_col", String.class)).isEmpty(),
-        () -> assertThat(row.getList("date_list_col", java.time.LocalDate.class)).isEmpty(),
+        () -> assertThat(row.getList("date_list_col", LocalDate.class)).isEmpty(),
         () -> assertThat(row.getList("double_list_col", Double.class)).isEmpty(),
         () -> assertThat(row.getList("float_list_col", Float.class)).isEmpty(),
         () -> assertThat(row.getList("smallint_list_col", Short.class)).isEmpty(),
-        () -> assertThat(row.getList("varint_list_col", java.math.BigInteger.class)).isEmpty(),
+        () -> assertThat(row.getList("varint_list_col", BigInteger.class)).isEmpty(),
         () -> assertThat(row.getList("text_list_col", String.class)).isEmpty(),
         () -> assertThat(row.getList("boolean_list_col", Boolean.class)).isEmpty(),
         () -> assertThat(row.getList("blob_list_col", ByteBuffer.class)).isEmpty(),
@@ -427,7 +422,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getSet("smallint_set_col", Short.class)).isEmpty(),
         () -> assertThat(row.getSet("text_set_col", String.class)).isEmpty(),
         () -> assertThat(row.getSet("double_set_col", Double.class)).isEmpty(),
-        () -> assertThat(row.getSet("date_set_col", java.time.LocalDate.class)).isEmpty(),
+        () -> assertThat(row.getSet("date_set_col", LocalDate.class)).isEmpty(),
         () -> assertThat(row.getSet("timestamp_set_col", Instant.class)).isEmpty(),
         () -> assertThat(row.getSet("bigint_set_col", Long.class)).isEmpty(),
         () -> assertThat(row.getSet("varchar_set_col", String.class)).isEmpty(),
@@ -436,7 +431,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> assertThat(row.getSet("float_set_col", Float.class)).isEmpty(),
         () -> assertThat(row.getSet("ascii_set_col", String.class)).isEmpty(),
         () -> assertThat(row.getSet("uuid_set_col", UUID.class)).isEmpty(),
-        () -> assertThat(row.getSet("varint_set_col", java.math.BigInteger.class)).isEmpty(),
+        () -> assertThat(row.getSet("varint_set_col", BigInteger.class)).isEmpty(),
         () -> assertThat(row.getSet("blob_set_col", ByteBuffer.class)).isEmpty(),
         () -> assertThat(row.getSet("inet_set_col", InetAddress.class)).isEmpty(),
         () -> assertThat(row.getSet("frozen_ascii_set_col", String.class)).isEmpty());

@@ -139,13 +139,13 @@ CREATE TABLE BoundaryConversionTestTable (
 );
 
 CREATE TABLE EmptyStringJsonTable (
-    varchar_column text PRIMARY KEY,
-    empty_column text,
+    varchar_column TEXT PRIMARY KEY,
+    empty_column TEXT,
     double_float_map_col MAP<DOUBLE, FLOAT>,
     decimal_set_col SET<DECIMAL>,
     date_double_map_col MAP<DATE, DOUBLE>,
-    uuid_ascii_map_col MAP<UUID, ASCII>,
-    ascii_text_map_col MAP<ASCII, TEXT>,
+    uuid_ascii_map_col MAP<UUID, TEXT>,
+    ascii_text_map_col MAP<TEXT, TEXT>,
     timestamp_list_col LIST<TIMESTAMP>,
     int_set_col SET<INT>,
     smallint_set_col SET<SMALLINT>,
@@ -156,7 +156,7 @@ CREATE TABLE EmptyStringJsonTable (
     text_set_col SET<TEXT>,
     double_set_col SET<DOUBLE>,
     time_list_col LIST<TIME>,
-    frozen_ascii_list_col LIST<FROZEN<ASCII>>,
+    frozen_ascii_list_col frozen<LIST<ASCII>>,
     int_list_col LIST<INT>,
     ascii_list_col LIST<ASCII>,
     date_set_col SET<DATE>,
@@ -196,10 +196,10 @@ CREATE TABLE EmptyStringJsonTable (
     varint_set_col SET<VARINT>,
     tinyint_list_col LIST<TINYINT>,
     timestamp_uuid_map_col MAP<TIMESTAMP, UUID>,
-    decimal_duration_map_col MAP<DECIMAL, DURATION>,
+    decimal_duration_map_col MAP<DECIMAL, TEXT>,
     decimal_list_col LIST<DECIMAL>,
     inet_set_col SET<INET>,
     timeuuid_varchar_map_col MAP<TIMEUUID, VARCHAR>,
-    duration_list_col LIST<DURATION>,
-    frozen_ascii_set_col SET<FROZEN<ASCII>>
+    duration_list_col LIST<TEXT>,
+    frozen_ascii_set_col frozen<SET<ASCII>>
 );

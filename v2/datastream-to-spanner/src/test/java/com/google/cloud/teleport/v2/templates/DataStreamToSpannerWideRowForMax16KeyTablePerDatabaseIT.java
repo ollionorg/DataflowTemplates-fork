@@ -34,7 +34,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
@@ -304,7 +308,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
   }
 
   public static Map<String, Object> createSessionTemplate() {
-    final int STRING_LENGTH = 200;
+    final int stringLength = 200;
     Map<String, Object> sessionTemplate = new LinkedHashMap<>();
     sessionTemplate.put("SessionName", "NewSession");
     sessionTemplate.put("EditorName", "");
@@ -339,7 +343,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
         Map<String, Object> colType = new LinkedHashMap<>();
         if (j % 2 == 0) {
           colType.put("Name", "STRING");
-          colType.put("Len", STRING_LENGTH);
+          colType.put("Len", stringLength);
         } else {
           colType.put("Name", "NUMERIC");
           colType.put("Len", 0);

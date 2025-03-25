@@ -35,7 +35,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.function.Function;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
@@ -69,7 +75,7 @@ import org.junit.runners.Parameterized;
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(Parameterized.class)
 public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends SpannerTemplateITBase {
-
+  private static final int STRING_LENGTH = 200;
   private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 1;
   private static final String SESSION_OUTPUT_FILE_PATH =
@@ -305,9 +311,6 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends Span
   }
 
   public static Map<String, Object> createSessionTemplate() {
-    final int NUM_TABLES = 5000;
-    final int STRING_LENGTH = 200;
-
     Map<String, Object> sessionTemplate = new LinkedHashMap<>();
     sessionTemplate.put("SessionName", "NewSession");
     sessionTemplate.put("EditorName", "");

@@ -460,12 +460,12 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
       List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
     tableNames.forEach(
         tableName -> {
-          List<String> COLUMNS = new ArrayList<>();
+          List<String> columns = new ArrayList<>();
           for (int i = 1; i <= NUM_COLUMNS; i++) {
-            COLUMNS.add("Col_" + i);
+            columns.add("Col_" + i);
           }
           SpannerAsserts.assertThatStructs(
-                  spannerResourceManager.readTableRecords(tableName, COLUMNS))
+                  spannerResourceManager.readTableRecords(tableName, columns))
               .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName));
         });
   }

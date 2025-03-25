@@ -41,8 +41,7 @@ public class MySQLSourceDbToSpannerWideRowMaxSizeTableKeyIT extends SourceDbToSp
 
   private static final String TABLE_NAME = "LargePrimaryKeyTable";
   private static final int MAX_ALLOWED_PACKET = 128 * 1024 * 1024; // 128 MiB
-  private static final String MYSQL_DUMP_FILE_RESOURCE =
-      "WideRow/MaxSizeTableKey/mysql-schema.sql";
+  private static final String MYSQL_DUMP_FILE_RESOURCE = "WideRow/MaxSizeTableKey/mysql-schema.sql";
   private static final String SPANNER_SCHEMA_FILE_RESOURCE =
       "WideRow/MaxSizeTableKey/spanner-schema.sql";
 

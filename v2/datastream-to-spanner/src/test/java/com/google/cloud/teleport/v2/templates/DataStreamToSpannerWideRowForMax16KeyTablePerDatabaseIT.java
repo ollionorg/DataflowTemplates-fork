@@ -180,9 +180,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
     // Create Spanner Resource Manager
     SpannerResourceManager.Builder spannerResourceManagerBuilder =
         SpannerResourceManager.builder(testName, PROJECT, REGION, spannerDialect)
-            .maybeUseStaticInstance()
-            .useCustomHost(spannerHost)
-            .setCredentials(credentials);
+            .maybeUseStaticInstance();
     spannerResourceManager = spannerResourceManagerBuilder.build();
 
     List<String> tableNames = new ArrayList<>();

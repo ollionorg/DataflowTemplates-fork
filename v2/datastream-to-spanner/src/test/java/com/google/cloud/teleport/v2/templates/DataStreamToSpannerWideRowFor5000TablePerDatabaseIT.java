@@ -182,9 +182,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     // Create Spanner Resource Manager
     SpannerResourceManager.Builder spannerResourceManagerBuilder =
         SpannerResourceManager.builder(testName, PROJECT, REGION, spannerDialect)
-            .maybeUseStaticInstance()
-            .useCustomHost(spannerHost)
-            .setCredentials(credentials);
+            .maybeUseStaticInstance();
     spannerResourceManager = spannerResourceManagerBuilder.build();
 
     // Generate 5000 table names

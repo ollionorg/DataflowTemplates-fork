@@ -52,8 +52,8 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   private final String dataGeneratorSchemaResource =
       "SpannerToCassandraSourceLT/datagenerator-schema.json";
   private final String table = "person";
-  private final int maxWorkers = 200;
-  private final int numWorkers = 200;
+  private final int maxWorkers = 300;
+  private final int numWorkers = 300;
   private PipelineLauncher.LaunchInfo jobInfo;
   private final int numShards = 1;
 
@@ -95,8 +95,8 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
             .setSpannerTableName(table)
-            .setNumWorkers("25")
-            .setMaxNumWorkers("25")
+            .setNumWorkers("50")
+            .setMaxNumWorkers("50")
             .setSinkType("SPANNER")
             .setProjectId(project)
             .setBatchSizeBytes("0")

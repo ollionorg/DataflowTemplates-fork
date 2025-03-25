@@ -139,7 +139,6 @@ public class DataStreamToSpannerIT extends SpannerTemplateITBase {
   }
 
   @Test
-  @Ignore("This test is flaky, and Oracle is not fully supported migration source yet")
   public void testDataStreamOracleToSpanner() throws IOException {
     // Run a simple IT
     simpleOracleToSpannerTest(
@@ -176,7 +175,6 @@ public class DataStreamToSpannerIT extends SpannerTemplateITBase {
   }
 
   @Test
-  @Ignore("This test is flaky, and Oracle is not fully supported migration source yet")
   public void testDataStreamOracleToSpannerJson() throws IOException {
     // Run a simple IT
     simpleOracleToSpannerTest(

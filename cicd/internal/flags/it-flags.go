@@ -132,12 +132,12 @@ func CloudProxyHost() string {
 	return "-DcloudProxyHost=" + dCloudProxyHost
 }
 
-func CloudProxyMySqlPort() string {
-	return "-DcloudProxyMySqlPort=" + dCloudProxyMySqlPort
+func CloudProxyPort() string {
+	return "-DcloudProxyPort=" + dCloudProxyPort
 }
 
-func CloudProxyPostgresPort() string {
-	return "-DcloudProxyPostgresPort=" + dCloudProxyPostgresPort
+func CloudProxyUsername() string {
+	return "-DcloudProxyUsername=" + dCloudProxyUsername
 }
 
 func CloudProxyPassword() string {

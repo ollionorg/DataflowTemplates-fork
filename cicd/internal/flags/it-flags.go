@@ -37,6 +37,8 @@ var (
 	dCloudProxyPort                     string
 	dCloudProxyUsername                 string
 	dCloudProxyPassword                 string
+	dCloudProxyMySqlPort                string
+	dCloudProxyPostgresPort             string
 	dOracleHost                         string
 	dCloudOracleSysPassword             string
 	dUnifiedWorkerHarnessContainerImage string
@@ -54,7 +56,9 @@ func RegisterItFlags() {
 	flag.BoolVar(&dReleaseMode, "it-release", false, "(optional) Set if tests are being executed for a release")
 	flag.StringVar(&dRetryFailures, "it-retry-failures", "0", "Number of retries attempts for failing tests")
 	flag.StringVar(&dCloudProxyHost, "it-cloud-proxy-host", "34.93.17.234", "Hostname or IP address of static Cloud Auth Proxy")
-	flag.StringVar(&dCloudProxyPort, "it-cloud-proxy-mysql-port", "33134", "MySql port number on static Cloud Auth Proxy")
+	flag.StringVar(&dCloudProxyPort, "it-cloud-proxy-port", "33134", "MySql port number on static Cloud Auth Proxy")
+	flag.StringVar(&dCloudProxyMySqlPort, "it-cloud-proxy-mysql-port", "33134", "MySql port number on static Cloud Auth Proxy")
+	flag.StringVar(&dCloudProxyPostgresPort, "it-cloud-proxy-postgress-port", "33134", "MySql port number on static Cloud Auth Proxy")
 	flag.StringVar(&dCloudProxyUsername, "it-cloud-proxy-mysql-user-name", "ollion", "Mysql User name on static Cloud Auth Proxy")
 	flag.StringVar(&dCloudProxyPassword, "it-cloud-proxy-password", "Ollion@2025", "Password of static Cloud Auth Proxy")
 	flag.StringVar(&dOracleHost, "it-oracle-host", "10.128.0.90", "Hostname or IP address of static Oracle DB")
@@ -130,6 +134,14 @@ func RetryFailures() string {
 
 func CloudProxyHost() string {
 	return "-DcloudProxyHost=" + dCloudProxyHost
+}
+
+func CloudProxyMySqlPort() string {
+	return "-DcloudProxyMySqlPort=" + dCloudProxyPort
+}
+
+func CloudProxyPostgresPort() string {
+	return "-DcloudProxyPostgresPort=" + dCloudProxyPostgresPort
 }
 
 func CloudProxyPort() string {

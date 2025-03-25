@@ -73,8 +73,8 @@ func main() {
 		// flags.StaticOracleHost(),
 		// flags.StaticOracleSysPassword(),
 		flags.CloudProxyHost(),
-		flags.CloudProxyMySqlPort(),
-		// flags.CloudProxyPostgresPort(),
+		flags.CloudProxyPort(),
+		flags.CloudProxyUsername(),
 		flags.CloudProxyPassword(),
 		flags.UnifiedWorkerHarnessContainerImage())
 		// flags.CloudProxyPassword())

@@ -52,8 +52,8 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   private final String dataGeneratorSchemaResource =
       "SpannerToCassandraSourceLT/datagenerator-schema.json";
   private final String table = "person";
-  private final int maxWorkers = 300;
-  private final int numWorkers = 300;
+  private final int maxWorkers = 400;
+  private final int numWorkers = 400;
   private PipelineLauncher.LaunchInfo jobInfo;
   private final int numShards = 1;
 
@@ -90,19 +90,19 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     //    Integer numRecords = 3000000;
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-            .setQPS("15000")
+            .setQPS("30000")
             //            .setMessagesLimit(String.valueOf(numRecords))
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
             .setSpannerTableName(table)
             .setNumWorkers("50")
-            .setMaxNumWorkers("50")
+            .setMaxNumWorkers("100")
             .setSinkType("SPANNER")
             .setProjectId(project)
             .setBatchSizeBytes("0")
             .build();
 
-    dataGenerator.execute(Duration.ofMinutes(60));
+    dataGenerator.execute(Duration.ofMinutes(180));
     assertThatPipeline(jobInfo).isRunning();
 
     //    CassandraRowsCheck check =

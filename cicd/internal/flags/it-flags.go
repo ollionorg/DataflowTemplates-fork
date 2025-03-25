@@ -34,8 +34,8 @@ var (
 	dReleaseMode                        bool
 	dRetryFailures                      string
 	dCloudProxyHost                     string
-	dCloudProxyMySqlPort                string
-	dCloudProxyPostgresPort             string
+	dCloudProxyPort                     string
+	dCloudProxyUsername                 string
 	dCloudProxyPassword                 string
 	dOracleHost                         string
 	dCloudOracleSysPassword             string

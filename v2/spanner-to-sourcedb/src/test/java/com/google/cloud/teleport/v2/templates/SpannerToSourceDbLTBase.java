@@ -134,7 +134,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
     SpannerResourceManager spannerResourceManager =
         SpannerResourceManager.builder("rr-loadtest-" + testName, project, region)
             .maybeUseStaticInstance()
-            .setNodeCount(15)
+            .setNodeCount(30)
             .build();
     String ddl =
         String.join(

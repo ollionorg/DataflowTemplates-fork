@@ -281,7 +281,7 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends Span
     String sessionFileContent =
         sessionFile.replaceAll("SRC_DATABASE", srcDb).replaceAll("SP_DATABASE", spannerDb);
     for (int i = 1; i <= NUM_TABLES; i++) {
-      sessionFileContent = sessionFileContent.replaceAll("TABLE" + i, tableNames.get(i));
+      sessionFileContent = sessionFileContent.replaceAll("TABLE" + i, tableNames.get(i - 1));
     }
     return sessionFileContent;
   }

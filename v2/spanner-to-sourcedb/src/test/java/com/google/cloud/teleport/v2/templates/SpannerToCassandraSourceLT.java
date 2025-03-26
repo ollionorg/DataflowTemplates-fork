@@ -52,7 +52,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   private final String dataGeneratorSchemaResource =
       "SpannerToCassandraSourceLT/datagenerator-schema.json";
   private final String table = "person";
-  private final int maxWorkers = 500;
+  private final int maxWorkers = 800;
   private final int numWorkers = 300;
   private PipelineLauncher.LaunchInfo jobInfo;
   private final int numShards = 1;
@@ -86,11 +86,6 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   @Test
   public void reverseReplicationCassandra1KTpsLoadTest()
       throws IOException, ParseException, InterruptedException {
-
-    // Sleep for 5 minutes (300,000 milliseconds)
-    System.out.println("Sleeping for 5 minutes before starting the test...");
-    Thread.sleep(300000);
-    System.out.println("Starting the test after sleep...");
 
     //    Integer numRecords = 3000000;
     DataGenerator dataGenerator =

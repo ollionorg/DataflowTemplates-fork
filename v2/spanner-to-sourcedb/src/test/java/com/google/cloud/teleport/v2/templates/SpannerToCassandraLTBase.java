@@ -38,11 +38,11 @@ public class SpannerToCassandraLTBase extends SpannerToSourceDbLTBase {
       throws IOException {
     spannerResourceManager = createSpannerDatabase(spannerDdlResource);
     spannerMetadataResourceManager = createSpannerMetadataDatabase();
-    cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
+    // cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
 
     gcsResourceManager =
         GcsResourceManager.builder(artifactBucket, getClass().getSimpleName(), CREDENTIALS).build();
-    createCassandraSchema(cassandraResourceManager, cassandraDdlResource);
+    // createCassandraSchema(cassandraResourceManager, cassandraDdlResource);
     createAndUploadCassandraConfigToGcs(gcsResourceManager, cassandraResourceManager);
     pubsubResourceManager = setUpPubSubResourceManager();
     subscriptionName =
@@ -76,9 +76,9 @@ public class SpannerToCassandraLTBase extends SpannerToSourceDbLTBase {
       GcsResourceManager gcsResourceManager, CassandraResourceManager cassandraResourceManagers)
       throws IOException {
 
-    String host = cassandraResourceManagers.getHost();
-    int port = cassandraResourceManagers.getPort();
-    String keyspaceName = cassandraResourceManagers.getKeyspaceName();
+    // String host = cassandraResourceManagers.getHost();
+    // int port = cassandraResourceManagers.getPort();
+    // String keyspaceName = cassandraResourceManagers.getKeyspaceName();
 
     String cassandraConfigContents;
     try (InputStream inputStream =
@@ -92,11 +92,11 @@ public class SpannerToCassandraLTBase extends SpannerToSourceDbLTBase {
       cassandraConfigContents = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
     }
 
-    cassandraConfigContents =
-        cassandraConfigContents
-            .replace("##host##", host)
-            .replace("##port##", Integer.toString(port))
-            .replace("##keyspace##", keyspaceName);
+    // cassandraConfigContents =
+    //     cassandraConfigContents
+    //         .replace("##host##", host)
+    //         .replace("##port##", Integer.toString(port))
+    //         .replace("##keyspace##", keyspaceName);
 
     gcsResourceManager.createArtifact(SOURCE_SHARDS_FILE_NAME, cassandraConfigContents);
   }

@@ -87,6 +87,11 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   public void reverseReplicationCassandra1KTpsLoadTest()
       throws IOException, ParseException, InterruptedException {
 
+    // Sleep for 5 minutes (300,000 milliseconds)
+    System.out.println("Sleeping for 5 minutes before starting the test...");
+    Thread.sleep(300000);
+    System.out.println("Starting the test after sleep...");
+
     //    Integer numRecords = 3000000;
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)

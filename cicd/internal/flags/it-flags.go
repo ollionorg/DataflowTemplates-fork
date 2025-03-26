@@ -55,7 +55,7 @@ func RegisterItFlags() {
 	flag.StringVar(&dSpannerHost, "it-spanner-host", "", "(optional) A custom endpoint to override Spanner API requests")
 	flag.BoolVar(&dReleaseMode, "it-release", false, "(optional) Set if tests are being executed for a release")
 	flag.StringVar(&dRetryFailures, "it-retry-failures", "0", "Number of retries attempts for failing tests")
-	flag.StringVar(&dCloudProxyHost, "it-cloud-proxy-host", "34.93.17.234", "Hostname or IP address of static Cloud Auth Proxy")
+	flag.StringVar(&dCloudProxyHost, "it-cloud-proxy-host", "34.100.173.155", "Hostname or IP address of static Cloud Auth Proxy")
 	flag.StringVar(&dCloudProxyPort, "it-cloud-proxy-port", "3306", "MySql port number on static Cloud Auth Proxy")
 	flag.StringVar(&dCloudProxyMySqlPort, "it-cloud-proxy-mysql-port", "3306", "MySql port number on static Cloud Auth Proxy")
 	flag.StringVar(&dCloudProxyPostgresPort, "it-cloud-proxy-postgress-port", "5432", "MySql port number on static Cloud Auth Proxy")

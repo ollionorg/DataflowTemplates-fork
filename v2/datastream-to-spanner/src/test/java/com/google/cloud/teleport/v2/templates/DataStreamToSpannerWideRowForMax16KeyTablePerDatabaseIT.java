@@ -417,7 +417,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
 
           for (int i = 1; i <= NUM_COLUMNS; i++) {
             sb.append(COLUMNS.get(i - 1)).append(" STRING(1024) NOT NULL ");
-            if( i != NUM_COLUMNS){
+            if (i != NUM_COLUMNS) {
               sb.append(",");
             }
           }

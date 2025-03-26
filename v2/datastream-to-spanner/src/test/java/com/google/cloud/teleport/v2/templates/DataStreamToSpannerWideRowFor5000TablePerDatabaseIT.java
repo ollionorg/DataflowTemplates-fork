@@ -74,7 +74,7 @@ import org.junit.runners.Parameterized;
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends SpannerTemplateITBase {
 
   private static final Integer NUM_EVENTS = 1;
-  private static final Integer NUM_TABLES = 4970;
+  private static final Integer NUM_TABLES = 4974;
 
   private static final String ROW_ID = "row_id";
   private static final String NAME = "name";

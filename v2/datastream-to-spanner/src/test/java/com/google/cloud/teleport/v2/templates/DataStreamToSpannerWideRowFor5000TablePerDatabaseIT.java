@@ -417,7 +417,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                     + (" STRING(1024), ")
                     + ENTRY_ADDED
                     + (" STRING(1024)")
-                    + (")) ")
+                    + (")")
                     + "PRIMARY KEY ("
                     + ROW_ID
                     + ")"));

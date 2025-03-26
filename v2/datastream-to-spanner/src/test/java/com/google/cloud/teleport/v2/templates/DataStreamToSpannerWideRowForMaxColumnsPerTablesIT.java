@@ -397,7 +397,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
 
       String ddlStatement =
           String.format(
-              "CREATE TABLE %s (%s, PRIMARY KEY (Col_1))", tableName, String.join(", ", columns));
+              "CREATE TABLE %s (%s) PRIMARY KEY (Col_1)", tableName, String.join(", ", columns));
 
       spannerResourceManager.executeDdlStatement(ddlStatement);
     }

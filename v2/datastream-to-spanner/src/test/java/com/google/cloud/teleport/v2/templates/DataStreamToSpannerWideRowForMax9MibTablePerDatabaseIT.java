@@ -434,7 +434,7 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends Span
                     + " BYTES(9437184)" // 9 MiB
                     + ") PRIMARY KEY ("
                     + ROW_ID
-                    + "))"));
+                    + ")"));
   }
 
   /**

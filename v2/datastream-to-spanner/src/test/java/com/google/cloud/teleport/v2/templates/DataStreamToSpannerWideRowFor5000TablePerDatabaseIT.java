@@ -24,15 +24,11 @@ import com.google.cloud.datastream.v1.Stream;
 import com.google.cloud.spanner.Dialect;
 import com.google.cloud.teleport.metadata.SkipDirectRunnerTest;
 import com.google.cloud.teleport.metadata.TemplateIntegrationTest;
-import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.pubsub.v1.SubscriptionName;
 import com.google.pubsub.v1.TopicName;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -79,8 +75,6 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
   private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 5000;
-  private static final String SESSION_OUTPUT_FILE_PATH =
-      "DataStreamToSpannerWideRowFor5000TablePerDatabaseIT/mysql-session.json";
 
   private static final String ROW_ID = "row_id";
   private static final String NAME = "name";
@@ -286,13 +280,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
   private String generateSessionFile(String srcDb, String spannerDb, List<String> tableNames)
       throws IOException {
-    generateBaseSchema();
-    String sessionFile =
-        Files.readString(
-            Paths.get(
-                Resources.getResource(
-                        "DataStreamToSpannerWideRowFor5000TablePerDatabaseIT/mysql-session.json")
-                    .getPath()));
+    String sessionFile = generateBaseSchema();
     String sessionFileContent =
         sessionFile.replaceAll("SRC_DATABASE", srcDb).replaceAll("SP_DATABASE", spannerDb);
     for (int i = 1; i <= NUM_TABLES; i++) {
@@ -301,15 +289,12 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     return sessionFileContent;
   }
 
-  private void generateBaseSchema() throws IOException {
+  private String generateBaseSchema() throws IOException {
     Map<String, Object> sessionTemplate = createSessionTemplate();
 
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    String jsonOutput = gson.toJson(sessionTemplate);
 
-    try (FileWriter file = new FileWriter(SESSION_OUTPUT_FILE_PATH)) {
-      file.write(jsonOutput);
-    }
+    return gson.toJson(sessionTemplate);
   }
 
   public static Map<String, Object> createSessionTemplate() {

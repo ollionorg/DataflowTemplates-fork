@@ -32,11 +32,12 @@ import org.junit.runners.JUnit4;
 @Category(TemplateLoadTest.class)
 @TemplateLoadTest(DataStreamToSpanner.class)
 @RunWith(JUnit4.class)
-public class DataStreamToSpanner100GbFor5000TablesLT extends DataStreamToSpannerLTBase {
-  private static final int NUM_TABLES = 5000;
+public class DataStreamToSpanner100Gb1600MBNonKeyTablesLT extends DataStreamToSpannerLTBase {
+  private static final int NUM_TABLES = 1;
+  private static final int NUM_COLUMNS = 80;
   private static final int RECORD_PER_TABLE = 6500000;
   private static final String SCHEMA_FILE =
-      "DataStreamToSpanner100GbFor5000TablesLT/spanner-schema.sql";
+      "DataStreamToSpanner100Gb1600MBNonKeyTablesLT/spanner-schema.sql";
 
   public static void preGenerateSpannerSchema() {
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(SCHEMA_FILE))) {
@@ -52,18 +53,15 @@ public class DataStreamToSpanner100GbFor5000TablesLT extends DataStreamToSpanner
   }
 
   private static String generateTableSchema(String tableName) {
-    return String.format(
-        """
-                    CREATE TABLE IF NOT EXISTS %s (
-                        first_name1 STRING(500),
-                        last_name1 STRING(500),
-                        first_name2 STRING(500),
-                        last_name2 STRING(500),
-                        first_name3 STRING(500),
-                        last_name3 STRING(500),
-                        ID INT64 NOT NULL
-                    ) PRIMARY KEY(ID);""",
-        tableName);
+    StringBuilder schema = new StringBuilder();
+    schema.append(String.format("CREATE TABLE IF NOT EXISTS %s (\n", tableName));
+    for (int i = 1; i <= NUM_COLUMNS; i++) {
+      schema.append(String.format("    first_name%d STRING(MAX),\n", i));
+      schema.append(String.format("    last_name%d STRING(MAX),\n", i));
+    }
+    schema.append("    ID INT64 NOT NULL\n");
+    schema.append(") PRIMARY KEY(ID);");
+    return schema.toString();
   }
 
   @Test

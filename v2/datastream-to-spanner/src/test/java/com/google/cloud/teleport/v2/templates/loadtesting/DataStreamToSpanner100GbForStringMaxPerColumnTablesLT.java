@@ -17,8 +17,6 @@ package com.google.cloud.teleport.v2.templates.loadtesting;
 
 import com.google.cloud.teleport.metadata.TemplateLoadTest;
 import com.google.cloud.teleport.v2.templates.DataStreamToSpanner;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashMap;
@@ -32,44 +30,16 @@ import org.junit.runners.JUnit4;
 @Category(TemplateLoadTest.class)
 @TemplateLoadTest(DataStreamToSpanner.class)
 @RunWith(JUnit4.class)
-public class DataStreamToSpanner100GbFor5000TablesLT extends DataStreamToSpannerLTBase {
-  private static final int NUM_TABLES = 5000;
+public class DataStreamToSpanner100GbForStringMaxPerColumnTablesLT
+    extends DataStreamToSpannerLTBase {
+  private static final int NUM_TABLES = 1;
   private static final int RECORD_PER_TABLE = 6500000;
   private static final String SCHEMA_FILE =
-      "DataStreamToSpanner100GbFor5000TablesLT/spanner-schema.sql";
-
-  public static void preGenerateSpannerSchema() {
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(SCHEMA_FILE))) {
-      for (int i = 1; i <= NUM_TABLES; i++) {
-        String tableName = "person" + i;
-        String schema = generateTableSchema(tableName);
-        writer.write(schema + "\n\n");
-      }
-      System.out.println("Schema file generated successfully!");
-    } catch (IOException e) {
-      System.err.println("Error writing schema file: " + e.getMessage());
-    }
-  }
-
-  private static String generateTableSchema(String tableName) {
-    return String.format(
-        """
-                    CREATE TABLE IF NOT EXISTS %s (
-                        first_name1 STRING(500),
-                        last_name1 STRING(500),
-                        first_name2 STRING(500),
-                        last_name2 STRING(500),
-                        first_name3 STRING(500),
-                        last_name3 STRING(500),
-                        ID INT64 NOT NULL
-                    ) PRIMARY KEY(ID);""",
-        tableName);
-  }
+      "DataStreamToSpanner100GbForStringMaxPerColumnTablesLT/spanner-schema.sql";
 
   @Test
   public void backFill100GbDataFor5000Tables()
       throws IOException, ParseException, InterruptedException {
-    preGenerateSpannerSchema();
     setUpResourceManagers(SCHEMA_FILE);
     HashMap<String, Integer> tables100GB = new HashMap<>();
     for (int i = 1; i <= NUM_TABLES; i++) {

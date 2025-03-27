@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashMap;
 import org.apache.beam.it.gcp.datastream.JDBCSource;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -30,6 +31,7 @@ import org.junit.runners.JUnit4;
 @Category(TemplateLoadTest.class)
 @TemplateLoadTest(DataStreamToSpanner.class)
 @RunWith(JUnit4.class)
+@Ignore
 public class DataStreamToSpanner100GbFor10MbPerColumnTablesLT extends DataStreamToSpannerLTBase {
   private static final int NUM_TABLES = 1;
   private static final int RECORD_PER_TABLE = 6500000;

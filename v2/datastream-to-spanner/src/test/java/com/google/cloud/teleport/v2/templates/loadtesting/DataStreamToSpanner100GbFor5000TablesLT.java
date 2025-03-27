@@ -41,7 +41,7 @@ public class DataStreamToSpanner100GbFor5000TablesLT extends DataStreamToSpanner
   public static void preGenerateSpannerSchema() {
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(SCHEMA_FILE))) {
       for (int i = 1; i <= NUM_TABLES; i++) {
-        String tableName = "person" + i;
+        String tableName = "table" + i;
         String schema = generateTableSchema(tableName);
         writer.write(schema + "\n\n");
       }
@@ -55,13 +55,8 @@ public class DataStreamToSpanner100GbFor5000TablesLT extends DataStreamToSpanner
     return String.format(
         """
                     CREATE TABLE IF NOT EXISTS %s (
-                        first_name1 STRING(500),
-                        last_name1 STRING(500),
-                        first_name2 STRING(500),
-                        last_name2 STRING(500),
-                        first_name3 STRING(500),
-                        last_name3 STRING(500),
-                        ID INT64 NOT NULL
+                        name STRING(500),
+                        id INT64 NOT NULL
                     ) PRIMARY KEY(ID);""",
         tableName);
   }
@@ -76,16 +71,15 @@ public class DataStreamToSpanner100GbFor5000TablesLT extends DataStreamToSpanner
       tables100GB.put("person" + i, RECORD_PER_TABLE);
     }
 
-    // Setup Datastream
-    String hostIp =
-        secretClient.accessSecret(
-            "projects/269744978479/secrets/nokill-datastream-mysql-to-spanner-cloudsql-ip-address/versions/1");
     String username =
         secretClient.accessSecret(
-            "projects/269744978479/secrets/nokill-datastream-mysql-to-spanner-cloudsql-username/versions/1");
+            "projects/209835939752/secrets/sourcedb-mysql-to-spanner-cloudsql-username/versions/1");
     String password =
         secretClient.accessSecret(
-            "projects/269744978479/secrets/nokill-datastream-mysql-to-spanner-cloudsql-password/versions/1");
+            "projects/209835939752/secrets/sourcedb-mysql-to-spanner-cloudsql-password/versions/1");
+    String hostIp =
+        secretClient.accessSecret(
+            "projects/209835939752/secrets/sourcedb-mysql-to-spanner-cloudsql-ip-address/versions/1");
 
     JDBCSource mySQLSource = getMySQLSource(hostIp, username, password);
     runLoadTest(tables100GB, mySQLSource);

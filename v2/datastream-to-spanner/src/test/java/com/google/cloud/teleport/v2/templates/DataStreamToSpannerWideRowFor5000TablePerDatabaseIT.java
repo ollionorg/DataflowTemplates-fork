@@ -255,7 +255,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                   if (retries == MAX_RETRIES) {
                     System.out.printf(
                         "Failed to create Spanner table after %s retries: %s :: %s",
-                        MAX_RETRIES, tableNames, e);
+                        MAX_RETRIES, "tableNames", e);
                     throw new RuntimeException("Failed to create Spanner table: " + tableNames, e);
                   }
                   try {

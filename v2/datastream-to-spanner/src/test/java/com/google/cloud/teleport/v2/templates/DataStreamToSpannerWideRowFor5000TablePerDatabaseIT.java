@@ -66,7 +66,6 @@ import org.apache.beam.it.jdbc.JDBCResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -78,7 +77,6 @@ import org.slf4j.LoggerFactory;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(Parameterized.class)
-@Ignore
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends SpannerTemplateITBase {
   private static final int THREAD_POOL_SIZE = 20;
   private static final int BATCH_SIZE = 1000;
@@ -117,7 +115,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     datastreamResourceManager =
         DatastreamResourceManager.builder(testName, PROJECT, REGION)
             .setCredentialsProvider(credentialsProvider)
-            .setPrivateConnectivity("datastream-private-connect-us-central1")
+            .setPrivateConnectivity("datastream-private-connect-asia-south1")
             .build();
 
     gcsResourceManager = setUpSpannerITGcsResourceManager();

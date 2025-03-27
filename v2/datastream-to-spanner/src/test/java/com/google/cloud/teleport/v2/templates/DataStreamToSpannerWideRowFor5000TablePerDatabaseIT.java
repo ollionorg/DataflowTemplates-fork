@@ -39,6 +39,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
@@ -72,7 +75,7 @@ import org.junit.runners.Parameterized;
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(Parameterized.class)
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends SpannerTemplateITBase {
-
+  private static final int THREAD_POOL_SIZE = 5;
   private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 4974;
 
@@ -89,7 +92,8 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   private SubscriptionName dlqSubscription;
 
   private static final List<String> COLUMNS = List.of(ROW_ID, NAME, AGE, MEMBER, ENTRY_ADDED);
-
+  private static final ExecutorService EXECUTOR_SERVICE =
+      Executors.newFixedThreadPool(THREAD_POOL_SIZE);
   private CloudSqlResourceManager cloudSqlResourceManager;
   private DatastreamResourceManager datastreamResourceManager;
   private SpannerResourceManager spannerResourceManager;
@@ -116,6 +120,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
   @After
   public void cleanUp() {
+    EXECUTOR_SERVICE.shutdown();
     ResourceManagerUtils.cleanResources(
         cloudSqlResourceManager,
         datastreamResourceManager,
@@ -164,6 +169,51 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                     getGcsPath("input/mysql-session.json", gcsResourceManager))));
   }
 
+  public void createTables(List<String> tableNames) {
+    CompletableFuture<Void> cloudSqlFuture =
+        CompletableFuture.runAsync(() -> createCloudSqlTables(tableNames), EXECUTOR_SERVICE);
+    CompletableFuture<Void> spannerFuture =
+        CompletableFuture.runAsync(() -> createSpannerTables(tableNames), EXECUTOR_SERVICE);
+    CompletableFuture.allOf(cloudSqlFuture, spannerFuture).join();
+  }
+
+  private void createCloudSqlTables(List<String> tableNames) {
+    List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+    for (String tableName : tableNames) {
+      futures.add(
+          CompletableFuture.runAsync(
+              () -> {
+                try {
+                  cloudSqlResourceManager.createTable(tableName, createJdbcSchema());
+                } catch (Exception e) {
+                  throw new RuntimeException("Failed to create Cloud SQL table: " + tableName, e);
+                }
+              },
+              EXECUTOR_SERVICE));
+    }
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+  }
+
+  private void createSpannerTables(List<String> tableNames) {
+    List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+    for (String tableName : tableNames) {
+      futures.add(
+          CompletableFuture.runAsync(
+              () -> {
+                try {
+                  spannerResourceManager.executeDdlStatement(generateSpannerDDL(tableName));
+                } catch (Exception e) {
+                  throw new RuntimeException("Failed to create Spanner table: " + tableName, e);
+                }
+              },
+              EXECUTOR_SERVICE));
+    }
+
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+  }
+
   private void simpleJdbcToSpannerTest(
       DatastreamResourceManager.DestinationOutputFormat fileFormat,
       Dialect spannerDialect,
@@ -192,9 +242,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
             spannerResourceManager.getDatabaseId(),
             tableNames));
 
-    // Create JDBC tables
-    tableNames.forEach(
-        tableName -> cloudSqlResourceManager.createTable(tableName, createJdbcSchema()));
+    createTables(tableNames);
 
     JDBCSource jdbcSource =
         MySQLSource.builder(
@@ -204,9 +252,6 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                 cloudSqlResourceManager.getPort())
             .setAllowedTables(Map.of(cloudSqlResourceManager.getDatabaseName(), tableNames))
             .build();
-
-    // Create Spanner tables
-    createSpannerTables(tableNames);
 
     // Create Datastream JDBC Source Connection profile and config
     SourceConfig sourceConfig =
@@ -399,28 +444,16 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     gcsResourceManager.createNotification(dlqTopic.toString(), dlqGcsPrefix.substring(1));
   }
 
-  private void createSpannerTables(List<String> tableNames) {
-    tableNames.forEach(
-        tableName ->
-            spannerResourceManager.executeDdlStatement(
-                "CREATE TABLE IF NOT EXISTS "
-                    + tableName
-                    + " ("
-                    + ROW_ID
-                    + (" INT64 ")
-                    + "NOT NULL, "
-                    + NAME
-                    + (" STRING(1024), ")
-                    + AGE
-                    + (" INT64, ")
-                    + MEMBER
-                    + (" STRING(1024), ")
-                    + ENTRY_ADDED
-                    + (" STRING(1024)")
-                    + (")")
-                    + "PRIMARY KEY ("
-                    + ROW_ID
-                    + ")"));
+  private String generateSpannerDDL(String tableName) {
+    return String.format(
+        "CREATE TABLE IF NOT EXISTS %s ("
+            + " %s INT64 NOT NULL, "
+            + " %s STRING(1024), "
+            + " %s INT64, "
+            + " %s STRING(1024), "
+            + " %s STRING(1024)) "
+            + "PRIMARY KEY (%s)",
+        tableName, ROW_ID, NAME, AGE, MEMBER, ENTRY_ADDED, ROW_ID);
   }
 
   /**

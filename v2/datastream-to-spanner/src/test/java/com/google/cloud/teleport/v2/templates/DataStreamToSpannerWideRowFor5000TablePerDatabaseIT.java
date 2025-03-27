@@ -234,38 +234,39 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
   private void createSpannerTables(List<String> tableNames) {
     List<CompletableFuture<Void>> futures = new ArrayList<>();
+    List<String> ddlStatements = new ArrayList<>();
 
     for (String tableName : tableNames) {
-      futures.add(
-          CompletableFuture.runAsync(
-              () -> {
-                int retries = 0;
-                while (retries < MAX_RETRIES) {
+      ddlStatements.add(generateSpannerDDL(tableName));
+    }
+
+    futures.add(
+        CompletableFuture.runAsync(
+            () -> {
+              int retries = 0;
+              while (retries < MAX_RETRIES) {
+                try {
+                  spannerResourceManager.executeDdlStatements(ddlStatements);
+                  System.out.println("Successfully created Spanner tableNames: " + tableNames);
+                  break;
+                } catch (Exception e) {
+                  log.error("e: ", e);
+                  retries++;
+                  if (retries == MAX_RETRIES) {
+                    System.out.printf(
+                        "Failed to create Spanner table after %s retries: %s :: %s",
+                        MAX_RETRIES, tableNames, e);
+                    throw new RuntimeException("Failed to create Spanner table: " + tableNames, e);
+                  }
                   try {
-                    String ddl = generateSpannerDDL(tableName);
-                    System.out.println(ddl);
-                    spannerResourceManager.executeDdlStatement(ddl);
-                    System.out.println("Successfully created Spanner table: " + tableName);
-                    break;
-                  } catch (Exception e) {
-                    log.error("e: ", e);
-                    retries++;
-                    if (retries == MAX_RETRIES) {
-                      System.out.printf(
-                          "Failed to create Spanner table after %s retries: %s :: %s",
-                          MAX_RETRIES, tableName, e);
-                      throw new RuntimeException("Failed to create Spanner table: " + tableName, e);
-                    }
-                    try {
-                      Thread.sleep(RETRY_DELAY_MS);
-                    } catch (InterruptedException ie) {
-                      Thread.currentThread().interrupt();
-                    }
+                    Thread.sleep(RETRY_DELAY_MS);
+                  } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
                   }
                 }
-              },
-              EXECUTOR_SERVICE));
-    }
+              }
+            },
+            EXECUTOR_SERVICE));
     try {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
     } catch (Exception e) {

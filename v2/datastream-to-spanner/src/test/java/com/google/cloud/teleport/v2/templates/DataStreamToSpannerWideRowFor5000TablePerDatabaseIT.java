@@ -238,10 +238,13 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                 int retries = 0;
                 while (retries < MAX_RETRIES) {
                   try {
-                    spannerResourceManager.executeDdlStatement(generateSpannerDDL(tableName));
+                    String ddl = generateSpannerDDL(tableName);
+                    System.out.println(ddl);
+                    spannerResourceManager.executeDdlStatement(ddl);
                     System.out.println("Successfully created Spanner table: " + tableName);
                     break;
                   } catch (Exception e) {
+                    System.out.println(e);
                     retries++;
                     if (retries == MAX_RETRIES) {
                       System.out.printf(
@@ -262,6 +265,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     try {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.SECONDS);
     } catch (Exception e) {
+      System.out.println(e);
       throw new RuntimeException("Failed to create Spanner tables", e);
     }
   }

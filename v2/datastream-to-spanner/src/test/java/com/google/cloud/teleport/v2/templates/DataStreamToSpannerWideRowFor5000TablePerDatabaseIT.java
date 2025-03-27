@@ -79,7 +79,7 @@ import org.slf4j.LoggerFactory;
 @RunWith(Parameterized.class)
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends SpannerTemplateITBase {
   private static final int THREAD_POOL_SIZE = 20;
-  private static final int BATCH_SIZE = 100;
+  private static final int BATCH_SIZE = 1000;
   private static final int MAX_RETRIES = 3;
   private static final long RETRY_DELAY_MS = 1000; // Delay between retries
 

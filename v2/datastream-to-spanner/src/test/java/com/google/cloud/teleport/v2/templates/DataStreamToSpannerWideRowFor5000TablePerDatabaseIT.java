@@ -70,6 +70,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Integration test for {@link DataStreamToSpanner} Flex template. */
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
@@ -89,6 +91,8 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   private static final String AGE = "age";
   private static final String MEMBER = "member";
   private static final String ENTRY_ADDED = "entry_added";
+  private static final Logger log =
+      LoggerFactory.getLogger(DataStreamToSpannerWideRowFor5000TablePerDatabaseIT.class);
 
   private String gcsPrefix;
   private String dlqGcsPrefix;
@@ -221,7 +225,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
               EXECUTOR_SERVICE));
     }
     try {
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.SECONDS);
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
     } catch (Exception e) {
       System.out.printf("Timeout or error while creating Cloud SQL tables %s", e);
       throw new RuntimeException("Failed to create Cloud SQL tables", e);
@@ -244,7 +248,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                     System.out.println("Successfully created Spanner table: " + tableName);
                     break;
                   } catch (Exception e) {
-                    System.out.println(e);
+                    log.error("e: ", e);
                     retries++;
                     if (retries == MAX_RETRIES) {
                       System.out.printf(
@@ -263,9 +267,9 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
               EXECUTOR_SERVICE));
     }
     try {
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.SECONDS);
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
     } catch (Exception e) {
-      System.out.println(e);
+      log.error("e: ", e);
       throw new RuntimeException("Failed to create Spanner tables", e);
     }
   }

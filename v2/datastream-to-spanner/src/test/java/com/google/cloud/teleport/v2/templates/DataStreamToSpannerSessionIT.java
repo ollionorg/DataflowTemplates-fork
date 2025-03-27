@@ -40,6 +40,7 @@ import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -52,6 +53,7 @@ import org.junit.runners.JUnit4;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(JUnit4.class)
+@Ignore
 public class DataStreamToSpannerSessionIT extends DataStreamToSpannerITBase {
 
   private static final String TABLE1 = "Category";

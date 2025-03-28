@@ -188,10 +188,9 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
             cloudSqlResourceManager.getDatabaseName(),
             spannerResourceManager.getDatabaseId(),
             tableNames));
-
     // Create JDBC tables
     tableNames.forEach(
-        tableName -> cloudSqlResourceManager.createTable(tableName, createJdbcSchema()));
+        tableName -> cloudSqlResourceManager.runSQLUpdate(getJDBCSchema(tableName)));
 
     JDBCSource jdbcSource =
         MySQLSource.builder(
@@ -383,14 +382,28 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
     return sessionTemplate;
   }
 
-  private JDBCResourceManager.JDBCSchema createJdbcSchema() {
-    HashMap<String, String> columns = new HashMap<>();
+  private String getJDBCSchema(String tableName) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("CREATE TABLE IF NOT EXISTS ")
+            .append(tableName)
+            .append(" (");
+
     for (int i = 0; i < NUM_COLUMNS; i++) {
-      columns.put(COLUMNS.get(i), "VARCHAR(200) NOT NULL");
+      sb.append(COLUMNS.get(i))
+              .append(" VARCHAR(200) NOT NULL");
+
+      if (i != NUM_COLUMNS - 1) {
+        sb.append(", ");
+      }
     }
 
-    return new JDBCResourceManager.JDBCSchema(columns, String.join(", ", COLUMNS));
+    sb.append(", PRIMARY KEY (")
+            .append(String.join(", ", COLUMNS))
+            .append("))");
+
+    return sb.toString();
   }
+
 
   private void createPubSubNotifications() throws IOException {
     // Instantiate pubsub resource manager for notifications

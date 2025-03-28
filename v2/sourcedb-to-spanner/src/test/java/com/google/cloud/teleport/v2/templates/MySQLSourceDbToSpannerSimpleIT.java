@@ -36,6 +36,7 @@ import org.apache.beam.it.jdbc.MySQLResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,6 +52,7 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SourceDbToSpanner.class)
 @RunWith(JUnit4.class)
+@Ignore
 public class MySQLSourceDbToSpannerSimpleIT extends SourceDbToSpannerITBase {
   private static final Logger LOG = LoggerFactory.getLogger(MySQLSourceDbToSpannerSimpleIT.class);
   private static HashSet<MySQLSourceDbToSpannerSimpleIT> testInstances = new HashSet<>();

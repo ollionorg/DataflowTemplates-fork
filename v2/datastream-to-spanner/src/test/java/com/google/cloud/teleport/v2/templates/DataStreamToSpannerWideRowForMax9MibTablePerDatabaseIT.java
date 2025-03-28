@@ -103,7 +103,6 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT extends Span
     datastreamResourceManager =
         DatastreamResourceManager.builder(testName, PROJECT, REGION)
             .setCredentialsProvider(credentialsProvider)
-            .setPrivateConnectivity("test-connectivity")
             .build();
 
     gcsResourceManager = setUpSpannerITGcsResourceManager();

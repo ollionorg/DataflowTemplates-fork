@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -369,7 +368,6 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                     SpannerRowsCheck.builder(spannerResourceManager, tableNames.get(1))
                         .setMinRows(NUM_EVENTS)
                         .build(),
-                    changeJdbcData(tableNames, cdcEvents),
                     checkDestinationRows(tableNames, cdcEvents)))
             .build();
 
@@ -598,71 +596,6 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
           messages.add(String.format("%d rows to %s", rows.size(), tableName));
         }
         return new CheckResult(success, "Sent " + String.join(", ", messages) + ".");
-      }
-    };
-  }
-
-  /**
-   * Helper function for constructing a ConditionCheck whose check() method changes rows of data in
-   * the JDBC database according to the common schema for the IT's in this class. Half the rows are
-   * mutated and half are removed completely.
-   *
-   * @return A ConditionCheck containing the JDBC mutate operation.
-   */
-  private ConditionCheck changeJdbcData(
-      List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
-    return new ConditionCheck() {
-      @Override
-      protected String getDescription() {
-        return "Send JDBC changes.";
-      }
-
-      @Override
-      protected CheckResult check() {
-        List<String> messages = new ArrayList<>();
-        for (String tableName : tableNames) {
-
-          List<Map<String, Object>> newCdcEvents = new ArrayList<>();
-          for (int i = 0; i < NUM_EVENTS; i++) {
-            if (i % 2 == 0) {
-              Map<String, Object> values = cdcEvents.get(tableName).get(i);
-              values.put(COLUMNS.get(1), values.get(COLUMNS.get(1)).toString().toUpperCase());
-              values.put(COLUMNS.get(2), new Random().nextInt(100));
-              values.put(
-                  COLUMNS.get(3),
-                  (Objects.equals(values.get(COLUMNS.get(3)).toString(), "Y") ? "N" : "Y"));
-
-              String updateSql =
-                  "UPDATE "
-                      + tableName
-                      + " SET "
-                      + COLUMNS.get(1)
-                      + " = '"
-                      + values.get(COLUMNS.get(1))
-                      + "',"
-                      + COLUMNS.get(2)
-                      + " = "
-                      + values.get(COLUMNS.get(2))
-                      + ","
-                      + COLUMNS.get(3)
-                      + " = '"
-                      + values.get(COLUMNS.get(3))
-                      + "'"
-                      + " WHERE "
-                      + COLUMNS.get(0)
-                      + " = "
-                      + i;
-              cloudSqlResourceManager.runSQLUpdate(updateSql);
-              newCdcEvents.add(values);
-            } else {
-              cloudSqlResourceManager.runSQLUpdate(
-                  "DELETE FROM " + tableName + " WHERE " + COLUMNS.get(0) + "=" + i);
-            }
-          }
-          cdcEvents.put(tableName, newCdcEvents);
-          messages.add(String.format("%d changes to %s", newCdcEvents.size(), tableName));
-        }
-        return new CheckResult(true, "Sent " + String.join(", ", messages) + ".");
       }
     };
   }

@@ -134,6 +134,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
     SpannerResourceManager spannerResourceManager =
         SpannerResourceManager.builder("rr-loadtest-" + testName, project, region)
             .maybeUseStaticInstance()
+            .setNodeCount(30)
             .build();
     String ddl =
         String.join(
@@ -154,6 +155,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
     SpannerResourceManager spannerMetadataResourceManager =
         SpannerResourceManager.builder("rr-meta-" + testName, project, region)
             .maybeUseStaticInstance()
+            .setNodeCount(15)
             .build();
     String dummy = "CREATE TABLE IF NOT EXISTS t1(id INT64 ) primary key(id)";
     spannerMetadataResourceManager.executeDdlStatement(dummy);
@@ -214,7 +216,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
             put("changeStreamName", "allstream");
             put("dlqGcsPubSubSubscription", subscriptionName.toString());
             put("deadLetterQueueDirectory", getGcsPath(artifactBucket, "dlq", gcsResourceManager));
-            put("maxShardConnections", "100");
+            put("maxShardConnections", "80000");
             put("sourceType", sourceType);
           }
         };
@@ -286,6 +288,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
 
     // export results
     exportMetricsToBigQuery(jobInfo, metrics);
+    // exportMetrics(jobInfo, numShards, "daring-fiber-439305-v4", "rr");
   }
 
   protected void createAndUploadJarToGcs(GcsResourceManager gcsResourceManager)

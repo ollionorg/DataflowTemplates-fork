@@ -54,7 +54,6 @@ import org.apache.beam.it.gcp.spanner.SpannerTemplateITBase;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
 import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
-import org.apache.beam.it.jdbc.JDBCResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
@@ -189,8 +188,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
             spannerResourceManager.getDatabaseId(),
             tableNames));
     // Create JDBC tables
-    tableNames.forEach(
-        tableName -> cloudSqlResourceManager.runSQLUpdate(getJDBCSchema(tableName)));
+    tableNames.forEach(tableName -> cloudSqlResourceManager.runSQLUpdate(getJDBCSchema(tableName)));
 
     JDBCSource jdbcSource =
         MySQLSource.builder(
@@ -384,26 +382,20 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
 
   private String getJDBCSchema(String tableName) {
     StringBuilder sb = new StringBuilder();
-    sb.append("CREATE TABLE IF NOT EXISTS ")
-            .append(tableName)
-            .append(" (");
+    sb.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append(" (");
 
     for (int i = 0; i < NUM_COLUMNS; i++) {
-      sb.append(COLUMNS.get(i))
-              .append(" VARCHAR(200) NOT NULL");
+      sb.append(COLUMNS.get(i)).append(" VARCHAR(200) NOT NULL");
 
       if (i != NUM_COLUMNS - 1) {
         sb.append(", ");
       }
     }
 
-    sb.append(", PRIMARY KEY (")
-            .append(String.join(", ", COLUMNS))
-            .append("))");
+    sb.append(", PRIMARY KEY (").append(String.join(", ", COLUMNS)).append("))");
 
     return sb.toString();
   }
-
 
   private void createPubSubNotifications() throws IOException {
     // Instantiate pubsub resource manager for notifications

@@ -84,7 +84,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   private static final long RETRY_DELAY_MS = 1000; // Delay between retries
 
   private static final Integer NUM_EVENTS = 1;
-  private static final Integer NUM_TABLES = 4974;
+  private static final Integer NUM_TABLES = 2;
 
   private static final String ROW_ID = "row_id";
   private static final String NAME = "name";

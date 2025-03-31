@@ -209,7 +209,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
     datastreamResourceManager.startStream(stream);
 
     // Construct template
-    //    createPubSubNotifications();
+    createPubSubNotifications();
     String jobName = PipelineUtils.createJobName(testName);
     LaunchConfig.Builder options =
         paramsAdder.apply(

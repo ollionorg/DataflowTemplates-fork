@@ -31,7 +31,6 @@ import com.google.pubsub.v1.TopicName;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -291,66 +290,53 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
     sessionTemplate.put("Dialect", "google_standard_sql");
     sessionTemplate.put("Notes", null);
     sessionTemplate.put("Tags", null);
-    sessionTemplate.put("SpSchema", new LinkedHashMap<>());
-    sessionTemplate.put("SyntheticPKeys", new LinkedHashMap<>());
-    sessionTemplate.put("SrcSchema", new LinkedHashMap<>());
-    sessionTemplate.put("SchemaIssues", new LinkedHashMap<>());
-    sessionTemplate.put("Location", new LinkedHashMap<>());
     sessionTemplate.put("TimezoneOffset", "+00:00");
     sessionTemplate.put("SpDialect", "google_standard_sql");
-    sessionTemplate.put("UniquePKey", new LinkedHashMap<>());
-    sessionTemplate.put("Rules", new ArrayList<>());
     sessionTemplate.put("IsSharded", false);
     sessionTemplate.put("SpRegion", "");
     sessionTemplate.put("ResourceValidation", false);
     sessionTemplate.put("UI", false);
 
+    // Initialize schema maps
+    sessionTemplate.put("SpSchema", new LinkedHashMap<>());
+    sessionTemplate.put("SyntheticPKeys", new LinkedHashMap<>());
+    sessionTemplate.put("SrcSchema", new LinkedHashMap<>());
+    sessionTemplate.put("SchemaIssues", new LinkedHashMap<>());
+    sessionTemplate.put("Location", new LinkedHashMap<>());
+    sessionTemplate.put("UniquePKey", new LinkedHashMap<>());
+    sessionTemplate.put("Rules", new ArrayList<>());
+
     for (int i = 1; i <= NUM_TABLES; i++) {
       String tableName = "TABLE" + i;
-      List<String> colIds = Arrays.asList("c1", "c2", "c3", "c4", "c5");
 
-      Map<String, Object> colDefs = new LinkedHashMap<>();
-      for (int j = 1; j <= colIds.size(); j++) {
-        Map<String, Object> colType = new LinkedHashMap<>();
-        colType.put("Name", (j % 2 == 0) ? "STRING" : "NUMERIC");
-        colType.put("Len", (j % 2 == 0) ? 200 : 0);
-        colType.put("IsArray", false);
-
-        Map<String, Object> column = new LinkedHashMap<>();
-        column.put("Name", "column_" + j);
-        column.put("T", colType);
-        column.put("NotNull", (j == 1));
-        column.put(
-            "Comment", "From: column_" + j + ((j % 2 == 0) ? " varchar(200)" : " decimal(10)"));
-        column.put("Id", colIds.get(j - 1));
-
-        colDefs.put(colIds.get(j - 1), column);
+      // Generate column IDs
+      List<String> colIds = new ArrayList<>();
+      for (int ci = 1; ci <= NUM_COLUMNS; ci++) {
+        colIds.add("c" + ci);
       }
 
-      List<Map<String, Object>> primaryKeys = new ArrayList<>();
-      Map<String, Object> primaryKey = new LinkedHashMap<>();
-      primaryKey.put("ColId", "c1");
-      primaryKey.put("Desc", false);
-      primaryKey.put("Order", 1);
-      primaryKeys.add(primaryKey);
+      // Create column definitions
+      Map<String, Object> colDefs = createColumnDefinitions(colIds);
 
-      Map<String, Object> spSchemaEntry = new LinkedHashMap<>();
-      spSchemaEntry.put("Name", tableName);
-      spSchemaEntry.put("ColIds", colIds);
-      spSchemaEntry.put("ShardIdColumn", "");
-      spSchemaEntry.put("ColDefs", colDefs);
-      spSchemaEntry.put("PrimaryKeys", primaryKeys);
-      spSchemaEntry.put("ForeignKeys", null);
-      spSchemaEntry.put("Indexes", null);
-      spSchemaEntry.put("ParentId", "");
-      spSchemaEntry.put("Comment", "Spanner schema for source table " + tableName);
-      spSchemaEntry.put("Id", "t" + i);
+      // Create primary keys
+      List<Map<String, Object>> primaryKeys = createPrimaryKeys(colIds);
+
+      // Create schema entries for Spanner & Source
+      Map<String, Object> spSchemaEntry =
+          createSchemaEntry(
+              tableName,
+              colIds,
+              colDefs,
+              primaryKeys,
+              "t" + i,
+              "Spanner schema for source table " + tableName);
       ((Map<String, Object>) sessionTemplate.get("SpSchema")).put("t" + i, spSchemaEntry);
 
       Map<String, Object> srcSchemaEntry = new LinkedHashMap<>(spSchemaEntry);
       srcSchemaEntry.put("Schema", "SRC_DATABASE");
       ((Map<String, Object>) sessionTemplate.get("SrcSchema")).put("t" + i, srcSchemaEntry);
 
+      // Initialize Schema Issues
       Map<String, Object> schemaIssuesEntry = new LinkedHashMap<>();
       schemaIssuesEntry.put("ColumnLevelIssues", new LinkedHashMap<>());
       schemaIssuesEntry.put("TableLevelIssues", null);
@@ -360,13 +346,74 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
     return sessionTemplate;
   }
 
+  /** Creates column definitions based on column IDs. */
+  private static Map<String, Object> createColumnDefinitions(List<String> colIds) {
+    Map<String, Object> colDefs = new LinkedHashMap<>();
+
+    for (int j = 1; j <= colIds.size(); j++) {
+      Map<String, Object> colType = new LinkedHashMap<>();
+      colType.put("Name", "NUMERIC");
+      colType.put("Len", 0);
+      colType.put("IsArray", false);
+
+      Map<String, Object> column = new LinkedHashMap<>();
+      column.put("Name", "col_" + j);
+      column.put("T", colType);
+      column.put("NotNull", (j == 1)); // First column is NOT NULL
+      column.put("Comment", "From: col_" + j + " decimal(10)");
+      column.put("Id", colIds.get(j - 1));
+
+      colDefs.put(colIds.get(j - 1), column);
+    }
+
+    return colDefs;
+  }
+
+  /** Creates a list of primary key definitions. */
+  private static List<Map<String, Object>> createPrimaryKeys(List<String> colIds) {
+    List<Map<String, Object>> primaryKeys = new ArrayList<>();
+
+    for (int j = 0; j < colIds.size(); j++) {
+      Map<String, Object> primaryKey = new LinkedHashMap<>();
+      primaryKey.put("ColId", colIds.get(j));
+      primaryKey.put("Desc", false);
+      primaryKey.put("Order", j + 1);
+      primaryKeys.add(primaryKey);
+    }
+
+    return primaryKeys;
+  }
+
+  /** Creates a schema entry for a table. */
+  private static Map<String, Object> createSchemaEntry(
+      String tableName,
+      List<String> colIds,
+      Map<String, Object> colDefs,
+      List<Map<String, Object>> primaryKeys,
+      String tableId,
+      String comment) {
+    Map<String, Object> schemaEntry = new LinkedHashMap<>();
+    schemaEntry.put("Name", tableName);
+    schemaEntry.put("ColIds", colIds);
+    schemaEntry.put("ShardIdColumn", "");
+    schemaEntry.put("ColDefs", colDefs);
+    schemaEntry.put("PrimaryKeys", primaryKeys);
+    schemaEntry.put("ForeignKeys", null);
+    schemaEntry.put("Indexes", null);
+    schemaEntry.put("ParentId", "");
+    schemaEntry.put("Comment", comment);
+    schemaEntry.put("Id", tableId);
+
+    return schemaEntry;
+  }
+
   private JDBCResourceManager.JDBCSchema createJdbcSchema() {
     HashMap<String, String> columns = new HashMap<>();
-    columns.put("Col_1", "NUMERIC NOT NULL");
+    columns.put("col_1", "NUMERIC NOT NULL");
     for (int i = 2; i <= NUM_COLUMNS; i++) {
-      columns.put("Col_" + i, "NUMERIC");
+      columns.put("col_" + i, "NUMERIC");
     }
-    return new JDBCResourceManager.JDBCSchema(columns, "Col_1");
+    return new JDBCResourceManager.JDBCSchema(columns, "col_1");
   }
 
   private void createPubSubNotifications() throws IOException {
@@ -476,7 +523,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
           for (int i = 0; i < NUM_EVENTS; i++) {
             Map<String, Object> values = new HashMap<>();
             for (int ci = 1; ci <= NUM_COLUMNS; ci++) {
-              values.put("Col_" + ci, ci);
+              values.put("col_" + ci, ci);
             }
             rows.add(values);
           }

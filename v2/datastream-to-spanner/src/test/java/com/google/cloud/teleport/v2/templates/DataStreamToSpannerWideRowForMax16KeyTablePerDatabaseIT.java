@@ -288,7 +288,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
   }
 
   public static Map<String, Object> createSessionTemplate() {
-    final int stringLength = 200;
+    final int stringLength = 20;
     Map<String, Object> sessionTemplate = new LinkedHashMap<>();
     sessionTemplate.put("SessionName", "NewSession");
     sessionTemplate.put("EditorName", "");
@@ -319,19 +319,13 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
       for (int j = 1; j <= NUM_COLUMNS; j++) {
         String colId = "c" + j;
         colIds.add(colId);
-
         Map<String, Object> colType = new LinkedHashMap<>();
-        if (j % 2 == 0) {
-          colType.put("Name", "STRING");
-          colType.put("Len", stringLength);
-        } else {
-          colType.put("Name", "NUMERIC");
-          colType.put("Len", 0);
-        }
+        colType.put("Name", "STRING");
+        colType.put("Len", stringLength);
         colType.put("IsArray", false);
 
         Map<String, Object> column = new LinkedHashMap<>();
-        column.put("Name", "column_" + j);
+        column.put("Name", COLUMNS.get(j - 1));
         column.put("T", colType);
         column.put("NotNull", true); // Making all columns NOT NULL as they are part of PK
         column.put("Comment", "From: column_" + j + " " + colType.get("Name"));
@@ -384,7 +378,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
     sb.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append(" (");
 
     for (int i = 0; i < NUM_COLUMNS; i++) {
-      sb.append(COLUMNS.get(i)).append(" VARCHAR(200) NOT NULL");
+      sb.append(COLUMNS.get(i)).append(" VARCHAR(20) NOT NULL");
 
       if (i != NUM_COLUMNS - 1) {
         sb.append(", ");
@@ -418,7 +412,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
           sb.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append(" (");
 
           for (int i = 1; i <= NUM_COLUMNS; i++) {
-            sb.append(COLUMNS.get(i - 1)).append(" STRING(1024) NOT NULL ");
+            sb.append(COLUMNS.get(i - 1)).append(" STRING(20) NOT NULL ");
             if (i != NUM_COLUMNS) {
               sb.append(",");
             }

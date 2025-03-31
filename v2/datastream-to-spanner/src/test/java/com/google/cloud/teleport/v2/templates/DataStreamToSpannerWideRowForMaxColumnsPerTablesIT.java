@@ -209,7 +209,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
     datastreamResourceManager.startStream(stream);
 
     // Construct template
-    createPubSubNotifications();
+    //    createPubSubNotifications();
     String jobName = PipelineUtils.createJobName(testName);
     LaunchConfig.Builder options =
         paramsAdder.apply(
@@ -435,15 +435,15 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
   private void createSpannerTables(List<String> tableNames) {
     for (String tableName : tableNames) {
       List<String> columns = new ArrayList<>();
-      columns.add("Col_1 INT64 NOT NULL");
+      columns.add("col_1 INT64 NOT NULL");
 
       for (int i = 2; i <= NUM_COLUMNS; i++) {
-        columns.add("Col_" + i + " INT64");
+        columns.add("col_" + i + " INT64");
       }
 
       String ddlStatement =
           String.format(
-              "CREATE TABLE %s (%s) PRIMARY KEY (Col_1)", tableName, String.join(", ", columns));
+              "CREATE TABLE %s (%s) PRIMARY KEY (col_1)", tableName, String.join(", ", columns));
 
       spannerResourceManager.executeDdlStatement(ddlStatement);
     }

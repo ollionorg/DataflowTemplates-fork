@@ -54,7 +54,6 @@ import org.apache.beam.it.gcp.spanner.SpannerTemplateITBase;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
 import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
-import org.apache.beam.it.jdbc.JDBCResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -181,8 +180,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
             tableNames));
 
     // Create JDBC tables
-    tableNames.forEach(
-        tableName -> cloudSqlResourceManager.createTable(tableName, createJdbcSchema()));
+    tableNames.forEach(tableName -> cloudSqlResourceManager.runSQLUpdate(getJDBCSchema(tableName)));
 
     JDBCSource jdbcSource =
         MySQLSource.builder(
@@ -407,13 +405,17 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
     return schemaEntry;
   }
 
-  private JDBCResourceManager.JDBCSchema createJdbcSchema() {
-    HashMap<String, String> columns = new HashMap<>();
-    columns.put("col_1", "NUMERIC NOT NULL");
-    for (int i = 2; i <= NUM_COLUMNS; i++) {
-      columns.put("col_" + i, "NUMERIC");
+  private String getJDBCSchema(String tableName) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append(" (");
+    for (int i = 1; i <= NUM_COLUMNS; i++) {
+      sb.append("col_").append(i).append(" NUMERIC NOT NULL");
+      if (i != NUM_COLUMNS) {
+        sb.append(", ");
+      }
     }
-    return new JDBCResourceManager.JDBCSchema(columns, "col_1");
+    sb.append(", PRIMARY KEY (").append("col_1").append("))");
+    return sb.toString();
   }
 
   private void createPubSubNotifications() throws IOException {

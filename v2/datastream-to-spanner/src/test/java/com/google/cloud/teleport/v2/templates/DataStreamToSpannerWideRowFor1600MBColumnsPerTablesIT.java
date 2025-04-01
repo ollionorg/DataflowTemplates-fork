@@ -364,15 +364,15 @@ public class DataStreamToSpannerWideRowFor1600MBColumnsPerTablesIT extends Spann
 
     for (int j = 1; j <= colIds.size(); j++) {
       Map<String, Object> colType = new LinkedHashMap<>();
-      colType.put("Name", (j == 1) ? "NUMERIC" : "VARCHAR");
-      colType.put("Len", (j == 1) ? 0 : 100);
+      colType.put("Name", (j == 1) ? "NUMERIC" : "TEXT");
+      colType.put("Len", 0);
       colType.put("IsArray", false);
 
       Map<String, Object> column = new LinkedHashMap<>();
       column.put("Name", "col_" + j);
       column.put("T", colType);
       column.put("NotNull", (j == 1)); // First column is NOT NULL
-      column.put("Comment", "From: col_" + j + ((j == 1) ? " decimal(10)" : " VARCHAR(100)"));
+      column.put("Comment", "From: col_" + j + ((j == 1) ? " decimal(10)" : " TEXT"));
       column.put("Id", colIds.get(j - 1));
 
       colDefs.put(colIds.get(j - 1), column);
@@ -426,7 +426,7 @@ public class DataStreamToSpannerWideRowFor1600MBColumnsPerTablesIT extends Spann
       if (i == 1) {
         sb.append("col_").append(i).append(" NUMERIC NOT NULL");
       } else {
-        sb.append("col_").append(i).append(" VARCHAR(21840) NOT NULL");
+        sb.append("col_").append(i).append(" TEXT NOT NULL");
       }
       if (i != NUM_COLUMNS) {
         sb.append(", ");

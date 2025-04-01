@@ -88,8 +88,8 @@ public class DataStreamToSpannerLTBase extends TemplateLoadTestBase {
     testRootDir = getClass().getSimpleName();
     spannerResourceManager =
         SpannerResourceManager.builder(testName, project, region)
-            .maybeUseStaticInstance()
-            .setNodeCount(10)
+            .useStaticInstance()
+            .setInstanceId("forward-migration-lt")
             .setMonitoringClient(monitoringClient)
             .build();
     pubsubResourceManager =

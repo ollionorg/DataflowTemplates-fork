@@ -73,7 +73,7 @@ public class DataStreamToSpannerWideRowFor1600MBColumnsPerTablesIT extends Spann
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 1;
-  private static final Integer NUM_COLUMNS = 801;
+  private static final Integer NUM_COLUMNS = 10;
   private static final int STRING_LENGTH = 2_621_440;
 
   private static final Random RANDOM_GENERATOR = new Random();

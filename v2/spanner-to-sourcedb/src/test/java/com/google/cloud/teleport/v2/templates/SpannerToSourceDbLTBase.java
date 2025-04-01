@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -189,7 +189,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
     gcsResourceManager.createArtifact("input/shard.json", shardFileContents);
   }
 
-  public PipelineLauncher.LaunchInfo launchDataflowJob(
+  public PipelineLauncher.LaunchInfo maciataflowJob(
       String artifactBucket,
       int numWorkers,
       int maxWorkers,
@@ -233,7 +233,10 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
     options
         .addEnvironment("maxWorkers", maxWorkers)
         .addEnvironment("numWorkers", numWorkers)
-        .addEnvironment("additionalExperiments", Collections.singletonList("use_runner_v2"));
+        .addEnvironment("workerMachineType", "n2-standard-8")
+        .addEnvironment(
+            "additionalExperiments",
+            Arrays.asList("enable_google_cloud_profiler", "use_runner_v2"));
 
     options.setParameters(params);
     PipelineLauncher.LaunchInfo jobInfo = pipelineLauncher.launch(project, region, options.build());

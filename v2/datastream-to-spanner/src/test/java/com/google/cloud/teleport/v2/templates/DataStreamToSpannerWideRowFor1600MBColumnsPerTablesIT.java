@@ -71,10 +71,10 @@ import org.junit.runners.Parameterized;
 public class DataStreamToSpannerWideRowFor1600MBColumnsPerTablesIT extends SpannerTemplateITBase {
   private static final String CHARACTERS =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  private static final Integer NUM_EVENTS = 1600000;
+  private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 1;
-  private static final Integer NUM_COLUMNS = 100;
-  private static final int STRING_LENGTH = 100;
+  private static final Integer NUM_COLUMNS = 4;
+  private static final int STRING_LENGTH = 21840;
 
   private static final Random RANDOM_GENERATOR = new Random();
 
@@ -426,7 +426,7 @@ public class DataStreamToSpannerWideRowFor1600MBColumnsPerTablesIT extends Spann
       if (i == 1) {
         sb.append("col_").append(i).append(" NUMERIC NOT NULL");
       } else {
-        sb.append("col_").append(i).append(" VARCHAR(100) NOT NULL");
+        sb.append("col_").append(i).append(" VARCHAR(21840) NOT NULL");
       }
       if (i != NUM_COLUMNS) {
         sb.append(", ");

@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -235,8 +235,8 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
         .addEnvironment("numWorkers", numWorkers)
         .addEnvironment("workerMachineType", "n2-standard-8")
         .addEnvironment(
-            "additionalExperiments",
-            Arrays.asList("enable_google_cloud_profiler", "use_runner_v2"));
+            "additionalExperiments", Collections.singletonList("enable_google_cloud_profiler"))
+        .addEnvironment("additionalExperiments", Collections.singletonList("use_runner_v2"));
 
     options.setParameters(params);
     PipelineLauncher.LaunchInfo jobInfo = pipelineLauncher.launch(project, region, options.build());

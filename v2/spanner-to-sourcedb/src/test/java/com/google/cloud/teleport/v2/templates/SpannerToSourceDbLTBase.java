@@ -189,7 +189,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
     gcsResourceManager.createArtifact("input/shard.json", shardFileContents);
   }
 
-  public PipelineLauncher.LaunchInfo maciataflowJob(
+  public PipelineLauncher.LaunchInfo launchDataflowJob(
       String artifactBucket,
       int numWorkers,
       int maxWorkers,

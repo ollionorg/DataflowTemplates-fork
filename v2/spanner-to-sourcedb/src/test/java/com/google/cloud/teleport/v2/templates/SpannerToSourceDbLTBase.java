@@ -134,7 +134,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
     SpannerResourceManager spannerResourceManager =
         SpannerResourceManager.builder("rr-loadtest-" + testName, project, region)
             .maybeUseStaticInstance()
-            .setNodeCount(30)
+            .setNodeCount(20)
             .build();
     String ddl =
         String.join(
@@ -155,7 +155,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
     SpannerResourceManager spannerMetadataResourceManager =
         SpannerResourceManager.builder("rr-meta-" + testName, project, region)
             .maybeUseStaticInstance()
-            .setNodeCount(15)
+            .setNodeCount(5)
             .build();
     String dummy = "CREATE TABLE IF NOT EXISTS t1(id INT64 ) primary key(id)";
     spannerMetadataResourceManager.executeDdlStatement(dummy);
@@ -216,7 +216,7 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
             put("changeStreamName", "allstream");
             put("dlqGcsPubSubSubscription", subscriptionName.toString());
             put("deadLetterQueueDirectory", getGcsPath(artifactBucket, "dlq", gcsResourceManager));
-            put("maxShardConnections", "80000");
+            put("maxShardConnections", "30000");
             put("sourceType", sourceType);
             put("workerMachineType", "n2-standard-8");
           }
@@ -234,8 +234,6 @@ public class SpannerToSourceDbLTBase extends TemplateLoadTestBase {
     options
         .addEnvironment("maxWorkers", maxWorkers)
         .addEnvironment("numWorkers", numWorkers)
-        .addEnvironment(
-            "additionalExperiments", Collections.singletonList("enable_google_cloud_profiler"))
         .addEnvironment("additionalExperiments", Collections.singletonList("use_runner_v2"));
 
     options.setParameters(params);

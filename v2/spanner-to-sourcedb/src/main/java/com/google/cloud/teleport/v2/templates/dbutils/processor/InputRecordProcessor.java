@@ -137,7 +137,7 @@ public class InputRecordProcessor {
       long replicationLag = ChronoUnit.SECONDS.between(commitTsInst, instTime);
 
       lagMetric.update(replicationLag); // update the lag metric
-      LOG.debug("replication_lag: {}", replicationLag);
+      LOG.info("replication_lag: {}", replicationLag);
       return false;
     } catch (Exception e) {
       LOG.error(

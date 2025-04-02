@@ -39,7 +39,7 @@ public class DataStreamToSpanner100GbFor10MbPerColumnTablesLT extends DataStream
   private static final String SCHEMA_FILE =
       "DataStreamToSpanner100GbFor10MbPerColumnTablesLT/spanner-schema.sql";
   private static final String DATABASE_NAME = "10MBStringCell";
-  private static final String TABLE_NAME = "widerowtable";
+  private static final String TABLE_NAME = "WideRowTable";
 
   private static final String PROJECT_ID = "209835939752";
   private static final String HOST_IP_SECRET = "sourcedb-mysql-to-spanner-cloudsql-ip-address";

@@ -36,6 +36,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class DataStreamToSpanner100GbFor10MbPerColumnTablesLT extends DataStreamToSpannerLTBase {
   private static final int RECORDS_PER_TABLE = 10_000;
+  private static final String FETCH_SIZE = "100";
   private static final String WORKER_MACHINE_TYPE = "n2-standard-16";
   private static final String SCHEMA_FILE =
       "DataStreamToSpanner100GbFor10MbPerColumnTablesLT/spanner-schema.sql";
@@ -59,6 +60,7 @@ public class DataStreamToSpanner100GbFor10MbPerColumnTablesLT extends DataStream
         new HashMap<>() {
           {
             put("workerMachineType", WORKER_MACHINE_TYPE);
+            put("fetchSize", FETCH_SIZE);
           }
         };
     runLoadTest(tables100GB, mySQLSource, templateParameterOptions, new HashMap<>());

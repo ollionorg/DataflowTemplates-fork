@@ -33,6 +33,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -231,7 +232,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     }
   }
 
-  private void insertIntoCloudSqlTables(List<String> insertStatements) {
+  private boolean insertIntoCloudSqlTables(List<String> insertStatements) {
     List<CompletableFuture<Void>> futures = new ArrayList<>();
     futures.add(
         CompletableFuture.runAsync(
@@ -264,8 +265,9 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
     } catch (Exception e) {
       System.out.printf("Timeout or error while inserting data into Cloud SQL tables %s", e);
-      throw new RuntimeException("Failed to insert data into Cloud SQL tables", e);
+      return false;
     }
+    return true;
   }
 
   private void createSpannerTables(List<String> tableNames) {
@@ -571,12 +573,33 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
       @Override
       protected CheckResult check() {
         // First, check that correct number of rows were deleted.
-        for (String tableName : tableNames) {
-          long totalRows = spannerResourceManager.getRowCount(tableName);
-          long maxRows = cdcEvents.get(tableName).size();
-          if (totalRows > maxRows) {
-            return new CheckResult(
-                false, String.format("Expected up to %d rows but found %d", maxRows, totalRows));
+        List<CompletableFuture<CheckResult>> futures =
+            tableNames.stream()
+                .map(
+                    tableName ->
+                        CompletableFuture.supplyAsync(
+                            () -> {
+                              long totalRows = spannerResourceManager.getRowCount(tableName);
+                              long maxRows =
+                                  cdcEvents.getOrDefault(tableName, Collections.emptyList()).size();
+                              if (totalRows > maxRows) {
+                                return new CheckResult(
+                                    false,
+                                    String.format(
+                                        "Expected up to %d rows but found %d in table %s",
+                                        maxRows, totalRows, tableName));
+                              }
+                              return new CheckResult(
+                                  true, "Table " + tableName + " row count is valid.");
+                            },
+                            EXECUTOR_SERVICE))
+                .toList();
+
+        List<CheckResult> results = futures.stream().map(CompletableFuture::join).toList();
+
+        for (CheckResult result : results) {
+          if (!result.isSuccess()) {
+            return result;
           }
         }
 
@@ -594,11 +617,19 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   /** Helper function for checking the rows of the destination Spanner tables. */
   private void checkSpannerTables(
       List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
-    tableNames.forEach(
-        tableName ->
-            SpannerAsserts.assertThatStructs(
-                    spannerResourceManager.readTableRecords(tableName, COLUMNS))
-                .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName)));
+    List<CompletableFuture<Void>> futures =
+        tableNames.stream()
+            .map(
+                tableName ->
+                    CompletableFuture.runAsync(
+                        () -> {
+                          SpannerAsserts.assertThatStructs(
+                                  spannerResourceManager.readTableRecords(tableName, COLUMNS))
+                              .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName));
+                        },
+                        EXECUTOR_SERVICE))
+            .toList();
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
   }
 
   /**
@@ -618,11 +649,11 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
         return "Send initial JDBC events.";
       }
 
-      private void insertIntoTables(List<String> tableNames) {
+      private void insertIntoTables() {
         for (int i = 0; i < tableNames.size(); i += BATCH_SIZE) {
           int endIndex = Math.min(i + BATCH_SIZE, tableNames.size());
           List<String> batch = tableNames.subList(i, endIndex);
-          createCloudSqlTables(batch);
+          insertIntoCloudTables(batch);
           try {
             Thread.sleep(1000);
           } catch (InterruptedException e) {
@@ -683,11 +714,12 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                     batchStatements.add(sql.toString());
                   }
                 });
-        cloudSqlResourceManager.runSQLUpdate(String.join(";", batchStatements));
+        success &= insertIntoCloudSqlTables(batchStatements);
       }
 
       @Override
       protected CheckResult check() {
+        insertIntoTables();
         return new CheckResult(success, "Sent " + String.join(", ", messages) + ".");
       }
     };

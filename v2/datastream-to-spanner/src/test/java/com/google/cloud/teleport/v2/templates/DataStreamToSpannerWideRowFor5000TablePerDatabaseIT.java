@@ -77,7 +77,6 @@ import org.slf4j.LoggerFactory;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(Parameterized.class)
-@Ignore
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends SpannerTemplateITBase {
   private static final int THREAD_POOL_SIZE = 20;
   private static final int BATCH_SIZE = 1000;
@@ -85,7 +84,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   private static final long RETRY_DELAY_MS = 1000; // Delay between retries
 
   private static final Integer NUM_EVENTS = 1;
-  private static final Integer NUM_TABLES = 2;
+  private static final Integer NUM_TABLES = 5000;
 
   private static final String ROW_ID = "row_id";
   private static final String NAME = "name";

@@ -41,13 +41,10 @@ public class DataStreamToSpanner100GbFor10MbPerColumnTablesLT extends DataStream
   private static final String DATABASE_NAME = "10MBStringCell";
   private static final String TABLE_NAME = "widerowtable";
 
-  private static final String PROJECT_ID = "269744978479";
-  private static final String HOST_IP_SECRET =
-      "nokill-datastream-mysql-to-spanner-cloudsql-ip-address";
-  private static final String USERNAME_SECRET =
-      "nokill-datastream-mysql-to-spanner-cloudsql-username";
-  private static final String PASSWORD_SECRET =
-      "nokill-datastream-mysql-to-spanner-cloudsql-password";
+  private static final String PROJECT_ID = "209835939752";
+  private static final String HOST_IP_SECRET = "sourcedb-mysql-to-spanner-cloudsql-ip-address";
+  private static final String USERNAME_SECRET = "sourcedb-mysql-to-spanner-cloudsql-username";
+  private static final String PASSWORD_SECRET = "sourcedb-mysql-to-spanner-cloudsql-password";
   private static final String SECRET_VERSION = "1";
 
   @Test

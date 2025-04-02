@@ -55,13 +55,13 @@ public class DataStreamToSpanner100GbFor10MbPerColumnTablesLT extends DataStream
     setUpResourceManagers(SCHEMA_FILE);
     HashMap<String, Integer> tables100GB = createTableConfiguration();
     JDBCSource mySQLSource = setupDatastreamConnection();
-    HashMap<String, Object> environmentOptions =
+    HashMap<String, String> templateParameterOptions =
         new HashMap<>() {
           {
             put("workerMachineType", WORKER_MACHINE_TYPE);
           }
         };
-    runLoadTest(tables100GB, mySQLSource, new HashMap<>(), environmentOptions);
+    runLoadTest(tables100GB, mySQLSource, templateParameterOptions, new HashMap<>());
   }
 
   /**

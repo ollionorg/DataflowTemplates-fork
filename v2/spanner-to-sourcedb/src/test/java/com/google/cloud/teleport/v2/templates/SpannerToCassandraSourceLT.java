@@ -96,7 +96,7 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
             .setSpannerTableName(table)
             .setNumWorkers("50")
-            .setMaxNumWorkers("50")
+            .setMaxNumWorkers("100")
             .setSinkType("SPANNER")
             .setProjectId(project)
             .setBatchSizeBytes("0")

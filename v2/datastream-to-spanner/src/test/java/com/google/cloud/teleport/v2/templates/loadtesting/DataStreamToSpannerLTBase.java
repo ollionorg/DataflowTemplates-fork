@@ -66,7 +66,7 @@ public class DataStreamToSpannerLTBase extends TemplateLoadTestBase {
   protected final String artifactBucket = TestProperties.artifactBucket();
   protected String testRootDir;
   protected final int maxWorkers = 100;
-  protected final int numWorkers = 50;
+  protected final int numWorkers = 10;
   public PubsubResourceManager pubsubResourceManager;
   public SpannerResourceManager spannerResourceManager;
   protected SpannerResourceManager shadowTableSpannerResourceManager = null;

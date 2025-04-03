@@ -184,9 +184,9 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     for (int i = 0; i < tableNames.size(); i += BATCH_SIZE) {
       int endIndex = Math.min(i + BATCH_SIZE, tableNames.size());
       List<String> batch = tableNames.subList(i, endIndex);
-      createCloudSqlTables(batch, futures);
       createSpannerTables(batch, futures);
     }
+    createCloudSqlTables(tableNames, futures);
     try {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
     } catch (Exception e) {
@@ -234,40 +234,46 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     }
   }
 
-  private boolean insertIntoCloudSqlTables(List<String> insertStatements) {
+  private boolean insertIntoCloudSqlTables(Map<String, List<Map<String, Object>>> batchedInserts) {
     List<CompletableFuture<Void>> futures = new ArrayList<>();
-    futures.add(
-        CompletableFuture.runAsync(
-            () -> {
-              int retries = 0;
-              while (retries < MAX_RETRIES) {
-                try {
-                  cloudSqlResourceManager.runSQLUpdate(String.join("; ", insertStatements));
-                  System.out.println("Successfully inserted data into Cloud SQL tables.");
-                  break;
-                } catch (Exception e) {
-                  System.out.println("Error on Creation " + e.getMessage());
-                  retries++;
-                  if (retries == MAX_RETRIES) {
-                    System.out.printf(
-                        "Failed to insert data into Cloud SQL tables after %s retries: %s",
-                        MAX_RETRIES, e);
-                    throw new RuntimeException("Failed to insert data into Cloud SQL tables", e);
-                  }
-                  try {
-                    Thread.sleep(RETRY_DELAY_MS);
-                  } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                  }
-                }
-              }
-            },
-            EXECUTOR_SERVICE));
-
+    batchedInserts
+        .keySet()
+        .forEach(
+            key -> {
+              futures.add(
+                  CompletableFuture.runAsync(
+                      () -> {
+                        int retries = 0;
+                        while (retries < MAX_RETRIES) {
+                          try {
+                            cloudSqlResourceManager.write(key, batchedInserts.get(key));
+                            System.out.println("Successfully inserted data into Cloud SQL tables.");
+                            break;
+                          } catch (Exception e) {
+                            System.out.println("Error on Creation " + e.getMessage());
+                            retries++;
+                            if (retries == MAX_RETRIES) {
+                              System.out.printf(
+                                  "Failed to insert data into Cloud SQL tables after %s retries: %s",
+                                  MAX_RETRIES, e);
+                              throw new RuntimeException(
+                                  "Failed to insert data into Cloud SQL tables", e);
+                            }
+                            try {
+                              Thread.sleep(RETRY_DELAY_MS);
+                            } catch (InterruptedException ie) {
+                              Thread.currentThread().interrupt();
+                            }
+                          }
+                        }
+                      },
+                      EXECUTOR_SERVICE));
+            });
     try {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
     } catch (Exception e) {
-      System.out.printf("Timeout or error while inserting data into Cloud SQL tables %s", e);
+      System.out.printf(
+          "Timeout or error while inserting data into Cloud SQL tables %s", e.getMessage());
       return false;
     }
     return true;
@@ -717,12 +723,11 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                         valueList.add(String.valueOf(value));
                       }
                     }
-
                     sql.append(String.join(",", valueList)).append(")");
                     batchStatements.add(sql.toString());
                   }
                 });
-        success &= insertIntoCloudSqlTables(batchStatements);
+        success &= insertIntoCloudSqlTables(batchedInserts);
       }
 
       @Override

@@ -48,7 +48,6 @@ import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.utils.PipelineUtils;
-import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.conditions.ChainedConditionCheck;
 import org.apache.beam.it.conditions.ConditionCheck;
 import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
@@ -128,13 +127,13 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
   @After
   public void cleanUp() {
-    EXECUTOR_SERVICE.shutdown();
-    ResourceManagerUtils.cleanResources(
-        cloudSqlResourceManager,
-        datastreamResourceManager,
-        spannerResourceManager,
-        pubsubResourceManager,
-        gcsResourceManager);
+    //    EXECUTOR_SERVICE.shutdown();
+    //    ResourceManagerUtils.cleanResources(
+    //        cloudSqlResourceManager,
+    //        datastreamResourceManager,
+    //        spannerResourceManager,
+    //        pubsubResourceManager,
+    //        gcsResourceManager);
   }
 
   @Test
@@ -335,7 +334,11 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
     // Create JDBC Resource manager
     cloudSqlResourceManager = CloudMySQLResourceManager.builder(testName).build();
-
+    System.out.println(cloudSqlResourceManager.getHost());
+    System.out.println(cloudSqlResourceManager.getUsername());
+    System.out.println(cloudSqlResourceManager.getDatabaseName());
+    System.out.println(cloudSqlResourceManager.getPort());
+    System.out.println(cloudSqlResourceManager.getPassword());
     // Create Spanner Resource Manager
     SpannerResourceManager.Builder spannerResourceManagerBuilder =
         SpannerResourceManager.builder(testName, PROJECT, REGION, spannerDialect)

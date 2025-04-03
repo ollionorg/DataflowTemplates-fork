@@ -186,7 +186,8 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
       List<String> batch = tableNames.subList(i, endIndex);
       createSpannerTables(batch, futures);
     }
-    createCloudSqlTablesBatch(tableNames, futures);
+    futures.add(
+        CompletableFuture.runAsync(() -> createCloudSqlTables(tableNames), EXECUTOR_SERVICE));
     try {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
     } catch (Exception e) {
@@ -196,66 +197,47 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   }
 
   private void createCloudSqlTables(List<String> tableNames) {
-    List<CompletableFuture<Void>> futures = new LinkedList<>();
-    System.out.println(
-        "Running createCloudSqlTables Tables: >>>>> for the size " + tableNames.size());
-    for (String tableName : tableNames) {
-      System.out.println(
-          "Generated createCloudSqlTables ddlStatements: >>>>> for the tableName " + tableName);
-      futures.add(
-          CompletableFuture.runAsync(
-              () -> {
-                System.out.println("Running createCloudSqlTables runAsync");
-                int retries = 0;
-                while (retries < MAX_RETRIES) {
-                  try {
-                    System.out.printf("Going to created Cloud SQL table: %s", tableName);
-                    cloudSqlResourceManager.runSQLUpdate(getJDBCSchema(tableName));
-                    System.out.printf("Successfully created Cloud SQL table: %s", tableName);
-                    break;
-                  } catch (Exception e) {
-                    retries++;
-                    if (retries == MAX_RETRIES) {
-                      System.out.printf(
-                          "Failed to create Cloud SQL table after %s retries: %s :: %s",
-                          MAX_RETRIES, tableName, e);
-                      throw new RuntimeException(
-                          "Failed to create Cloud SQL table: " + tableName, e);
-                    }
-                    try {
-                      Thread.sleep(RETRY_DELAY_MS);
-                    } catch (InterruptedException ie) {
-                      Thread.currentThread().interrupt();
-                    }
-                  }
-                }
-              },
-              EXECUTOR_SERVICE));
-    }
+    System.out.println("Running createCloudSqlTables for table size: " + tableNames.size());
+    List<CompletableFuture<Void>> futures =
+        tableNames.stream()
+            .map(
+                tableName ->
+                    CompletableFuture.runAsync(
+                        () -> createCloudSqlTableWithRetries(tableName), EXECUTOR_SERVICE))
+            .toList();
+
     try {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
     } catch (Exception e) {
-      System.out.printf("Timeout or error while creating tables %s", e);
-      throw new RuntimeException("Failed to create tables", e);
+      System.err.printf("Timeout or error while creating Cloud SQL tables: %s%n", e);
+      throw new RuntimeException("Failed to create Cloud SQL tables", e);
     }
   }
 
-  private void createCloudSqlTablesBatch(
-      List<String> tableNames, List<CompletableFuture<Void>> futures) {
-    futures.add(
-        CompletableFuture.runAsync(
-            () -> {
-              for (int i = 0; i < tableNames.size(); i += BATCH_SIZE) {
-                int endIndex = Math.min(i + BATCH_SIZE, tableNames.size());
-                List<String> batch = tableNames.subList(i, endIndex);
-                createCloudSqlTables(batch);
-                try {
-                  Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                  Thread.currentThread().interrupt();
-                }
-              }
-            }));
+  private void createCloudSqlTableWithRetries(String tableName) {
+    System.out.println("Processing table: " + tableName);
+    int retries = 0;
+    while (retries < MAX_RETRIES) {
+      try {
+        System.out.printf("Creating Cloud SQL table: %s%n", tableName);
+        cloudSqlResourceManager.runSQLUpdate(getJDBCSchema(tableName));
+        System.out.printf("Successfully created Cloud SQL table: %s%n", tableName);
+        return;
+      } catch (Exception e) {
+        retries++;
+        if (retries == MAX_RETRIES) {
+          System.err.printf(
+              "Failed to create Cloud SQL table after %d retries: %s :: %s%n",
+              MAX_RETRIES, tableName, e);
+          throw new RuntimeException("Failed to create Cloud SQL table: " + tableName, e);
+        }
+        try {
+          Thread.sleep(RETRY_DELAY_MS);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
   }
 
   private boolean insertIntoCloudSqlTables(Map<String, List<Map<String, Object>>> batchedInserts) {

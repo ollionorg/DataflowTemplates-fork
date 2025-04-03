@@ -1575,7 +1575,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     Mutation mutation =
         Mutation.newInsertOrUpdateBuilder(BOUNDARY_CONVERSION_TABLE)
             .set("varchar_column")
-            .to("MaxBoundaryVarchar") // Distinct value for max
+            .to("MaxBoundaryVarchar")
             .set("tinyint_column")
             .to(Byte.MAX_VALUE)
             .set("smallint_column")
@@ -1603,7 +1603,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("time_column")
             .to("23:59:59.999999")
             .set("timestamp_column")
-            .to(String.valueOf(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999000Z")))
+            .to(String.valueOf(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999Z")))
             .set("duration_column")
             .to("P10675199DT2H48M5S")
             .set("uuid_column")
@@ -1664,7 +1664,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     Mutation mutation =
         Mutation.newInsertOrUpdateBuilder(BOUNDARY_CONVERSION_TABLE)
             .set("varchar_column")
-            .to("MinBoundaryVarchar") // Distinct value for min
+            .to("MinBoundaryVarchar")
             .set("tinyint_column")
             .to(Byte.MIN_VALUE)
             .set("smallint_column")
@@ -1726,7 +1726,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("map_time_column")
             .to(Value.json("{\"00:00:00\": \"01:00:00\"}"))
             .set("map_timestamp_column")
-            .to(Value.json("{\"0001-01-01T00:00:00Z\": \"1900-01-01T00:00:000Z\"}"))
+            .to(Value.json("{\"0001-01-01T00:00:00Z\": \"1900-01-01T00:00:00Z\"}"))
             .set("map_duration_column")
             .to(Value.json("{\"-P4DT1H\": \"-P10675199DT2H48M5S\"}"))
             .set("map_uuid_column")
@@ -1759,7 +1759,6 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
     }
     assertThat(rows).hasSize(2);
     for (Row row : rows) {
-      LOG.info("Cassandra Row to Assert for All Data Types: {}", row.getFormattedContents());
       String varcharColumn = row.getString("varchar_column");
       if (Objects.equals(varcharColumn, "MaxBoundaryVarchar")) {
         assertAll(
@@ -2080,7 +2079,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                     .isEqualTo(
                         Map.of(
                             java.time.Instant.parse("0001-01-01T00:00:00Z"),
-                            java.time.Instant.parse("1900-01-01T00:00:000Z"))),
+                            java.time.Instant.parse("1900-01-01T00:00:00Z"))),
             () ->
                 assertThat(row.getMap("map_duration_column", String.class, CqlDuration.class))
                     .isEqualTo(Map.of("-P4DT1H", CqlDuration.from("-P10675199DT2H48M5S"))),

@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -78,8 +79,8 @@ import org.testcontainers.shaded.org.apache.commons.lang3.math.NumberUtils;
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(Parameterized.class)
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends SpannerTemplateITBase {
-  private static final int THREAD_POOL_SIZE = 20;
-  private static final int BATCH_SIZE = 100;
+  private static final int THREAD_POOL_SIZE = 200;
+  private static final int BATCH_SIZE = 10;
   private static final int MAX_RETRIES = 3;
   private static final long RETRY_DELAY_MS = 1000; // Delay between retries
 
@@ -179,23 +180,25 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
   private void createTables(List<String> tableNames) {
     System.out.println("Running Create Tables: >>>>>");
+    List<CompletableFuture<Void>> futures = new LinkedList<>();
     for (int i = 0; i < tableNames.size(); i += BATCH_SIZE) {
       int endIndex = Math.min(i + BATCH_SIZE, tableNames.size());
       List<String> batch = tableNames.subList(i, endIndex);
-      createCloudSqlTables(batch);
-      createSpannerTables(batch);
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
+      createCloudSqlTables(batch, futures);
+      createSpannerTables(batch, futures);
+    }
+    try {
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(10, TimeUnit.MINUTES);
+    } catch (Exception e) {
+      System.out.printf("Timeout or error while creating tables %s", e);
+      throw new RuntimeException("Failed to create tables", e);
     }
   }
 
-  private void createCloudSqlTables(List<String> tableNames) {
+  private void createCloudSqlTables(
+      List<String> tableNames, List<CompletableFuture<Void>> futures) {
     System.out.println(
         "Running createCloudSqlTables Tables: >>>>> for the size " + tableNames.size());
-    List<CompletableFuture<Void>> futures = new ArrayList<>();
     List<String> ddlStatements = new ArrayList<>();
     for (String tableName : tableNames) {
       ddlStatements.add(getJDBCSchema(tableName));
@@ -205,6 +208,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     futures.add(
         CompletableFuture.runAsync(
             () -> {
+              System.out.println("Running createCloudSqlTables runAsync");
               int retries = 0;
               while (retries < MAX_RETRIES) {
                 try {
@@ -231,12 +235,6 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
               }
             },
             EXECUTOR_SERVICE));
-    try {
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(1, TimeUnit.MINUTES);
-    } catch (Exception e) {
-      System.out.printf("Timeout or error while creating Cloud SQL tables %s", e);
-      throw new RuntimeException("Failed to create Cloud SQL tables", e);
-    }
   }
 
   private boolean insertIntoCloudSqlTables(List<String> insertStatements) {
@@ -251,6 +249,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                   System.out.println("Successfully inserted data into Cloud SQL tables.");
                   break;
                 } catch (Exception e) {
+                  System.out.println("Error on Creation " + e.getMessage());
                   retries++;
                   if (retries == MAX_RETRIES) {
                     System.out.printf(
@@ -277,12 +276,10 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     return true;
   }
 
-  private void createSpannerTables(List<String> tableNames) {
+  private void createSpannerTables(List<String> tableNames, List<CompletableFuture<Void>> futures) {
     System.out.println(
         "Running createSpannerTables Tables: >>>>> for the size " + tableNames.size());
-    List<CompletableFuture<Void>> futures = new ArrayList<>();
     List<String> ddlStatements = new ArrayList<>();
-
     for (String tableName : tableNames) {
       ddlStatements.add(generateSpannerDDL(tableName));
     }
@@ -292,6 +289,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     futures.add(
         CompletableFuture.runAsync(
             () -> {
+              System.out.println("Running createSpannerTables runAsync");
               int retries = 0;
               while (retries < MAX_RETRIES) {
                 try {
@@ -302,6 +300,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
                   System.out.println("Successfully created Spanner tableNames: " + tableNames);
                   break;
                 } catch (Exception e) {
+                  System.out.println("Error on Creation " + e.getMessage());
                   log.error("e: ", e);
                   retries++;
                   if (retries == MAX_RETRIES) {
@@ -319,12 +318,6 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
               }
             },
             EXECUTOR_SERVICE));
-    try {
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(5, TimeUnit.MINUTES);
-    } catch (Exception e) {
-      log.error("e: ", e);
-      throw new RuntimeException("Failed to create Spanner tables", e);
-    }
   }
 
   private void simpleJdbcToSpannerTest(

@@ -29,12 +29,18 @@ import com.google.gson.GsonBuilder;
 import com.google.pubsub.v1.SubscriptionName;
 import com.google.pubsub.v1.TopicName;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -70,19 +76,19 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.shaded.org.apache.commons.lang3.math.NumberUtils;
 
 /** Integration test for {@link DataStreamToSpanner} Flex template. */
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(Parameterized.class)
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends SpannerTemplateITBase {
-  private static final int THREAD_POOL_SIZE = 20;
+  private static final int THREAD_POOL_SIZE = 16;
   private static final int BATCH_SIZE = 1000;
   private static final int MAX_RETRIES = 3;
-  private static final long RETRY_DELAY_MS = 1000; // Delay between retries
-
+  private static final long RETRY_DELAY_MS = 3000; // Delay between retries
   private static final Integer NUM_EVENTS = 1;
-  private static final Integer NUM_TABLES = 4974;
+  private static final Integer NUM_TABLES = 5000;
 
   private static final String ROW_ID = "row_id";
   private static final String NAME = "name";
@@ -176,78 +182,148 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   }
 
   private void createTables(List<String> tableNames) {
+    System.out.println("Running Create Tables: >>>>> " + tableNames.size());
+    List<CompletableFuture<Void>> futures = new LinkedList<>();
     for (int i = 0; i < tableNames.size(); i += BATCH_SIZE) {
       int endIndex = Math.min(i + BATCH_SIZE, tableNames.size());
       List<String> batch = tableNames.subList(i, endIndex);
-      createCloudSqlTables(batch);
-      createSpannerTables(batch);
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-  }
-
-  private void createCloudSqlTables(List<String> tableNames) {
-    List<CompletableFuture<Void>> futures = new ArrayList<>();
-    List<String> ddlStatements = new ArrayList<>();
-    for (String tableName : tableNames) {
-      ddlStatements.add(getJDBCSchema(tableName));
+      createSpannerTables(batch, futures);
     }
     futures.add(
-        CompletableFuture.runAsync(
-            () -> {
-              int retries = 0;
-              while (retries < MAX_RETRIES) {
-                try {
-                  cloudSqlResourceManager.runSQLUpdate(String.join("; ", ddlStatements));
-                  System.out.printf("Successfully created Cloud SQL table: %s", tableNames);
-                  break;
-                } catch (Exception e) {
-                  retries++;
-                  if (retries == MAX_RETRIES) {
-                    System.out.printf(
-                        "Failed to create Cloud SQL table after %s retries: %s :: %s",
-                        MAX_RETRIES, tableNames, e);
-                    throw new RuntimeException(
-                        "Failed to create Cloud SQL table: " + tableNames, e);
-                  }
-                  try {
-                    Thread.sleep(RETRY_DELAY_MS);
-                  } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                  }
-                }
-              }
-            },
-            EXECUTOR_SERVICE));
+        CompletableFuture.runAsync(() -> createCloudSqlTables(tableNames), EXECUTOR_SERVICE));
     try {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
     } catch (Exception e) {
-      System.out.printf("Timeout or error while creating Cloud SQL tables %s", e);
+      System.out.printf("Timeout or error while creating tables %s", e);
+      throw new RuntimeException("Failed to create tables", e);
+    }
+  }
+
+  private void execute(String statement) throws SQLException {
+    String jdbcUrl = cloudSqlResourceManager.getUri();
+    Connection connection =
+        DriverManager.getConnection(
+            jdbcUrl, cloudSqlResourceManager.getUsername(), cloudSqlResourceManager.getPassword());
+    Statement statement1 = connection.createStatement();
+    statement1.execute(statement);
+    statement1.close();
+    connection.close();
+  }
+
+  private void createCloudSqlTables(List<String> tableNames) {
+    System.out.println("Running createCloudSqlTables for table size: " + tableNames.size());
+    List<CompletableFuture<Void>> futures =
+        tableNames.stream()
+            .map(
+                tableName ->
+                    CompletableFuture.runAsync(
+                        () -> createCloudSqlTableWithRetries(tableName), EXECUTOR_SERVICE))
+            .toList();
+
+    try {
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
+    } catch (Exception e) {
+      System.err.printf("Timeout or error while creating Cloud SQL tables: %s%n", e);
       throw new RuntimeException("Failed to create Cloud SQL tables", e);
     }
   }
 
-  private void createSpannerTables(List<String> tableNames) {
-    List<CompletableFuture<Void>> futures = new ArrayList<>();
-    List<String> ddlStatements = new ArrayList<>();
+  private void createCloudSqlTableWithRetries(String tableName) {
+    System.out.println("Processing table: " + tableName);
+    int retries = 0;
+    while (retries < MAX_RETRIES) {
+      try {
+        System.out.printf("Creating Cloud SQL table: %s%n", tableName);
+        execute(getJDBCSchema(tableName));
+        System.out.printf("Successfully created Cloud SQL table: %s%n", tableName);
+        return;
+      } catch (Exception e) {
+        retries++;
+        if (retries == MAX_RETRIES) {
+          System.err.printf(
+              "Failed to create Cloud SQL table after %d retries: %s :: %s%n",
+              MAX_RETRIES, tableName, e);
+          throw new RuntimeException("Failed to create Cloud SQL table: " + tableName, e);
+        }
+        try {
+          Thread.sleep(RETRY_DELAY_MS);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
+  }
 
+  private boolean insertIntoCloudSqlTables(Map<String, List<Map<String, Object>>> batchedInserts) {
+    List<CompletableFuture<Void>> futures = new ArrayList<>();
+    batchedInserts
+        .keySet()
+        .forEach(
+            key -> {
+              futures.add(
+                  CompletableFuture.runAsync(
+                      () -> {
+                        int retries = 0;
+                        while (retries < MAX_RETRIES) {
+                          try {
+                            cloudSqlResourceManager.write(key, batchedInserts.get(key));
+                            System.out.println("Successfully inserted data into Cloud SQL tables.");
+                            break;
+                          } catch (Exception e) {
+                            System.out.println("Error on Creation " + e.getMessage());
+                            retries++;
+                            if (retries == MAX_RETRIES) {
+                              System.out.printf(
+                                  "Failed to insert data into Cloud SQL tables after %s retries: %s",
+                                  MAX_RETRIES, e);
+                              throw new RuntimeException(
+                                  "Failed to insert data into Cloud SQL tables", e);
+                            }
+                            try {
+                              Thread.sleep(RETRY_DELAY_MS);
+                            } catch (InterruptedException ie) {
+                              Thread.currentThread().interrupt();
+                            }
+                          }
+                        }
+                      },
+                      EXECUTOR_SERVICE));
+            });
+    try {
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
+    } catch (Exception e) {
+      System.out.printf(
+          "Timeout or error while inserting data into Cloud SQL tables %s", e.getMessage());
+      return false;
+    }
+    return true;
+  }
+
+  private void createSpannerTables(List<String> tableNames, List<CompletableFuture<Void>> futures) {
+    System.out.println(
+        "Running createSpannerTables Tables: >>>>> for the size " + tableNames.size());
+    List<String> ddlStatements = new ArrayList<>();
     for (String tableName : tableNames) {
       ddlStatements.add(generateSpannerDDL(tableName));
     }
-
+    System.out.println(
+        "Generated ddlStatements for createSpannerTables Tables: >>>>> for the size "
+            + ddlStatements.size());
     futures.add(
         CompletableFuture.runAsync(
             () -> {
+              System.out.println("Running createSpannerTables runAsync");
               int retries = 0;
               while (retries < MAX_RETRIES) {
                 try {
+                  System.out.println(
+                      "Going to executes ddlStatements for createSpannerTables Tables: >>>>> for the size "
+                          + ddlStatements.size());
                   spannerResourceManager.executeDdlStatements(ddlStatements);
                   System.out.println("Successfully created Spanner tableNames: " + tableNames);
                   break;
                 } catch (Exception e) {
+                  System.out.println("Error on Creation " + e.getMessage());
                   log.error("e: ", e);
                   retries++;
                   if (retries == MAX_RETRIES) {
@@ -268,8 +344,8 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     try {
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
     } catch (Exception e) {
-      log.error("e: ", e);
-      throw new RuntimeException("Failed to create Spanner tables", e);
+      System.out.printf("Timeout or error while creating tables %s", e);
+      throw new RuntimeException("Failed to create tables", e);
     }
   }
 
@@ -281,7 +357,11 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
     // Create JDBC Resource manager
     cloudSqlResourceManager = CloudMySQLResourceManager.builder(testName).build();
-
+    System.out.println(cloudSqlResourceManager.getHost());
+    System.out.println(cloudSqlResourceManager.getUsername());
+    System.out.println(cloudSqlResourceManager.getDatabaseName());
+    System.out.println(cloudSqlResourceManager.getPort());
+    System.out.println(cloudSqlResourceManager.getPassword());
     // Create Spanner Resource Manager
     SpannerResourceManager.Builder spannerResourceManagerBuilder =
         SpannerResourceManager.builder(testName, PROJECT, REGION, spannerDialect)
@@ -533,12 +613,33 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
       @Override
       protected CheckResult check() {
         // First, check that correct number of rows were deleted.
-        for (String tableName : tableNames) {
-          long totalRows = spannerResourceManager.getRowCount(tableName);
-          long maxRows = cdcEvents.get(tableName).size();
-          if (totalRows > maxRows) {
-            return new CheckResult(
-                false, String.format("Expected up to %d rows but found %d", maxRows, totalRows));
+        List<CompletableFuture<CheckResult>> futures =
+            tableNames.stream()
+                .map(
+                    tableName ->
+                        CompletableFuture.supplyAsync(
+                            () -> {
+                              long totalRows = spannerResourceManager.getRowCount(tableName);
+                              long maxRows =
+                                  cdcEvents.getOrDefault(tableName, Collections.emptyList()).size();
+                              if (totalRows > maxRows) {
+                                return new CheckResult(
+                                    false,
+                                    String.format(
+                                        "Expected up to %d rows but found %d in table %s",
+                                        maxRows, totalRows, tableName));
+                              }
+                              return new CheckResult(
+                                  true, "Table " + tableName + " row count is valid.");
+                            },
+                            EXECUTOR_SERVICE))
+                .toList();
+
+        List<CheckResult> results = futures.stream().map(CompletableFuture::join).toList();
+
+        for (CheckResult result : results) {
+          if (!result.isSuccess()) {
+            return result;
           }
         }
 
@@ -556,11 +657,19 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   /** Helper function for checking the rows of the destination Spanner tables. */
   private void checkSpannerTables(
       List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
-    tableNames.forEach(
-        tableName ->
-            SpannerAsserts.assertThatStructs(
-                    spannerResourceManager.readTableRecords(tableName, COLUMNS))
-                .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName)));
+    List<CompletableFuture<Void>> futures =
+        tableNames.stream()
+            .map(
+                tableName ->
+                    CompletableFuture.runAsync(
+                        () -> {
+                          SpannerAsserts.assertThatStructs(
+                                  spannerResourceManager.readTableRecords(tableName, COLUMNS))
+                              .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName));
+                        },
+                        EXECUTOR_SERVICE))
+            .toList();
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
   }
 
   /**
@@ -572,17 +681,30 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   private ConditionCheck writeJdbcData(
       List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
     return new ConditionCheck() {
+      private boolean success = true;
+      private final List<String> messages = new ArrayList<>();
+
       @Override
       protected String getDescription() {
         return "Send initial JDBC events.";
       }
 
-      @Override
-      protected CheckResult check() {
-        boolean success = true;
-        List<String> messages = new ArrayList<>();
-        for (String tableName : tableNames) {
+      private void insertIntoTables() {
+        for (int i = 0; i < tableNames.size(); i += BATCH_SIZE) {
+          int endIndex = Math.min(i + BATCH_SIZE, tableNames.size());
+          List<String> batch = tableNames.subList(i, endIndex);
+          insertIntoCloudTables(batch);
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        }
+      }
 
+      private void insertIntoCloudTables(List<String> tableNames) {
+        Map<String, List<Map<String, Object>>> batchedInserts = new HashMap<>();
+        for (String tableName : tableNames) {
           List<Map<String, Object>> rows = new ArrayList<>();
           for (int i = 0; i < NUM_EVENTS; i++) {
             Map<String, Object> values = new HashMap<>();
@@ -594,9 +716,49 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
             rows.add(values);
           }
           cdcEvents.put(tableName, rows);
-          success &= cloudSqlResourceManager.write(tableName, rows);
+          batchedInserts.put(tableName, rows);
           messages.add(String.format("%d rows to %s", rows.size(), tableName));
         }
+
+        List<String> batchStatements = new ArrayList<>();
+        batchedInserts
+            .keySet()
+            .forEach(
+                key -> {
+                  for (Map<String, Object> row : batchedInserts.get(key)) {
+                    List<String> columns = new ArrayList<>(row.keySet());
+                    StringBuilder sql =
+                        new StringBuilder("INSERT INTO ")
+                            .append(key)
+                            .append("(")
+                            .append(String.join(",", columns))
+                            .append(") VALUES (");
+
+                    List<String> valueList = new ArrayList<>();
+
+                    for (String colName : columns) {
+                      Object value = row.get(colName);
+                      if (value == null) {
+                        valueList.add("NULL");
+                      } else if (!NumberUtils.isCreatable(value.toString())
+                          && !"true".equalsIgnoreCase(value.toString())
+                          && !"false".equalsIgnoreCase(value.toString())
+                          && !value.toString().startsWith("ARRAY[")) {
+                        valueList.add("'" + value + "'");
+                      } else {
+                        valueList.add(String.valueOf(value));
+                      }
+                    }
+                    sql.append(String.join(",", valueList)).append(")");
+                    batchStatements.add(sql.toString());
+                  }
+                });
+        success &= insertIntoCloudSqlTables(batchedInserts);
+      }
+
+      @Override
+      protected CheckResult check() {
+        insertIntoTables();
         return new CheckResult(success, "Sent " + String.join(", ", messages) + ".");
       }
     };

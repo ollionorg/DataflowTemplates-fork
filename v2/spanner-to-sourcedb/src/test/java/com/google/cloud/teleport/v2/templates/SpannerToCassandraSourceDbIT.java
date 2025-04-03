@@ -1035,7 +1035,10 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             () ->
                 assertThat(row.getBytesUnsafe("bytes_column"))
                     .isEqualTo(ByteBuffer.wrap(ByteArray.copyFrom("Hello world").toByteArray())),
-            () -> assertThat(row.getString("inet_column")).isEqualTo("192.168.1.10"),
+            () -> {
+              InetAddress inetAddress = row.getInetAddress("inet_column");
+              assertThat(inetAddress.getHostAddress()).isEqualTo("192.168.1.10");
+            },
             () ->
                 assertThat(row.getCqlDuration("duration_column"))
                     .isEqualTo(CqlDuration.from("P1DT2H3M4S")),
@@ -1560,7 +1563,10 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () ->
             assertThat(row.getBigInteger("varint_column"))
                 .isEqualTo(java.math.BigInteger.valueOf(123456789L)),
-        () -> assertThat(row.getString("inet_column")).isEqualTo("192.168.1.101"),
+        () -> {
+          InetAddress inetAddress = row.getInetAddress("inet_column");
+          assertThat(inetAddress.getHostAddress()).isEqualTo("192.168.1.101");
+        },
         () ->
             assertThat(row.getCqlDuration("duration_column"))
                 .isEqualTo(CqlDuration.from("PT5H10M")),

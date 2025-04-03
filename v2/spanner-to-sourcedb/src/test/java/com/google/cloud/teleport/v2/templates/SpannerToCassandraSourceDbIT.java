@@ -733,7 +733,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("inet_column")
             .to("192.168.1.10")
             .set("timeuuid_column")
-            .to("550e8400-e29b-41d4-a716-446655440000") // Assume this is a valid time-based UUID
+            .to("f47ac10b-58cc-11e1-b86c-0800200c9a66") // Assume this is a valid time-based UUID
             .set("duration_column")
             .to("P1DT2H3M4S") // ISO-8601 duration format (1 day, 2 hours, 3 minutes, 4 seconds)
             .set("uuid_column")
@@ -1041,7 +1041,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                     .isEqualTo(CqlDuration.from("P1DT2H3M4S")),
             () ->
                 assertThat(row.getUuid("timeuuid_column"))
-                    .isEqualTo(UUID.fromString("550e8400-e29b-41d4-a716-446655440000")),
+                    .isEqualTo(UUID.fromString("f47ac10b-58cc-11e1-b86c-0800200c9a66")),
             () ->
                 assertThat(row.getUuid("uuid_column"))
                     .isEqualTo(UUID.fromString("123e4567-e89b-12d3-a456-426614174000")),
@@ -1197,7 +1197,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("inet_column")
             .to("192.168.1.100") // Example IPv4 address
             .set("timeuuid_column")
-            .to("550e8400-e29b-41d4-a716-446655440000") // Example UUID
+            .to("f47ac10b-58cc-11e1-b86c-0800200c9a66") // Example UUID
             .set("duration_column")
             .to("P2D") // Example ISO-8601 duration
             .set("uuid_column")
@@ -1297,7 +1297,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("inet_column")
             .to("192.168.1.101") // Different example IPv4 address
             .set("timeuuid_column")
-            .to("f47ac10b-58cc-4372-a567-0e02b2c3d479") // Another Example UUID
+            .to("550e8400-e29b-41d4-a716-446655440000") // Another Example UUID
             .set("duration_column")
             .to("PT5H10M") // Another example ISO-8601 duration
             .set("uuid_column")
@@ -1399,7 +1399,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("inet_column")
             .to("10.0.0.1") // Updated example IPv4 address
             .set("timeuuid_column")
-            .to("ff33811b-0a59-4c9a-885c-d865fc31b3a4") // Updated Example UUID
+            .to("d9428888-122b-11e1-b85c-61cd3cbb3210") // Updated Example UUID
             .set("duration_column")
             .to("P4DT12H30M5S") // Updated example ISO-8601 duration
             .set("uuid_column")
@@ -1566,7 +1566,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(CqlDuration.from("PT5H10M")),
         () ->
             assertThat(row.getUuid("timeuuid_column"))
-                .isEqualTo(UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479")),
+                .isEqualTo(UUID.fromString("550e8400-e29b-41d4-a716-446655440000")),
         () ->
             assertThat(row.getUuid("uuid_column"))
                 .isEqualTo(UUID.fromString("0e3f2a1c-dc40-4e73-9e0d-2d7d0ef7be7f")),
@@ -2226,56 +2226,40 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
       String varcharColumn = row.getString("varchar_column");
       if (Objects.equals(varcharColumn, "MaxBoundaryVarchar")) {
         assertAll(
-            () -> assertThat(row.getByte("tinyint_column")).isNull(),
-            () -> assertThat(row.getShort("smallint_column")).isNull(),
-            () -> assertThat(row.getInt("int_column")).isNull(),
-            () -> assertThat(row.getLong("bigint_column")).isNull(),
-            () -> assertThat(row.getFloat("float_column")).isNull(),
-            () -> assertThat(row.getDouble("double_column")).isNull(),
-            () -> assertThat(row.getBigDecimal("decimal_column")).isNull(),
-            () -> assertThat(row.getBoolean("bool_column")).isNull(),
-            () -> assertThat(row.getString("ascii_column")).isNull(),
-            () -> assertThat(row.getString("text_column")).isNull(),
-            () -> assertThat(row.getBytesUnsafe("bytes_column")).isNull(),
-            () -> assertThat(row.getLocalDate("date_column")).isNull(),
-            () -> assertThat(row.getLocalTime("time_column")).isNull(),
-            () -> assertThat(row.getInstant("timestamp_column")).isNull(),
+            () -> assertThat(row.isNull("tinyint_column")).isTrue(),
+            () -> assertThat(row.isNull("smallint_column")).isTrue(),
+            () -> assertThat(row.isNull("int_column")).isTrue(),
+            () -> assertThat(row.isNull("bigint_column")).isTrue(),
+            () -> assertThat(row.isNull("float_column")).isTrue(),
+            () -> assertThat(row.isNull("double_column")).isTrue(),
+            () -> assertThat(row.isNull("decimal_column")).isTrue(),
+            () -> assertThat(row.isNull("bool_column")).isTrue(),
+            () -> assertThat(row.isNull("ascii_column")).isTrue(),
+            () -> assertThat(row.isNull("text_column")).isTrue(),
+            () -> assertThat(row.isNull("bytes_column")).isTrue(),
+            () -> assertThat(row.isNull("date_column")).isTrue(),
+            () -> assertThat(row.isNull("time_column")).isTrue(),
+            () -> assertThat(row.isNull("timestamp_column")).isTrue(),
             // Maps
-            () -> assertThat(row.getMap("map_bool_column", Boolean.class, Boolean.class)).isNull(),
-            () -> assertThat(row.getMap("map_float_column", Float.class, Float.class)).isNull(),
-            () -> assertThat(row.getMap("map_double_column", Double.class, Double.class)).isNull(),
-            () -> assertThat(row.getMap("map_tinyint_column", Byte.class, Byte.class)).isNull(),
-            () -> assertThat(row.getMap("map_smallint_column", Short.class, Short.class)).isNull(),
-            () -> assertThat(row.getMap("map_int_column", Integer.class, Integer.class)).isNull(),
-            () -> assertThat(row.getMap("map_bigint_column", Long.class, Long.class)).isNull(),
-            () ->
-                assertThat(row.getMap("map_varint_column", BigInteger.class, BigInteger.class))
-                    .isNull(),
-            () ->
-                assertThat(row.getMap("map_decimal_column", BigDecimal.class, BigDecimal.class))
-                    .isNull(),
-            () -> assertThat(row.getMap("map_ascii_column", String.class, String.class)).isNull(),
-            () -> assertThat(row.getMap("map_varchar_column", String.class, String.class)).isNull(),
-            () ->
-                assertThat(row.getMap("map_blob_column", ByteBuffer.class, ByteBuffer.class))
-                    .isNull(),
-            () ->
-                assertThat(row.getMap("map_date_column", LocalDate.class, LocalDate.class))
-                    .isNull(),
-            () ->
-                assertThat(row.getMap("map_time_column", LocalTime.class, LocalTime.class))
-                    .isNull(),
-            () ->
-                assertThat(row.getMap("map_timestamp_column", Instant.class, Instant.class))
-                    .isNull(),
-            () ->
-                assertThat(row.getMap("map_duration_column", String.class, CqlDuration.class))
-                    .isNull(),
-            () -> assertThat(row.getMap("map_uuid_column", UUID.class, UUID.class)).isNull(),
-            () -> assertThat(row.getMap("map_timeuuid_column", UUID.class, UUID.class)).isNull(),
-            () ->
-                assertThat(row.getMap("map_inet_column", InetAddress.class, InetAddress.class))
-                    .isNull());
+            () -> assertThat(row.isNull("map_bool_column")).isTrue(),
+            () -> assertThat(row.isNull("map_float_column")).isTrue(),
+            () -> assertThat(row.isNull("map_double_column")).isTrue(),
+            () -> assertThat(row.isNull("map_tinyint_column")).isTrue(),
+            () -> assertThat(row.isNull("map_smallint_column")).isTrue(),
+            () -> assertThat(row.isNull("map_int_column")).isTrue(),
+            () -> assertThat(row.isNull("map_bigint_column")).isTrue(),
+            () -> assertThat(row.isNull("map_varint_column")).isTrue(),
+            () -> assertThat(row.isNull("map_decimal_column")).isTrue(),
+            () -> assertThat(row.isNull("map_ascii_column")).isTrue(),
+            () -> assertThat(row.isNull("map_varchar_column")).isTrue(),
+            () -> assertThat(row.isNull("map_blob_column")).isTrue(),
+            () -> assertThat(row.isNull("map_date_column")).isTrue(),
+            () -> assertThat(row.isNull("map_time_column")).isTrue(),
+            () -> assertThat(row.isNull("map_timestamp_column")).isTrue(),
+            () -> assertThat(row.isNull("map_duration_column")).isTrue(),
+            () -> assertThat(row.isNull("map_uuid_column")).isTrue(),
+            () -> assertThat(row.isNull("map_timeuuid_column")).isTrue(),
+            () -> assertThat(row.isNull("map_inet_column")).isTrue());
       }
     }
   }

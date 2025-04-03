@@ -104,7 +104,7 @@ CREATE TABLE AllDatatypeColumns (
     timeuuid_column timeuuid,
     duration_column duration,
     uuid_column uuid,
-    ascii_column ascii
+    ascii_column ascii,
     list_text_column_from_array list<text>,
     set_text_column_from_array set<text>
 );

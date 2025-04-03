@@ -29,6 +29,10 @@ import com.google.gson.GsonBuilder;
 import com.google.pubsub.v1.SubscriptionName;
 import com.google.pubsub.v1.TopicName;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -83,7 +87,6 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   private static final int BATCH_SIZE = 1000;
   private static final int MAX_RETRIES = 3;
   private static final long RETRY_DELAY_MS = 1000; // Delay between retries
-
   private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 5000;
 
@@ -196,6 +199,17 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     }
   }
 
+  private void execute(String statement) throws SQLException {
+    String jdbcUrl = cloudSqlResourceManager.getUri();
+    Connection connection =
+        DriverManager.getConnection(
+            jdbcUrl, cloudSqlResourceManager.getUsername(), cloudSqlResourceManager.getPassword());
+    Statement statement1 = connection.createStatement();
+    statement1.execute(statement);
+    statement1.close();
+    connection.close();
+  }
+
   private void createCloudSqlTables(List<String> tableNames) {
     System.out.println("Running createCloudSqlTables for table size: " + tableNames.size());
     List<CompletableFuture<Void>> futures =
@@ -220,7 +234,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
     while (retries < MAX_RETRIES) {
       try {
         System.out.printf("Creating Cloud SQL table: %s%n", tableName);
-        cloudSqlResourceManager.runSQLUpdate(getJDBCSchema(tableName));
+        execute(getJDBCSchema(tableName));
         System.out.printf("Successfully created Cloud SQL table: %s%n", tableName);
         return;
       } catch (Exception e) {

@@ -232,7 +232,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
             },
             EXECUTOR_SERVICE));
     try {
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(1, TimeUnit.MINUTES);
     } catch (Exception e) {
       System.out.printf("Timeout or error while creating Cloud SQL tables %s", e);
       throw new RuntimeException("Failed to create Cloud SQL tables", e);
@@ -320,7 +320,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
             },
             EXECUTOR_SERVICE));
     try {
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(30, TimeUnit.MINUTES);
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(5, TimeUnit.MINUTES);
     } catch (Exception e) {
       log.error("e: ", e);
       throw new RuntimeException("Failed to create Spanner tables", e);

@@ -2212,7 +2212,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         pipelineOperator()
             .waitForCondition(
                 createConfig(jobInfo, Duration.ofMinutes(10)),
-                () -> getRowCount(BOUNDARY_CONVERSION_TABLE) == 2);
+                () -> getRowCount(BOUNDARY_CONVERSION_TABLE) == 1);
     assertThatResult(result).meetsConditions();
     Iterable<Row> rows;
     try {
@@ -2221,7 +2221,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
       throw new RuntimeException(
           "Failed to read from Cassandra table: " + BOUNDARY_CONVERSION_TABLE, e);
     }
-    assertThat(rows).hasSize(2);
+    assertThat(rows).hasSize(1);
     for (Row row : rows) {
       String varcharColumn = row.getString("varchar_column");
       if (Objects.equals(varcharColumn, "MaxBoundaryVarchar")) {

@@ -543,14 +543,20 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
   @Test
   public void validateBoundaryAndMapDataConversionsBetweenSpannerAndCassandra()
       throws InterruptedException, IOException, MultipleFailureException {
+    // Test Insert
     assertThatPipeline(jobInfo).isRunning();
     insertMaxBoundaryValuesIntoSpanner();
     insertMinBoundaryValuesIntoSpanner();
     assertCassandraBoundaryData();
-    updateBoundaryValuesInSpanner();
-    assertCassandraAfterUpdate();
+
+    // Test Delete
     deleteBoundaryValuesInSpanner();
     assertCassandraAfterDelete();
+
+    // Test Update
+    insertMaxBoundaryValuesIntoSpanner();
+    updateBoundaryValuesInSpanner();
+    assertCassandraAfterUpdate();
   }
 
   /**
@@ -2120,7 +2126,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
   private void updateBoundaryValuesInSpanner() {
     // Update max boundary record to null (use mutation strategy that doesn't affect primary key)
     Mutation updateMaxToNull =
-        Mutation.newUpdateBuilder(BOUNDARY_CONVERSION_TABLE)
+        Mutation.newInsertOrUpdateBuilder(BOUNDARY_CONVERSION_TABLE)
             .set("varchar_column")
             .to("MaxBoundaryVarchar")
             .set("tinyint_column")

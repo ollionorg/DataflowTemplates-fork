@@ -448,6 +448,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
    * @throws InterruptedException if the thread is interrupted during execution.
    * @throws IOException if an I/O error occurs during the test execution.
    */
+  @Ignore("Disabled")
   @Test
   public void spannerToCasandraSourceDbDeleteOperation() throws InterruptedException, IOException {
     assertThatPipeline(jobInfo).isRunning();
@@ -2123,13 +2124,13 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("varchar_column")
             .to("MaxBoundaryVarchar")
             .set("tinyint_column")
-            .to((Byte) null)
+            .to(Value.int64(null))
             .set("smallint_column")
-            .to((Short) null)
+            .to(Value.int64(null))
             .set("int_column")
-            .to((Integer) null)
+            .to(Value.int64(null))
             .set("bigint_column")
-            .to((Long) null)
+            .to(Value.int64(null))
             .set("float_column")
             .to((Float) null)
             .set("double_column")

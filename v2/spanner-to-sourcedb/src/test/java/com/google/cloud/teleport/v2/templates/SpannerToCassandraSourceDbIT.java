@@ -39,7 +39,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -1208,7 +1207,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("ascii_column")
             .to("SampleASCII")
             .set("bytes_column")
-            .to(Base64.getEncoder().encodeToString("sampleBytes".getBytes(StandardCharsets.UTF_8)))
+            .to("c2FtcGxlQnl0ZXM=")
             .build();
 
     spannerResourceManager.write(m);
@@ -1308,9 +1307,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("ascii_column")
             .to("SampleASCII2")
             .set("bytes_column")
-            .to(
-                Base64.getEncoder()
-                    .encodeToString("anotherSampleBytes".getBytes(StandardCharsets.UTF_8)))
+            .to("YW5vdGhlclNhbXBsZUJ5dGVz")
             .build();
 
     spannerResourceManager.write(m);
@@ -1410,9 +1407,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("ascii_column")
             .to("UpdatedSampleASCII")
             .set("bytes_column")
-            .to(
-                Base64.getEncoder()
-                    .encodeToString("updatedSampleBytes".getBytes(StandardCharsets.UTF_8)))
+            .to("dXBkYXRlZFNhbXBsZUJ5dGVz")
             .build();
 
     spannerResourceManager.write(m);

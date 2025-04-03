@@ -193,11 +193,15 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   }
 
   private void createCloudSqlTables(List<String> tableNames) {
+    System.out.println(
+        "Running createCloudSqlTables Tables: >>>>> for the size " + tableNames.size());
     List<CompletableFuture<Void>> futures = new ArrayList<>();
     List<String> ddlStatements = new ArrayList<>();
     for (String tableName : tableNames) {
       ddlStatements.add(getJDBCSchema(tableName));
     }
+    System.out.println(
+        "Generated createCloudSqlTables ddlStatements: >>>>> for the size " + ddlStatements.size());
     futures.add(
         CompletableFuture.runAsync(
             () -> {
@@ -274,19 +278,26 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   }
 
   private void createSpannerTables(List<String> tableNames) {
+    System.out.println(
+        "Running createSpannerTables Tables: >>>>> for the size " + tableNames.size());
     List<CompletableFuture<Void>> futures = new ArrayList<>();
     List<String> ddlStatements = new ArrayList<>();
 
     for (String tableName : tableNames) {
       ddlStatements.add(generateSpannerDDL(tableName));
     }
-
+    System.out.println(
+        "Generated ddlStatements for createSpannerTables Tables: >>>>> for the size "
+            + ddlStatements.size());
     futures.add(
         CompletableFuture.runAsync(
             () -> {
               int retries = 0;
               while (retries < MAX_RETRIES) {
                 try {
+                  System.out.println(
+                      "Going to executes ddlStatements for createSpannerTables Tables: >>>>> for the size "
+                          + ddlStatements.size());
                   spannerResourceManager.executeDdlStatements(ddlStatements);
                   System.out.println("Successfully created Spanner tableNames: " + tableNames);
                   break;

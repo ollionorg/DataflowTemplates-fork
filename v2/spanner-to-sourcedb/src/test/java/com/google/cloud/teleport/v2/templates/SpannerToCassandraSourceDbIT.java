@@ -1300,7 +1300,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("inet_column")
             .to("192.168.1.101") // Different example IPv4 address
             .set("timeuuid_column")
-            .to("550e8400-e29b-41d4-a716-446655440000") // Another Example UUID
+            .to("f2c74f2e-1c4a-11ec-9621-0242ac130002") // Another Example UUID
             .set("duration_column")
             .to("PT5H10M") // Another example ISO-8601 duration
             .set("uuid_column")
@@ -1402,7 +1402,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("inet_column")
             .to("10.0.0.1") // Updated example IPv4 address
             .set("timeuuid_column")
-            .to("d9428888-122b-11e1-b85c-61cd3cbb3210") // Updated Example UUID
+            .to("e2f94108-1c4a-11ec-8b57-0242ac130003") // Updated Example UUID
             .set("duration_column")
             .to("P4DT12H30M5S") // Updated example ISO-8601 duration
             .set("uuid_column")
@@ -1572,7 +1572,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(CqlDuration.from("PT5H10M")),
         () ->
             assertThat(row.getUuid("timeuuid_column"))
-                .isEqualTo(UUID.fromString("550e8400-e29b-41d4-a716-446655440000")),
+                .isEqualTo(UUID.fromString("f2c74f2e-1c4a-11ec-9621-0242ac130002")),
         () ->
             assertThat(row.getUuid("uuid_column"))
                 .isEqualTo(UUID.fromString("0e3f2a1c-dc40-4e73-9e0d-2d7d0ef7be7f")),

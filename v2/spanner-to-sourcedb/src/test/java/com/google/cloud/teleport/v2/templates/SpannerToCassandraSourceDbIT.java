@@ -2144,7 +2144,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("text_column")
             .to((String) null)
             .set("bytes_column")
-            .to((ByteBuffer) null)
+            .to(Value.bytes(null))
             .set("date_column")
             .to((Date) null)
             .set("time_column")

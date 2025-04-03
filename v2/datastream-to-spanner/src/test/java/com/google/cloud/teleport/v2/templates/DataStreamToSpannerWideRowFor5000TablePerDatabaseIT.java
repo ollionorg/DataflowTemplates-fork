@@ -84,9 +84,9 @@ import org.testcontainers.shaded.org.apache.commons.lang3.math.NumberUtils;
 @RunWith(Parameterized.class)
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends SpannerTemplateITBase {
   private static final int THREAD_POOL_SIZE = 16;
-  private static final int BATCH_SIZE = 1000;
+  private static final int BATCH_SIZE = 5000;
   private static final int MAX_RETRIES = 3;
-  private static final long RETRY_DELAY_MS = 1000; // Delay between retries
+  private static final long RETRY_DELAY_MS = 3000; // Delay between retries
   private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 5000;
 
@@ -149,21 +149,21 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
         Function.identity());
   }
 
-  //  @Test
-  //  public void testDataStreamMySqlToSpannerStreamingEngine() throws IOException {
-  //    simpleMaxMySqlTablesPerDatabaseToSpannerTest(
-  //        DatastreamResourceManager.DestinationOutputFormat.AVRO_FILE_FORMAT,
-  //        Dialect.GOOGLE_STANDARD_SQL,
-  //        config -> config.addEnvironment("enableStreamingEngine", true));
-  //  }
-  //
-  //  @Test
-  //  public void testDataStreamMySqlToSpannerJson() throws IOException {
-  //    simpleMaxMySqlTablesPerDatabaseToSpannerTest(
-  //        DatastreamResourceManager.DestinationOutputFormat.JSON_FILE_FORMAT,
-  //        Dialect.GOOGLE_STANDARD_SQL,
-  //        Function.identity());
-  //  }
+  @Test
+  public void testDataStreamMySqlToSpannerStreamingEngine() throws IOException {
+    simpleMaxMySqlTablesPerDatabaseToSpannerTest(
+        DatastreamResourceManager.DestinationOutputFormat.AVRO_FILE_FORMAT,
+        Dialect.GOOGLE_STANDARD_SQL,
+        config -> config.addEnvironment("enableStreamingEngine", true));
+  }
+
+  @Test
+  public void testDataStreamMySqlToSpannerJson() throws IOException {
+    simpleMaxMySqlTablesPerDatabaseToSpannerTest(
+        DatastreamResourceManager.DestinationOutputFormat.JSON_FILE_FORMAT,
+        Dialect.GOOGLE_STANDARD_SQL,
+        Function.identity());
+  }
 
   private void simpleMaxMySqlTablesPerDatabaseToSpannerTest(
       DatastreamResourceManager.DestinationOutputFormat fileFormat,
@@ -357,11 +357,6 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
     // Create JDBC Resource manager
     cloudSqlResourceManager = CloudMySQLResourceManager.builder(testName).build();
-    System.out.println(cloudSqlResourceManager.getHost());
-    System.out.println(cloudSqlResourceManager.getUsername());
-    System.out.println(cloudSqlResourceManager.getDatabaseName());
-    System.out.println(cloudSqlResourceManager.getPort());
-    System.out.println(cloudSqlResourceManager.getPassword());
     // Create Spanner Resource Manager
     SpannerResourceManager.Builder spannerResourceManagerBuilder =
         SpannerResourceManager.builder(testName, PROJECT, REGION, spannerDialect)

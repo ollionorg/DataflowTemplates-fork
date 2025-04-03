@@ -89,7 +89,7 @@ public class DataStreamToSpannerLTBase extends TemplateLoadTestBase {
     spannerResourceManager =
         SpannerResourceManager.builder(testName, project, region)
             .maybeUseStaticInstance()
-            .setNodeCount(10)
+            .setNodeCount(1)
             .setMonitoringClient(monitoringClient)
             .build();
     pubsubResourceManager =
@@ -110,7 +110,7 @@ public class DataStreamToSpannerLTBase extends TemplateLoadTestBase {
       shadowTableSpannerResourceManager =
           SpannerResourceManager.builder("shadow_" + testName, project, region)
               .maybeUseStaticInstance()
-              .setNodeCount(10)
+              .setNodeCount(1)
               .setMonitoringClient(monitoringClient)
               .build();
       shadowTableSpannerResourceManager.ensureUsableAndCreateResources();

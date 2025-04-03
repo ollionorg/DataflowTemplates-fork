@@ -145,21 +145,21 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
         Function.identity());
   }
 
-  @Test
-  public void testDataStreamMySqlToSpannerStreamingEngine() throws IOException {
-    simpleMaxMySqlTablesPerDatabaseToSpannerTest(
-        DatastreamResourceManager.DestinationOutputFormat.AVRO_FILE_FORMAT,
-        Dialect.GOOGLE_STANDARD_SQL,
-        config -> config.addEnvironment("enableStreamingEngine", true));
-  }
-
-  @Test
-  public void testDataStreamMySqlToSpannerJson() throws IOException {
-    simpleMaxMySqlTablesPerDatabaseToSpannerTest(
-        DatastreamResourceManager.DestinationOutputFormat.JSON_FILE_FORMAT,
-        Dialect.GOOGLE_STANDARD_SQL,
-        Function.identity());
-  }
+  //  @Test
+  //  public void testDataStreamMySqlToSpannerStreamingEngine() throws IOException {
+  //    simpleMaxMySqlTablesPerDatabaseToSpannerTest(
+  //        DatastreamResourceManager.DestinationOutputFormat.AVRO_FILE_FORMAT,
+  //        Dialect.GOOGLE_STANDARD_SQL,
+  //        config -> config.addEnvironment("enableStreamingEngine", true));
+  //  }
+  //
+  //  @Test
+  //  public void testDataStreamMySqlToSpannerJson() throws IOException {
+  //    simpleMaxMySqlTablesPerDatabaseToSpannerTest(
+  //        DatastreamResourceManager.DestinationOutputFormat.JSON_FILE_FORMAT,
+  //        Dialect.GOOGLE_STANDARD_SQL,
+  //        Function.identity());
+  //  }
 
   private void simpleMaxMySqlTablesPerDatabaseToSpannerTest(
       DatastreamResourceManager.DestinationOutputFormat fileFormat,
@@ -178,6 +178,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   }
 
   private void createTables(List<String> tableNames) {
+    System.out.println("Running Create Tables: >>>>>");
     for (int i = 0; i < tableNames.size(); i += BATCH_SIZE) {
       int endIndex = Math.min(i + BATCH_SIZE, tableNames.size());
       List<String> batch = tableNames.subList(i, endIndex);

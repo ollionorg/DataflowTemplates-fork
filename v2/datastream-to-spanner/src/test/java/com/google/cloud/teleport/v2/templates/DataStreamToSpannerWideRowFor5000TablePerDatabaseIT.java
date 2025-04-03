@@ -48,6 +48,7 @@ import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.utils.PipelineUtils;
+import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.conditions.ChainedConditionCheck;
 import org.apache.beam.it.conditions.ConditionCheck;
 import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
@@ -78,7 +79,7 @@ import org.testcontainers.shaded.org.apache.commons.lang3.math.NumberUtils;
 @RunWith(Parameterized.class)
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends SpannerTemplateITBase {
   private static final int THREAD_POOL_SIZE = 20;
-  private static final int BATCH_SIZE = 1000;
+  private static final int BATCH_SIZE = 100;
   private static final int MAX_RETRIES = 3;
   private static final long RETRY_DELAY_MS = 1000; // Delay between retries
 
@@ -127,13 +128,13 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
   @After
   public void cleanUp() {
-    //    EXECUTOR_SERVICE.shutdown();
-    //    ResourceManagerUtils.cleanResources(
-    //        cloudSqlResourceManager,
-    //        datastreamResourceManager,
-    //        spannerResourceManager,
-    //        pubsubResourceManager,
-    //        gcsResourceManager);
+    EXECUTOR_SERVICE.shutdown();
+    ResourceManagerUtils.cleanResources(
+        cloudSqlResourceManager,
+        datastreamResourceManager,
+        spannerResourceManager,
+        pubsubResourceManager,
+        gcsResourceManager);
   }
 
   @Test

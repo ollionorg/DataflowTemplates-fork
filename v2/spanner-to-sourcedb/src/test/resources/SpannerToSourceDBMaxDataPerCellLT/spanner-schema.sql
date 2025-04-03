@@ -1,0 +1,5 @@
+CREATE TABLE maxNonKeyCol (
+  id STRING(MAX) NOT NULL,
+  col1 STRING(MAX),
+  col2 STRING(MAX),
+) PRIMARY KEY (id);

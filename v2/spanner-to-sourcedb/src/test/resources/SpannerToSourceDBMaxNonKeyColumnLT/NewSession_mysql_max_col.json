@@ -1,0 +1,1228 @@
+{
+    "SessionName": "NewSession",
+    "EditorName": "",
+    "DatabaseType": "mysql",
+    "DatabaseName": "max_col",
+    "Dialect": "google_standard_sql",
+    "Notes": null,
+    "Tags": null,
+    "SpSchema": {
+        "t1": {
+            "Name": "maxNonKeyCol",
+            "ColIds": [
+                "c2",
+                "c3",
+                "c4",
+                "c5",
+                "c6",
+                "c7",
+                "c8",
+                "c9",
+                "c10",
+                "c11",
+                "c12",
+                "c13",
+                "c14",
+                "c15",
+                "c16",
+                "c17",
+                "c18",
+                "c19",
+                "c20",
+                "c21",
+                "c22"
+            ],
+            "ShardIdColumn": "",
+            "ColDefs": {
+                "c10": {
+                    "Name": "col8",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col8 mediumtext(16777215)",
+                    "Id": "c10",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c11": {
+                    "Name": "col9",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col9 mediumtext(16777215)",
+                    "Id": "c11",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c12": {
+                    "Name": "col10",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col10 mediumtext(16777215)",
+                    "Id": "c12",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c13": {
+                    "Name": "col11",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col11 mediumtext(16777215)",
+                    "Id": "c13",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c14": {
+                    "Name": "col12",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col12 mediumtext(16777215)",
+                    "Id": "c14",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c15": {
+                    "Name": "col13",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col13 mediumtext(16777215)",
+                    "Id": "c15",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c16": {
+                    "Name": "col14",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col14 mediumtext(16777215)",
+                    "Id": "c16",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c17": {
+                    "Name": "col15",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col15 mediumtext(16777215)",
+                    "Id": "c17",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c18": {
+                    "Name": "col16",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col16 mediumtext(16777215)",
+                    "Id": "c18",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c19": {
+                    "Name": "col17",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col17 mediumtext(16777215)",
+                    "Id": "c19",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c2": {
+                    "Name": "id",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 255,
+                        "IsArray": false
+                    },
+                    "NotNull": true,
+                    "Comment": "From: id varchar(255)",
+                    "Id": "c2",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c20": {
+                    "Name": "col18",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col18 mediumtext(16777215)",
+                    "Id": "c20",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c21": {
+                    "Name": "col19",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col19 mediumtext(16777215)",
+                    "Id": "c21",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c22": {
+                    "Name": "col20",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col20 mediumtext(16777215)",
+                    "Id": "c22",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c3": {
+                    "Name": "col1",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col1 mediumtext(16777215)",
+                    "Id": "c3",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c4": {
+                    "Name": "col2",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col2 mediumtext(16777215)",
+                    "Id": "c4",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c5": {
+                    "Name": "col3",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col3 mediumtext(16777215)",
+                    "Id": "c5",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c6": {
+                    "Name": "col4",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col4 mediumtext(16777215)",
+                    "Id": "c6",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c7": {
+                    "Name": "col5",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col5 mediumtext(16777215)",
+                    "Id": "c7",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c8": {
+                    "Name": "col6",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col6 mediumtext(16777215)",
+                    "Id": "c8",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c9": {
+                    "Name": "col7",
+                    "T": {
+                        "Name": "STRING",
+                        "Len": 9223372036854775807,
+                        "IsArray": false
+                    },
+                    "NotNull": false,
+                    "Comment": "From: col7 mediumtext(16777215)",
+                    "Id": "c9",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                }
+            },
+            "PrimaryKeys": [
+                {
+                    "ColId": "c2",
+                    "Desc": false,
+                    "Order": 1
+                }
+            ],
+            "ForeignKeys": null,
+            "Indexes": null,
+            "ParentTable": {
+                "Id": "",
+                "OnDelete": ""
+            },
+            "CheckConstraints": null,
+            "Comment": "Spanner schema for source table maxNonKeyCol",
+            "Id": "t1"
+        }
+    },
+    "SyntheticPKeys": {},
+    "SrcSchema": {
+        "t1": {
+            "Name": "maxNonKeyCol",
+            "Schema": "max_col",
+            "ColIds": [
+                "c2",
+                "c3",
+                "c4",
+                "c5",
+                "c6",
+                "c7",
+                "c8",
+                "c9",
+                "c10",
+                "c11",
+                "c12",
+                "c13",
+                "c14",
+                "c15",
+                "c16",
+                "c17",
+                "c18",
+                "c19",
+                "c20",
+                "c21",
+                "c22"
+            ],
+            "ColDefs": {
+                "c10": {
+                    "Name": "col8",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c10",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c11": {
+                    "Name": "col9",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c11",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c12": {
+                    "Name": "col10",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c12",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c13": {
+                    "Name": "col11",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c13",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c14": {
+                    "Name": "col12",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c14",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c15": {
+                    "Name": "col13",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c15",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c16": {
+                    "Name": "col14",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c16",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c17": {
+                    "Name": "col15",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c17",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c18": {
+                    "Name": "col16",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c18",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c19": {
+                    "Name": "col17",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c19",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c2": {
+                    "Name": "id",
+                    "Type": {
+                        "Name": "varchar",
+                        "Mods": [
+                            255
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": true,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c2",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c20": {
+                    "Name": "col18",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c20",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c21": {
+                    "Name": "col19",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c21",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c22": {
+                    "Name": "col20",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c22",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c3": {
+                    "Name": "col1",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c3",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c4": {
+                    "Name": "col2",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c4",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c5": {
+                    "Name": "col3",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c5",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c6": {
+                    "Name": "col4",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c6",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c7": {
+                    "Name": "col5",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c7",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c8": {
+                    "Name": "col6",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c8",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                },
+                "c9": {
+                    "Name": "col7",
+                    "Type": {
+                        "Name": "mediumtext",
+                        "Mods": [
+                            16777215
+                        ],
+                        "ArrayBounds": null
+                    },
+                    "NotNull": false,
+                    "Ignored": {
+                        "Check": false,
+                        "Identity": false,
+                        "Default": false,
+                        "Exclusion": false,
+                        "ForeignKey": false,
+                        "AutoIncrement": false
+                    },
+                    "Id": "c9",
+                    "AutoGen": {
+                        "Name": "",
+                        "GenerationType": ""
+                    },
+                    "DefaultValue": {
+                        "IsPresent": false,
+                        "Value": {
+                            "ExpressionId": "",
+                            "Statement": ""
+                        }
+                    }
+                }
+            },
+            "PrimaryKeys": [
+                {
+                    "ColId": "c2",
+                    "Desc": false,
+                    "Order": 1
+                }
+            ],
+            "ForeignKeys": null,
+            "CheckConstraints": null,
+            "Indexes": null,
+            "Id": "t1"
+        }
+    },
+    "SchemaIssues": {
+        "t1": {
+            "ColumnLevelIssues": {},
+            "TableLevelIssues": null
+        }
+    },
+    "InvalidCheckExp": null,
+    "Location": {},
+    "TimezoneOffset": "+00:00",
+    "SpDialect": "google_standard_sql",
+    "UniquePKey": {},
+    "IsSharded": false,
+    "SpRegion": "",
+    "ResourceValidation": false,
+    "UI": false,
+    "Source": "mysql"
+}

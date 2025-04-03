@@ -179,7 +179,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
   }
 
   private void createTables(List<String> tableNames) {
-    System.out.println("Running Create Tables: >>>>>");
+    System.out.println("Running Create Tables: >>>>> " + tableNames.size());
     List<CompletableFuture<Void>> futures = new LinkedList<>();
     for (int i = 0; i < tableNames.size(); i += BATCH_SIZE) {
       int endIndex = Math.min(i + BATCH_SIZE, tableNames.size());

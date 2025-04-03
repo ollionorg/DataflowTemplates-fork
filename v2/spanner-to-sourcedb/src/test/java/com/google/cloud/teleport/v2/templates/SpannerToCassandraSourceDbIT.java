@@ -89,11 +89,11 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
   private static final String CASSANDRA_CONFIG_FILE_RESOURCE =
       "SpannerToCassandraSourceIT/cassandra-config-template.conf";
 
+  private static final String EMPTY_STRING_JSON_TABLE = "EmptyStringJsonTable";
   private static final String USER_TABLE = "Users";
   private static final String USER_TABLE_2 = "Users2";
   private static final String ALL_DATA_TYPES_TABLE = "AllDatatypeColumns";
   private static final String ALL_DATA_TYPES_CUSTOM_CONVERSION_TABLE = "AllDatatypeTransformation";
-  private static final String EMPTY_STRING_JSON_TABLE = "EmptyStringJsonTable";
   private static final String BOUNDARY_CONVERSION_TABLE = "BoundaryConversionTestTable";
   private static final HashSet<SpannerToCassandraSourceDbIT> testInstances = new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
@@ -193,6 +193,262 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
    * @throws IOException if an I/O error occurs during the test execution.
    */
   @Ignore("Disabled")
+  @Test
+  public void spannerToCasandraSourceDbJSONEmptyOperation()
+      throws InterruptedException, IOException, MultipleFailureException {
+    assertThatPipeline(jobInfo).isRunning();
+    writeJSONEmptyInSpanner();
+    assertJSONEmptyRowInCassandraDB();
+  }
+
+  /** Insert Empty rows in Spanner. */
+  private void writeJSONEmptyInSpanner() {
+    Mutation.WriteBuilder mutationBuilder =
+        Mutation.newInsertOrUpdateBuilder(EMPTY_STRING_JSON_TABLE)
+            .set("varchar_column")
+            .to("SampleVarchar")
+            .set("empty_column")
+            .to("")
+            .set("double_float_map_col")
+            .to(Value.json("{}"))
+            .set("decimal_set_col")
+            .to(Value.json("[]"))
+            .set("date_double_map_col")
+            .to(Value.json("{}"))
+            .set("uuid_ascii_map_col")
+            .to(Value.json("{}"))
+            .set("ascii_text_map_col")
+            .to(Value.json("{}"))
+            .set("timestamp_list_col")
+            .to(Value.json("[]"))
+            .set("int_set_col")
+            .to(Value.json("[]"))
+            .set("smallint_set_col")
+            .to(Value.json("[]"))
+            .set("varchar_list_col")
+            .to(Value.json("[]"))
+            .set("inet_list_col")
+            .to(Value.json("[]"))
+            .set("bigint_list_col")
+            .to(Value.json("[]"))
+            .set("tinyint_varint_map_col")
+            .to(Value.json("{}"))
+            .set("text_set_col")
+            .to(Value.json("[]"))
+            .set("double_set_col")
+            .to(Value.json("[]"))
+            .set("time_list_col")
+            .to(Value.json("[]"))
+            .set("frozen_ascii_list_col")
+            .to(Value.json("[]"))
+            .set("int_list_col")
+            .to(Value.json("[]"))
+            .set("ascii_list_col")
+            .to(Value.json("[]"))
+            .set("date_set_col")
+            .to(Value.json("[]"))
+            .set("double_inet_map_col")
+            .to(Value.json("{}"))
+            .set("timestamp_set_col")
+            .to(Value.json("[]"))
+            .set("time_tinyint_map_col")
+            .to(Value.json("{}"))
+            .set("bigint_set_col")
+            .to(Value.json("[]"))
+            .set("varchar_set_col")
+            .to(Value.json("[]"))
+            .set("tinyint_set_col")
+            .to(Value.json("[]"))
+            .set("bigint_boolean_map_col")
+            .to(Value.json("{}"))
+            .set("text_list_col")
+            .to(Value.json("[]"))
+            .set("boolean_list_col")
+            .to(Value.json("[]"))
+            .set("blob_list_col")
+            .to(Value.json("[]"))
+            .set("timeuuid_set_col")
+            .to(Value.json("[]"))
+            .set("int_time_map_col")
+            .to(Value.json("{}"))
+            .set("time_set_col")
+            .to(Value.json("[]"))
+            .set("boolean_set_col")
+            .to(Value.json("[]"))
+            .set("float_set_col")
+            .to(Value.json("[]"))
+            .set("ascii_set_col")
+            .to(Value.json("[]"))
+            .set("uuid_list_col")
+            .to(Value.json("[]"))
+            .set("varchar_bigint_map_col")
+            .to(Value.json("{}"))
+            .set("blob_int_map_col")
+            .to(Value.json("{}"))
+            .set("varint_blob_map_col")
+            .to(Value.json("{}"))
+            .set("double_list_col")
+            .to(Value.json("[]"))
+            .set("float_list_col")
+            .to(Value.json("[]"))
+            .set("smallint_list_col")
+            .to(Value.json("[]"))
+            .set("varint_list_col")
+            .to(Value.json("[]"))
+            .set("float_smallint_map_col")
+            .to(Value.json("{}"))
+            .set("smallint_timestamp_map_col")
+            .to(Value.json("{}"))
+            .set("text_timeuuid_map_col")
+            .to(Value.json("{}"))
+            .set("timeuuid_list_col")
+            .to(Value.json("[]"))
+            .set("date_list_col")
+            .to(Value.json("[]"))
+            .set("uuid_set_col")
+            .to(Value.json("[]"))
+            .set("boolean_decimal_map_col")
+            .to(Value.json("{}"))
+            .set("blob_set_col")
+            .to(Value.json("[]"))
+            .set("inet_text_map_col")
+            .to(Value.json("{}"))
+            .set("varint_set_col")
+            .to(Value.json("[]"))
+            .set("tinyint_list_col")
+            .to(Value.json("[]"))
+            .set("timestamp_uuid_map_col")
+            .to(Value.json("{}"))
+            .set("decimal_duration_map_col")
+            .to(Value.json("{}"))
+            .set("decimal_list_col")
+            .to(Value.json("[]"))
+            .set("inet_set_col")
+            .to(Value.json("[]"))
+            .set("timeuuid_varchar_map_col")
+            .to(Value.json("{}"))
+            .set("duration_list_col")
+            .to(Value.json("[]"))
+            .set("frozen_ascii_set_col")
+            .to(Value.json("[]"));
+
+    Mutation mutation = mutationBuilder.build();
+    spannerResourceManager.write(mutation);
+  }
+
+  /**
+   * Asserts that Empty Record in the Cassandra database.
+   *
+   * @throws InterruptedException if the thread is interrupted while waiting for the row count
+   *     condition.
+   * @throws RuntimeException if reading from the Cassandra table fails.
+   */
+  private void assertJSONEmptyRowInCassandraDB()
+      throws InterruptedException, MultipleFailureException {
+    PipelineOperator.Result result =
+        pipelineOperator()
+            .waitForCondition(
+                createConfig(jobInfo, Duration.ofMinutes(10)),
+                () -> getRowCount(EMPTY_STRING_JSON_TABLE) == 1);
+    assertThatResult(result).meetsConditions();
+
+    Iterable<Row> rows;
+    try {
+      rows = cassandraResourceManager.readTable(EMPTY_STRING_JSON_TABLE);
+    } catch (Exception e) {
+      throw new RuntimeException(
+          "Failed to read from Cassandra table: " + EMPTY_STRING_JSON_TABLE, e);
+    }
+
+    assertThat(rows).hasSize(1);
+    Row row = rows.iterator().next();
+    LOG.info("[AssertJSONEmptyRowInCassandraDB] row: {}", row.getFormattedContents());
+
+    assertAll(
+        () -> assertThat(row.getString("varchar_column")).isEqualTo("SampleVarchar"),
+        () -> assertThat(row.getString("empty_column")).isEmpty(),
+        () -> assertThat(row.getMap("double_float_map_col", Double.class, Float.class)).isEmpty(),
+        () ->
+            assertThat(row.getMap("date_double_map_col", LocalDate.class, Double.class)).isEmpty(),
+        () -> assertThat(row.getMap("uuid_ascii_map_col", UUID.class, String.class)).isEmpty(),
+        () -> assertThat(row.getMap("ascii_text_map_col", String.class, String.class)).isEmpty(),
+        () ->
+            assertThat(row.getMap("tinyint_varint_map_col", String.class, String.class)).isEmpty(),
+        () -> assertThat(row.getMap("time_tinyint_map_col", String.class, Byte.class)).isEmpty(),
+        () -> assertThat(row.getMap("bigint_boolean_map_col", Long.class, Boolean.class)).isEmpty(),
+        () -> assertThat(row.getMap("varchar_bigint_map_col", String.class, Long.class)).isEmpty(),
+        () -> assertThat(row.getMap("blob_int_map_col", ByteBuffer.class, Integer.class)).isEmpty(),
+        () ->
+            assertThat(row.getMap("varint_blob_map_col", String.class, ByteBuffer.class)).isEmpty(),
+        () -> assertThat(row.getMap("float_smallint_map_col", Float.class, Short.class)).isEmpty(),
+        () ->
+            assertThat(row.getMap("smallint_timestamp_map_col", Short.class, Instant.class))
+                .isEmpty(),
+        () -> assertThat(row.getMap("text_timeuuid_map_col", String.class, UUID.class)).isEmpty(),
+        () ->
+            assertThat(row.getMap("inet_text_map_col", InetAddress.class, String.class)).isEmpty(),
+        () -> assertThat(row.getMap("timestamp_uuid_map_col", String.class, UUID.class)).isEmpty(),
+        () ->
+            assertThat(row.getMap("boolean_decimal_map_col", Boolean.class, BigDecimal.class))
+                .isEmpty(),
+        () ->
+            assertThat(row.getMap("decimal_duration_map_col", BigDecimal.class, String.class))
+                .isEmpty(),
+        () ->
+            assertThat(row.getMap("double_inet_map_col", Double.class, InetAddress.class))
+                .isEmpty(),
+        () ->
+            assertThat(row.getMap("timeuuid_varchar_map_col", UUID.class, String.class)).isEmpty(),
+        () -> assertThat(row.getMap("int_time_map_col", Integer.class, String.class)).isEmpty(),
+        () -> assertThat(row.getList("timestamp_list_col", Instant.class)).isEmpty(),
+        () -> assertThat(row.getList("varchar_list_col", String.class)).isEmpty(),
+        () -> assertThat(row.getList("inet_list_col", InetAddress.class)).isEmpty(),
+        () -> assertThat(row.getList("bigint_list_col", Long.class)).isEmpty(),
+        () -> assertThat(row.getList("time_list_col", String.class)).isEmpty(),
+        () -> assertThat(row.getList("frozen_ascii_list_col", String.class)).isEmpty(),
+        () -> assertThat(row.getList("int_list_col", Integer.class)).isEmpty(),
+        () -> assertThat(row.getList("ascii_list_col", String.class)).isEmpty(),
+        () -> assertThat(row.getList("date_list_col", LocalDate.class)).isEmpty(),
+        () -> assertThat(row.getList("double_list_col", Double.class)).isEmpty(),
+        () -> assertThat(row.getList("float_list_col", Float.class)).isEmpty(),
+        () -> assertThat(row.getList("smallint_list_col", Short.class)).isEmpty(),
+        () -> assertThat(row.getList("varint_list_col", String.class)).isEmpty(),
+        () -> assertThat(row.getList("text_list_col", String.class)).isEmpty(),
+        () -> assertThat(row.getList("boolean_list_col", Boolean.class)).isEmpty(),
+        () -> assertThat(row.getList("blob_list_col", ByteBuffer.class)).isEmpty(),
+        () -> assertThat(row.getList("timeuuid_list_col", UUID.class)).isEmpty(),
+        () -> assertThat(row.getList("duration_list_col", String.class)).isEmpty(),
+        () -> assertThat(row.getList("decimal_list_col", BigDecimal.class)).isEmpty(),
+        () -> assertThat(row.getList("tinyint_list_col", Byte.class)).isEmpty(),
+        () -> assertThat(row.getSet("decimal_set_col", BigDecimal.class)).isEmpty(),
+        () -> assertThat(row.getSet("int_set_col", Integer.class)).isEmpty(),
+        () -> assertThat(row.getSet("smallint_set_col", Short.class)).isEmpty(),
+        () -> assertThat(row.getSet("text_set_col", String.class)).isEmpty(),
+        () -> assertThat(row.getSet("double_set_col", Double.class)).isEmpty(),
+        () -> assertThat(row.getSet("date_set_col", LocalDate.class)).isEmpty(),
+        () -> assertThat(row.getSet("timestamp_set_col", String.class)).isEmpty(),
+        () -> assertThat(row.getSet("bigint_set_col", Long.class)).isEmpty(),
+        () -> assertThat(row.getSet("varchar_set_col", String.class)).isEmpty(),
+        () -> assertThat(row.getSet("tinyint_set_col", Byte.class)).isEmpty(),
+        () -> assertThat(row.getSet("boolean_set_col", Boolean.class)).isEmpty(),
+        () -> assertThat(row.getSet("float_set_col", Float.class)).isEmpty(),
+        () -> assertThat(row.getSet("ascii_set_col", String.class)).isEmpty(),
+        () -> assertThat(row.getSet("uuid_set_col", UUID.class)).isEmpty(),
+        () -> assertThat(row.getSet("varint_set_col", String.class)).isEmpty(),
+        () -> assertThat(row.getSet("blob_set_col", ByteBuffer.class)).isEmpty(),
+        () -> assertThat(row.getSet("inet_set_col", InetAddress.class)).isEmpty(),
+        () -> assertThat(row.getSet("frozen_ascii_set_col", String.class)).isEmpty());
+  }
+
+  /**
+   * Tests the data flow from Spanner to Cassandra.
+   *
+   * <p>This test ensures that a basic row is successfully deleted from Spanner and subsequently
+   * deleted in Cassandra, validating end-to-end data consistency.
+   *
+   * @throws InterruptedException if the thread is interrupted during execution.
+   * @throws IOException if an I/O error occurs during the test execution.
+   */
   @Test
   public void spannerToCasandraSourceDbDeleteOperation() throws InterruptedException, IOException {
     assertThatPipeline(jobInfo).isRunning();
@@ -2297,6 +2553,576 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 createConfig(jobInfo, Duration.ofMinutes(10)),
                 () -> getRowCount(BOUNDARY_CONVERSION_TABLE) == 0);
     assertThatResult(result).meetsConditions();
+  }
+
+  // Helper function to compare two ByteBuffers byte-by-byte
+  private boolean compareByteBuffers(ByteBuffer buffer1, ByteBuffer buffer2) {
+    if (buffer1.remaining() != buffer2.remaining()) {
+      return false;
+    }
+
+    for (int i = 0; i < buffer1.remaining(); i++) {
+      if (buffer1.get(i) != buffer2.get(i)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Utility for debugging, converting ByteBuffer to readable string
+  private String keyToString(ByteBuffer buffer) {
+    int oldPosition = buffer.position();
+    StringBuilder hex = new StringBuilder();
+    while (buffer.hasRemaining()) {
+      hex.append(String.format("%02x", buffer.get()));
+    }
+    buffer.position(oldPosition); // reset to original position
+    return hex.toString();
+  }
+
+  private void insertMaxBoundaryValuesIntoSpanner() {
+    Mutation mutation =
+        Mutation.newInsertOrUpdateBuilder(BOUNDARY_CONVERSION_TABLE)
+            .set("varchar_column")
+            .to("MaxBoundaryVarchar")
+            .set("tinyint_column")
+            .to(Byte.MAX_VALUE)
+            .set("smallint_column")
+            .to(Short.MAX_VALUE)
+            .set("int_column")
+            .to(Integer.MAX_VALUE)
+            .set("bigint_column")
+            .to(Long.MAX_VALUE)
+            .set("float_column")
+            .to(Float.POSITIVE_INFINITY)
+            .set("double_column")
+            .to(Double.POSITIVE_INFINITY)
+            .set("decimal_column")
+            .to(new BigDecimal("99999999999999999999999999999.999999999").toPlainString())
+            .set("bool_column")
+            .to(Boolean.TRUE)
+            .set("ascii_column")
+            .to("ASCII_TEXT")
+            .set("text_column")
+            .to("Text data")
+            .set("bytes_column")
+            .to("////////")
+            .set("date_column")
+            .to(Date.parseDate("9999-12-31"))
+            .set("time_column")
+            .to("23:59:59.999999")
+            .set("timestamp_column")
+            .to(String.valueOf(Timestamp.parseTimestamp("9999-12-31T23:59:59.999999Z")))
+            .set("duration_column")
+            .to("P10675199DT2H48M5S")
+            .set("uuid_column")
+            .to("ffffffff-ffff-4fff-9fff-ffffffffffff")
+            .set("timeuuid_column")
+            .to("ffffffff-ffff-1fff-9fff-ffffffffffff")
+            .set("inet_column")
+            .to("192.168.0.1")
+            .set("map_bool_column")
+            .to(Value.json("{\"true\": false}"))
+            .set("map_float_column")
+            .to(Value.json("{\"3.4028235E38\": \"Infinity\"}"))
+            .set("map_double_column")
+            .to(Value.json("{\"2.718281828459045\": \"Infinity\"}"))
+            .set("map_tinyint_column")
+            .to(Value.json("{\"127\": \"127\"}"))
+            .set("map_smallint_column")
+            .to(Value.json("{\"32767\": \"32767\"}"))
+            .set("map_int_column")
+            .to(Value.json("{\"2147483647\": \"2147483647\"}"))
+            .set("map_bigint_column")
+            .to(Value.json("{\"9223372036854775807\": \"9223372036854775807\"}"))
+            .set("map_varint_column")
+            .to(Value.json("{\"100000000000000000000\": \"100000000000000000000\"}"))
+            .set("map_decimal_column")
+            .to(Value.json("{\"12345.6789\": \"99999999999999999999999999999.999999999\"}"))
+            .set("map_ascii_column")
+            .to(Value.json("{\"example1\": \"max_str1\", \"example2\": \"max_str2\"}"))
+            .set("map_varchar_column")
+            .to(Value.json("{\"key1\": \"max_value1\", \"key2\": \"max_value2\"}"))
+            .set("map_blob_column")
+            .to(Value.json("{\"R29vZ2xl\": \"U29tZURhdGE=\"}"))
+            .set("map_date_column")
+            .to(Value.json("{\"2025-01-27\": \"9999-12-31\"}"))
+            .set("map_time_column")
+            .to(Value.json("{\"12:30:00\": \"23:59:59\"}"))
+            .set("map_timestamp_column")
+            .to(Value.json("{\"2025-01-01T00:00:00Z\": \"9999-12-31T23:59:59.999999Z\"}"))
+            .set("map_duration_column")
+            .to(Value.json("{\"P4DT1H\": \"P10675199DT2H48M5S\"}"))
+            .set("map_uuid_column")
+            .to(
+                Value.json(
+                    "{\"123e4567-e89b-12d3-a456-426614174000\": \"ffffffff-ffff-4fff-9fff-ffffffffffff\"}"))
+            .set("map_timeuuid_column")
+            .to(
+                Value.json(
+                    "{\"321e4567-e89b-12d3-a456-426614174000\": \"ffffffff-ffff-1fff-9fff-ffffffffffff\"}"))
+            .set("map_inet_column")
+            .to(
+                Value.json(
+                    "{\"255.255.255.255\": \"::1\",\"3031:3233:3435:3637:3839:4041:4243:4445\": \"::ffff:192.0.2.128\" }"))
+            .build();
+    spannerResourceManager.write(mutation);
+  }
+
+  private void insertMinBoundaryValuesIntoSpanner() {
+    Mutation mutation =
+        Mutation.newInsertOrUpdateBuilder(BOUNDARY_CONVERSION_TABLE)
+            .set("varchar_column")
+            .to("MinBoundaryVarchar")
+            .set("tinyint_column")
+            .to(Byte.MIN_VALUE)
+            .set("smallint_column")
+            .to(Short.MIN_VALUE)
+            .set("int_column")
+            .to(Integer.MIN_VALUE)
+            .set("bigint_column")
+            .to(Long.MIN_VALUE)
+            .set("float_column")
+            .to(Float.NEGATIVE_INFINITY)
+            .set("double_column")
+            .to(Double.NEGATIVE_INFINITY)
+            .set("decimal_column")
+            .to(new BigDecimal("-99999999999999999999999999999.999999999").toPlainString())
+            .set("bool_column")
+            .to(Boolean.FALSE)
+            .set("bytes_column")
+            .to("AAAAAAAAAAA=")
+            .set("date_column")
+            .to(Date.parseDate("0001-01-01"))
+            .set("time_column")
+            .to("00:00:00.000000")
+            .set("timestamp_column")
+            .to(String.valueOf(Timestamp.parseTimestamp("0001-01-01T00:00:00.000000Z")))
+            .set("duration_column")
+            .to("-PT0S")
+            .set("uuid_column")
+            .to("00000000-0000-0000-0000-000000000000")
+            .set("timeuuid_column")
+            .to("00000000-0000-1000-9000-000000000000")
+            .set("inet_column")
+            .to("0.0.0.0")
+            .set("map_bool_column")
+            .to(Value.json("{\"false\": true}"))
+            .set("map_float_column")
+            .to(Value.json("{\"-1.4E-45\": \"-Infinity\", \"NaN\": \"NaN\"}"))
+            .set("map_double_column")
+            .to(Value.json("{\"-2.718281828459045\": \"-Infinity\"}"))
+            .set("map_tinyint_column")
+            .to(Value.json("{\"-128\": \"-128\"}"))
+            .set("map_smallint_column")
+            .to(Value.json("{\"-32768\": \"-32768\"}"))
+            .set("map_int_column")
+            .to(Value.json("{\"-2147483648\": \"-2147483648\"}"))
+            .set("map_bigint_column")
+            .to(Value.json("{\"-9223372036854775808\": \"-9223372036854775808\"}"))
+            .set("map_varint_column")
+            .to(Value.json("{\"-100000000000000000000\": \"-100000000000000000000\"}"))
+            .set("map_decimal_column")
+            .to(Value.json("{\"-98765.4321\": \"-99999999999999999999999999999.999999999\"}"))
+            .set("map_ascii_column")
+            .to(Value.json("{\"exampleMin1\": \"min_str1\", \"exampleMin2\": \"min_str2\"}"))
+            .set("map_varchar_column")
+            .to(Value.json("{\"keyMin1\": \"min_value1\", \"keyMin2\": \"min_value2\"}"))
+            .set("map_blob_column")
+            .to(Value.json("{\"U29tZU5ld2RhdGE=\": \"Q29tcGFueQ==\"}"))
+            .set("map_date_column")
+            .to(Value.json("{\"0001-01-01\": \"1800-01-01\"}"))
+            .set("map_time_column")
+            .to(Value.json("{\"00:00:00\": \"01:00:00\"}"))
+            .set("map_timestamp_column")
+            .to(Value.json("{\"0001-01-01T00:00:00Z\": \"1900-01-01T00:00:00Z\"}"))
+            .set("map_duration_column")
+            .to(Value.json("{\"-P4DT1H\": \"-P10675199DT2H48M5S\"}"))
+            .set("map_uuid_column")
+            .to(
+                Value.json(
+                    "{\"00000000-0000-0000-0000-000000000000\": \"11111111-1111-1111-1111-111111111111\"}"))
+            .set("map_timeuuid_column")
+            .to(
+                Value.json(
+                    "{\"00000000-0000-1000-9000-000000000000\": \"10000000-0000-1000-9000-111111111111\"}"))
+            .set("map_inet_column")
+            .to(Value.json("{\"0.0.0.0\": \"0:0:0:0:0:0:0:0\"}"))
+            .build();
+    spannerResourceManager.write(mutation);
+  }
+
+  private void assertCassandraBoundaryData() throws InterruptedException, MultipleFailureException {
+    PipelineOperator.Result result =
+        pipelineOperator()
+            .waitForCondition(
+                createConfig(jobInfo, Duration.ofMinutes(10)),
+                () -> getRowCount(BOUNDARY_CONVERSION_TABLE) == 2);
+    assertThatResult(result).meetsConditions();
+    Iterable<Row> rows;
+    try {
+      rows = cassandraResourceManager.readTable(BOUNDARY_CONVERSION_TABLE);
+    } catch (Exception e) {
+      throw new RuntimeException(
+          "Failed to read from Cassandra table: " + BOUNDARY_CONVERSION_TABLE, e);
+    }
+    assertThat(rows).hasSize(2);
+    for (Row row : rows) {
+      String varcharColumn = row.getString("varchar_column");
+      if (Objects.equals(varcharColumn, "MaxBoundaryVarchar")) {
+        assertAll(
+            () -> assertThat(row.getByte("tinyint_column")).isEqualTo(Byte.MAX_VALUE),
+            () -> assertThat(row.getShort("smallint_column")).isEqualTo(Short.MAX_VALUE),
+            () -> assertThat(row.getInt("int_column")).isEqualTo(Integer.MAX_VALUE),
+            () -> assertThat(row.getLong("bigint_column")).isEqualTo(Long.MAX_VALUE),
+            () -> assertThat(row.getFloat("float_column")).isEqualTo(Float.POSITIVE_INFINITY),
+            () -> assertThat(row.getDouble("double_column")).isEqualTo(Double.POSITIVE_INFINITY),
+            () ->
+                assertThat(row.getBigDecimal("decimal_column"))
+                    .isEqualTo(new BigDecimal("99999999999999999999999999999.999999999")),
+            () -> assertThat(row.getBoolean("bool_column")).isTrue(),
+            () -> assertThat(row.getString("ascii_column")).isEqualTo("ASCII_TEXT"),
+            () -> assertThat(row.getString("text_column")).isEqualTo("Text data"),
+            () ->
+                assertThat(row.getCqlDuration("duration_column"))
+                    .isEqualTo(CqlDuration.from("P10675199DT2H48M5S")),
+            () ->
+                assertThat(row.getUuid("timeuuid_column"))
+                    .isEqualTo(UUID.fromString("ffffffff-ffff-1fff-9fff-ffffffffffff")),
+            () ->
+                assertThat(row.getUuid("uuid_column"))
+                    .isEqualTo(UUID.fromString("ffffffff-ffff-4fff-9fff-ffffffffffff")),
+            () -> {
+              byte[] expectedBytes = Base64.getDecoder().decode("////////");
+              ByteBuffer actualBytes = row.getBytesUnsafe("bytes_column");
+              assertThat(actualBytes).isEqualTo(ByteBuffer.wrap(expectedBytes));
+            },
+            () ->
+                assertThat(row.getLocalDate("date_column"))
+                    .isEqualTo(LocalDate.parse("9999-12-31")),
+            () ->
+                assertThat(row.getLocalTime("time_column"))
+                    .isEqualTo(java.time.LocalTime.parse("23:59:59.999999")),
+            () ->
+                assertThat(row.getInstant("timestamp_column"))
+                    .isEqualTo(java.time.Instant.parse("9999-12-31T23:59:59.999Z")),
+            // Maps
+            () ->
+                assertThat(row.getMap("map_bool_column", Boolean.class, Boolean.class))
+                    .isEqualTo(Map.of(true, false)),
+            () -> {
+              Map<Float, Float> expected = Map.of(3.4028235E38f, Float.POSITIVE_INFINITY);
+              Map<Float, Float> actual = row.getMap("map_float_column", Float.class, Float.class);
+              expected.forEach(
+                  (key, expectedValue) -> {
+                    Assertions.assertThat(actual.containsKey(key))
+                        .withFailMessage("Actual map is missing key: %s", key)
+                        .isTrue();
+                    Float actualValue = actual.get(key);
+                    if (Float.isNaN(expectedValue)) {
+                      Assertions.assertThat(Float.isNaN(actualValue))
+                          .withFailMessage("Value for key %s should be NaN", key)
+                          .isTrue();
+                    } else if (Float.isInfinite(expectedValue)) {
+                      Assertions.assertThat(actualValue)
+                          .withFailMessage("Value for key %s should be Infinity", key)
+                          .isEqualTo(Float.POSITIVE_INFINITY);
+                    } else {
+                      Assertions.assertThat(actualValue)
+                          .withFailMessage("Value for key %s is incorrect", key)
+                          .isEqualTo(expectedValue);
+                    }
+                  });
+              Set<Float> unexpectedKeys =
+                  actual.keySet().stream()
+                      .filter(key -> !expected.containsKey(key))
+                      .collect(Collectors.toSet());
+              Assertions.assertThat(unexpectedKeys)
+                  .withFailMessage("Actual map has unexpected keys: %s", unexpectedKeys)
+                  .isEmpty();
+            },
+            () ->
+                assertThat(row.getMap("map_double_column", Double.class, Double.class))
+                    .isEqualTo(Map.of(2.718281828459045, Double.POSITIVE_INFINITY)),
+            () ->
+                assertThat(row.getMap("map_tinyint_column", Byte.class, Byte.class))
+                    .isEqualTo(Map.of((byte) 127, (byte) 127)),
+            () ->
+                assertThat(row.getMap("map_smallint_column", Short.class, Short.class))
+                    .isEqualTo(Map.of((short) 32767, (short) 32767)),
+            () ->
+                assertThat(row.getMap("map_int_column", Integer.class, Integer.class))
+                    .isEqualTo(Map.of(2147483647, 2147483647)),
+            () ->
+                assertThat(row.getMap("map_bigint_column", Long.class, Long.class))
+                    .isEqualTo(Map.of(9223372036854775807L, 9223372036854775807L)),
+            () ->
+                assertThat(row.getMap("map_varint_column", BigInteger.class, BigInteger.class))
+                    .isEqualTo(
+                        Map.of(
+                            new BigInteger("100000000000000000000"),
+                            new BigInteger("100000000000000000000"))),
+            () ->
+                assertThat(row.getMap("map_decimal_column", BigDecimal.class, BigDecimal.class))
+                    .isEqualTo(
+                        Map.of(
+                            new BigDecimal("12345.6789"),
+                            new BigDecimal("99999999999999999999999999999.999999999"))),
+            () ->
+                assertThat(row.getMap("map_ascii_column", String.class, String.class))
+                    .isEqualTo(Map.of("example1", "max_str1", "example2", "max_str2")),
+            () ->
+                assertThat(row.getMap("map_varchar_column", String.class, String.class))
+                    .isEqualTo(Map.of("key1", "max_value1", "key2", "max_value2")),
+            () -> {
+              byte[] keyBytes = Base64.getDecoder().decode("R29vZ2xl");
+              byte[] valueBytes = Base64.getDecoder().decode("U29tZURhdGE=");
+              Map<ByteBuffer, ByteBuffer> expected = new HashMap<>();
+              expected.put(ByteBuffer.wrap(keyBytes), ByteBuffer.wrap(valueBytes));
+              Map<ByteBuffer, ByteBuffer> actual =
+                  row.getMap("map_blob_column", ByteBuffer.class, ByteBuffer.class);
+              Assertions.assertThat(actual)
+                  .allSatisfy(
+                      (key, value) -> {
+                        ByteBuffer expectedKey =
+                            expected.keySet().stream()
+                                .filter(k -> compareByteBuffers(k, key))
+                                .findAny()
+                                .orElse(null);
+                        Assertions.assertThat(expectedKey)
+                            .withFailMessage("Unexpected key: %s", keyToString(key))
+                            .isNotNull();
+                        ByteBuffer expectedValue = expected.get(expectedKey);
+                        Assertions.assertThat(expectedValue)
+                            .withFailMessage("Unexpected value for key %s", keyToString(key))
+                            .satisfies(v -> compareByteBuffers(v, value));
+                      });
+            },
+            () ->
+                assertThat(row.getMap("map_date_column", LocalDate.class, LocalDate.class))
+                    .isEqualTo(
+                        Map.of(LocalDate.parse("2025-01-27"), LocalDate.parse("9999-12-31"))),
+            () ->
+                assertThat(row.getMap("map_time_column", LocalTime.class, LocalTime.class))
+                    .isEqualTo(Map.of(LocalTime.parse("12:30:00"), LocalTime.parse("23:59:59"))),
+            () ->
+                assertThat(row.getMap("map_timestamp_column", Instant.class, Instant.class))
+                    .isEqualTo(
+                        Map.of(
+                            java.time.Instant.parse("2025-01-01T00:00:00Z"),
+                            java.time.Instant.parse("9999-12-31T23:59:59.999Z"))),
+            () ->
+                assertThat(row.getMap("map_duration_column", String.class, CqlDuration.class))
+                    .isEqualTo(Map.of("P4DT1H", CqlDuration.from("P10675199DT2H48M5S"))),
+            () ->
+                assertThat(row.getMap("map_uuid_column", UUID.class, UUID.class))
+                    .isEqualTo(
+                        Map.of(
+                            UUID.fromString("123e4567-e89b-12d3-a456-426614174000"),
+                            UUID.fromString("ffffffff-ffff-4fff-9fff-ffffffffffff"))),
+            () ->
+                assertThat(row.getMap("map_timeuuid_column", UUID.class, UUID.class))
+                    .isEqualTo(
+                        Map.of(
+                            UUID.fromString("321e4567-e89b-12d3-a456-426614174000"),
+                            UUID.fromString("ffffffff-ffff-1fff-9fff-ffffffffffff"))),
+            () -> {
+              try {
+                Map<InetAddress, InetAddress> expected =
+                    Map.of(
+                        InetAddress.getByName("255.255.255.255"),
+                        InetAddress.getByName("::1"),
+                        InetAddress.getByName("3031:3233:3435:3637:3839:4041:4243:4445"),
+                        InetAddress.getByName("::ffff:192.0.2.128"));
+                Map<InetAddress, InetAddress> actual =
+                    row.getMap("map_inet_column", InetAddress.class, InetAddress.class);
+                Assertions.assertThat(actual)
+                    .as(
+                        "Checking the mapping of IP addresses between Cassandra and the expected output")
+                    .isEqualTo(expected);
+              } catch (Exception e) {
+                throw new RuntimeException(
+                    "Failed to convert String to InetAddress, possibly due to an invalid IP format.",
+                    e);
+              }
+            });
+      } else if (Objects.equals(varcharColumn, "MinBoundaryVarchar")) {
+        assertAll(
+            () -> assertThat(row.getByte("tinyint_column")).isEqualTo(Byte.MIN_VALUE),
+            () -> assertThat(row.getShort("smallint_column")).isEqualTo(Short.MIN_VALUE),
+            () -> assertThat(row.getInt("int_column")).isEqualTo(Integer.MIN_VALUE),
+            () -> assertThat(row.getLong("bigint_column")).isEqualTo(Long.MIN_VALUE),
+            () -> assertThat(row.getFloat("float_column")).isEqualTo(Float.NEGATIVE_INFINITY),
+            () -> assertThat(row.getDouble("double_column")).isEqualTo(Double.NEGATIVE_INFINITY),
+            () ->
+                assertThat(row.getBigDecimal("decimal_column"))
+                    .isEqualTo(new BigDecimal("-99999999999999999999999999999.999999999")),
+            () -> assertThat(row.getBoolean("bool_column")).isFalse(),
+            () -> assertThat(row.isNull("ascii_column")).isTrue(),
+            () -> assertThat(row.isNull("text_column")).isTrue(),
+            () ->
+                assertThat(row.getCqlDuration("duration_column"))
+                    .isEqualTo(CqlDuration.from("-PT0S")),
+            () ->
+                assertThat(row.getUuid("timeuuid_column"))
+                    .isEqualTo(UUID.fromString("00000000-0000-1000-9000-000000000000")),
+            () ->
+                assertThat(row.getUuid("uuid_column"))
+                    .isEqualTo(UUID.fromString("00000000-0000-0000-0000-000000000000")),
+            () -> {
+              byte[] expectedMinBytes = Base64.getDecoder().decode("AAAAAAAAAAA=");
+              ByteBuffer actualMinBytes = row.getBytesUnsafe("bytes_column");
+              assertThat(actualMinBytes).isEqualTo(ByteBuffer.wrap(expectedMinBytes));
+            },
+            () ->
+                assertThat(row.getLocalDate("date_column"))
+                    .isEqualTo(LocalDate.parse("0001-01-01")),
+            () ->
+                assertThat(row.getLocalTime("time_column"))
+                    .isEqualTo(java.time.LocalTime.parse("00:00:00.000000")),
+            () ->
+                assertThat(row.getInstant("timestamp_column"))
+                    .isEqualTo(java.time.Instant.parse("0001-01-01T00:00:00.000Z")),
+            // Maps
+            () ->
+                assertThat(row.getMap("map_bool_column", Boolean.class, Boolean.class))
+                    .isEqualTo(Map.of(false, true)),
+            () -> {
+              Map<Float, Float> expected =
+                  Map.of(-1.4E-45f, Float.NEGATIVE_INFINITY, Float.NaN, Float.NaN);
+              Map<Float, Float> actual = row.getMap("map_float_column", Float.class, Float.class);
+              expected.forEach(
+                  (key, expectedValue) -> {
+                    Assertions.assertThat(actual.containsKey(key))
+                        .withFailMessage("Actual map is missing key: %s", key)
+                        .isTrue();
+                    Float actualValue = actual.get(key);
+                    if (Float.isNaN(expectedValue)) {
+                      Assertions.assertThat(Float.isNaN(actualValue))
+                          .withFailMessage("Value for key %s should be NaN", key)
+                          .isTrue();
+                    } else if (Float.isInfinite(expectedValue)) {
+                      Assertions.assertThat(actualValue)
+                          .withFailMessage("Value for key %s should be %s", key, expectedValue)
+                          .isEqualTo(expectedValue);
+                    } else {
+                      Assertions.assertThat(actualValue)
+                          .withFailMessage("Value for key %s is incorrect", key)
+                          .isEqualTo(expectedValue);
+                    }
+                  });
+              Set<Float> unexpectedKeys =
+                  actual.keySet().stream()
+                      .filter(key -> !expected.containsKey(key))
+                      .collect(Collectors.toSet());
+              Assertions.assertThat(unexpectedKeys)
+                  .withFailMessage("Actual map has unexpected keys: %s", unexpectedKeys)
+                  .isEmpty();
+            },
+            () ->
+                assertThat(row.getMap("map_double_column", Double.class, Double.class))
+                    .isEqualTo(Map.of(-2.718281828459045, Double.NEGATIVE_INFINITY)),
+            () ->
+                assertThat(row.getMap("map_tinyint_column", Byte.class, Byte.class))
+                    .isEqualTo(Map.of((byte) -128, (byte) -128)),
+            () ->
+                assertThat(row.getMap("map_smallint_column", Short.class, Short.class))
+                    .isEqualTo(Map.of((short) -32768, (short) -32768)),
+            () ->
+                assertThat(row.getMap("map_int_column", Integer.class, Integer.class))
+                    .isEqualTo(Map.of(-2147483648, -2147483648)),
+            () ->
+                assertThat(row.getMap("map_bigint_column", Long.class, Long.class))
+                    .isEqualTo(Map.of(-9223372036854775808L, -9223372036854775808L)),
+            () ->
+                assertThat(row.getMap("map_varint_column", BigInteger.class, BigInteger.class))
+                    .isEqualTo(
+                        Map.of(
+                            new BigInteger("-100000000000000000000"),
+                            new BigInteger("-100000000000000000000"))),
+            () ->
+                assertThat(row.getMap("map_decimal_column", BigDecimal.class, BigDecimal.class))
+                    .isEqualTo(
+                        Map.of(
+                            new BigDecimal("-98765.4321"),
+                            new BigDecimal("-99999999999999999999999999999.999999999"))),
+            () ->
+                assertThat(row.getMap("map_ascii_column", String.class, String.class))
+                    .isEqualTo(Map.of("exampleMin1", "min_str1", "exampleMin2", "min_str2")),
+            () ->
+                assertThat(row.getMap("map_varchar_column", String.class, String.class))
+                    .isEqualTo(Map.of("keyMin1", "min_value1", "keyMin2", "min_value2")),
+            () -> {
+              byte[] keyBytes = Base64.getDecoder().decode("U29tZU5ld2RhdGE=");
+              byte[] valueBytes = Base64.getDecoder().decode("Q29tcGFueQ==");
+              Map<ByteBuffer, ByteBuffer> expected = new HashMap<>();
+              expected.put(ByteBuffer.wrap(keyBytes), ByteBuffer.wrap(valueBytes));
+              Map<ByteBuffer, ByteBuffer> actual =
+                  row.getMap("map_blob_column", ByteBuffer.class, ByteBuffer.class);
+              Assertions.assertThat(actual)
+                  .allSatisfy(
+                      (key, value) -> {
+                        ByteBuffer expectedKey =
+                            expected.keySet().stream()
+                                .filter(k -> compareByteBuffers(k, key))
+                                .findAny()
+                                .orElse(null);
+                        Assertions.assertThat(expectedKey)
+                            .withFailMessage("Unexpected key: %s", keyToString(key))
+                            .isNotNull();
+                        ByteBuffer expectedValue = expected.get(expectedKey);
+                        Assertions.assertThat(expectedValue)
+                            .withFailMessage("Unexpected value for key %s", keyToString(key))
+                            .satisfies(v -> compareByteBuffers(v, value));
+                      });
+            },
+            () ->
+                assertThat(row.getMap("map_date_column", LocalDate.class, LocalDate.class))
+                    .isEqualTo(
+                        Map.of(LocalDate.parse("0001-01-01"), LocalDate.parse("1800-01-01"))),
+            () ->
+                assertThat(row.getMap("map_time_column", LocalTime.class, LocalTime.class))
+                    .isEqualTo(Map.of(LocalTime.parse("00:00:00"), LocalTime.parse("01:00:00"))),
+            () ->
+                assertThat(row.getMap("map_timestamp_column", Instant.class, Instant.class))
+                    .isEqualTo(
+                        Map.of(
+                            java.time.Instant.parse("0001-01-01T00:00:00Z"),
+                            java.time.Instant.parse("1900-01-01T00:00:00Z"))),
+            () ->
+                assertThat(row.getMap("map_duration_column", String.class, CqlDuration.class))
+                    .isEqualTo(Map.of("-P4DT1H", CqlDuration.from("-P10675199DT2H48M5S"))),
+            () ->
+                assertThat(row.getMap("map_uuid_column", UUID.class, UUID.class))
+                    .isEqualTo(
+                        Map.of(
+                            UUID.fromString("00000000-0000-0000-0000-000000000000"),
+                            UUID.fromString("11111111-1111-1111-1111-111111111111"))),
+            () ->
+                assertThat(row.getMap("map_timeuuid_column", UUID.class, UUID.class))
+                    .isEqualTo(
+                        Map.of(
+                            UUID.fromString("00000000-0000-1000-9000-000000000000"),
+                            UUID.fromString("10000000-0000-1000-9000-111111111111"))),
+            () -> {
+              try {
+                Map<InetAddress, InetAddress> expected =
+                    Map.of(
+                        InetAddress.getByName("0.0.0.0"), InetAddress.getByName("0:0:0:0:0:0:0:0"));
+                Map<InetAddress, InetAddress> actual =
+                    row.getMap("map_inet_column", InetAddress.class, InetAddress.class);
+                Assertions.assertThat(actual)
+                    .as(
+                        "Checking the mapping of IP addresses between Cassandra and the expected output")
+                    .isEqualTo(expected);
+              } catch (Exception e) {
+                throw new RuntimeException(
+                    "Failed to convert String to InetAddress, possibly due to an invalid IP format.",
+                    e);
+              }
+            });
+      }
+    }
   }
 
   // Helper function to compare two ByteBuffers byte-by-byte

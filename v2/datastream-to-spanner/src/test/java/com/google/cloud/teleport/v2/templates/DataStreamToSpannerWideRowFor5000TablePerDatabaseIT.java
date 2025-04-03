@@ -204,7 +204,9 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
               int retries = 0;
               while (retries < MAX_RETRIES) {
                 try {
-                  cloudSqlResourceManager.runSQLUpdate(String.join("; ", ddlStatements));
+                  String statements = String.join("; ", ddlStatements);
+                  System.out.printf("Going to created Cloud SQL table: %s", statements);
+                  cloudSqlResourceManager.runSQLUpdate(statements);
                   System.out.printf("Successfully created Cloud SQL table: %s", tableNames);
                   break;
                 } catch (Exception e) {

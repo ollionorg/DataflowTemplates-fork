@@ -39,6 +39,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -1575,6 +1576,20 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         () -> {
           byte[] expectedBytes = Base64.getDecoder().decode("anotherSampleBytes");
           ByteBuffer actualBytes = row.getBytesUnsafe("bytes_column");
+
+          // To get a byte array from the ByteBuffer
+          byte[] actualByteArray = new byte[actualBytes.remaining()];
+          actualBytes.get(actualByteArray);
+
+          // Convert byte array to a raw string using the appropriate charset, e.g., UTF-8
+          String actualString = new String(actualByteArray, StandardCharsets.UTF_8);
+
+          // Print the raw string representation
+          System.out.println("Actual raw string: " + actualString);
+
+          // Just for reference, printing bytes directly may show non-printable characters
+          System.out.println("Actual bytes: " + Arrays.toString(actualByteArray));
+          System.out.println("Expected bytes: " + Arrays.toString(expectedBytes));
           assertThat(actualBytes).isEqualTo(ByteBuffer.wrap(expectedBytes));
         });
   }

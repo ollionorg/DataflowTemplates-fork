@@ -135,7 +135,6 @@ public class InputRecordProcessor {
       Instant instTime = Instant.now();
       Instant commitTsInst = spannerRecord.getCommitTimestamp().toSqlTimestamp().toInstant();
       long replicationLag = ChronoUnit.SECONDS.between(commitTsInst, instTime);
-      LOG.info("replication_lag: " + replicationLag);
 
       lagMetric.update(replicationLag); // update the lag metric
       return false;

@@ -66,7 +66,7 @@ public class DataStreamToSpannerLTBase extends TemplateLoadTestBase {
   protected final String artifactBucket = TestProperties.artifactBucket();
   protected String testRootDir;
   protected final int maxWorkers = 100;
-  protected final int numWorkers = 50;
+  protected final int numWorkers = 10;
   public PubsubResourceManager pubsubResourceManager;
   public SpannerResourceManager spannerResourceManager;
   protected SpannerResourceManager shadowTableSpannerResourceManager = null;
@@ -89,7 +89,7 @@ public class DataStreamToSpannerLTBase extends TemplateLoadTestBase {
     spannerResourceManager =
         SpannerResourceManager.builder(testName, project, region)
             .maybeUseStaticInstance()
-            .setNodeCount(10)
+            .setNodeCount(1)
             .setMonitoringClient(monitoringClient)
             .build();
     pubsubResourceManager =
@@ -110,7 +110,7 @@ public class DataStreamToSpannerLTBase extends TemplateLoadTestBase {
       shadowTableSpannerResourceManager =
           SpannerResourceManager.builder("shadow_" + testName, project, region)
               .maybeUseStaticInstance()
-              .setNodeCount(10)
+              .setNodeCount(1)
               .setMonitoringClient(monitoringClient)
               .build();
       shadowTableSpannerResourceManager.ensureUsableAndCreateResources();

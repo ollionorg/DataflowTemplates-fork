@@ -60,7 +60,7 @@ public class DataStreamToSpanner100GbFor10MbPerColumnTablesLT extends DataStream
         new HashMap<>() {
           {
             put("workerMachineType", WORKER_MACHINE_TYPE);
-            put("fetchSize", FETCH_SIZE);
+            put("enableStreamingEngine", "true");
           }
         };
     runLoadTest(tables100GB, mySQLSource, templateParameterOptions, new HashMap<>());

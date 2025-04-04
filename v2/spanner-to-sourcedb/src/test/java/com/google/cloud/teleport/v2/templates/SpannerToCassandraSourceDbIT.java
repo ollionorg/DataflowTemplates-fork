@@ -1574,23 +1574,11 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 .isEqualTo(UUID.fromString("0e3f2a1c-dc40-4e73-9e0d-2d7d0ef7be7f")),
         () -> assertThat(row.getString("ascii_column")).isEqualTo("SampleASCII2"),
         () -> {
-          byte[] expectedBytes = Base64.getDecoder().decode("anotherSampleBytes");
           ByteBuffer actualBytes = row.getBytesUnsafe("bytes_column");
-
-          // To get a byte array from the ByteBuffer
           byte[] actualByteArray = new byte[actualBytes.remaining()];
           actualBytes.get(actualByteArray);
-
-          // Convert byte array to a raw string using the appropriate charset, e.g., UTF-8
           String actualString = new String(actualByteArray, StandardCharsets.UTF_8);
-
-          // Print the raw string representation
-          System.out.println("Actual raw string: " + actualString);
-
-          // Just for reference, printing bytes directly may show non-printable characters
-          System.out.println("Actual bytes: " + Arrays.toString(actualByteArray));
-          System.out.println("Expected bytes: " + Arrays.toString(expectedBytes));
-          assertThat(actualBytes).isEqualTo(ByteBuffer.wrap(expectedBytes));
+          assertThat(actualString).isEqualTo("anotherSampleBytes");
         });
   }
 

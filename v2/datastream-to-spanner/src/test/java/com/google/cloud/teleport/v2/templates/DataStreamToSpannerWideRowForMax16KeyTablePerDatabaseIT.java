@@ -122,7 +122,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT extends Spa
   }
 
   @Test
-  public void testDataStreamMySqlToSpannerFor5000TablesPerDatabase() throws IOException {
+  public void testDataStreamMySqlToSpannerForMax16KeyTablesPerDatabase() throws IOException {
     simpleMaxMySqlTablesPerDatabaseToSpannerTest(
         DatastreamResourceManager.DestinationOutputFormat.AVRO_FILE_FORMAT,
         Dialect.GOOGLE_STANDARD_SQL,

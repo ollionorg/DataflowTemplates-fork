@@ -65,7 +65,6 @@ import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerTemplateITBase;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
-import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
@@ -420,7 +419,7 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
             .waitForConditionAndCancel(createConfig(info, Duration.ofMinutes(20)), conditionCheck);
 
     // Assert
-    checkSpannerTables(tableNames, cdcEvents);
+    checkSpannerTables(spannerResourceManager, tableNames, cdcEvents, COLUMNS);
     assertThatResult(result).meetsConditions();
   }
 
@@ -551,31 +550,13 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends Spanner
 
         // Next, make sure in-place mutations were applied.
         try {
-          checkSpannerTables(tableNames, cdcEvents);
+          checkSpannerTables(spannerResourceManager, tableNames, cdcEvents, COLUMNS);
           return new CheckResult(true, "Spanner tables contain expected rows.");
         } catch (AssertionError error) {
           return new CheckResult(false, "Spanner tables do not contain expected rows.");
         }
       }
     };
-  }
-
-  /** Helper function for checking the rows of the destination Spanner tables. */
-  private void checkSpannerTables(
-      List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
-    List<CompletableFuture<Void>> futures =
-        tableNames.stream()
-            .map(
-                tableName ->
-                    CompletableFuture.runAsync(
-                        () -> {
-                          SpannerAsserts.assertThatStructs(
-                                  spannerResourceManager.readTableRecords(tableName, COLUMNS))
-                              .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName));
-                        },
-                        EXECUTOR_SERVICE))
-            .toList();
-    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
   }
 
   /**

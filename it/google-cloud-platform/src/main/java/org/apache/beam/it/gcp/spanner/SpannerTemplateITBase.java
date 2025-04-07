@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.beam.it.gcp.TemplateTestBase;
+import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -127,5 +128,18 @@ public abstract class SpannerTemplateITBase extends TemplateTestBase {
     }
 
     return sessionTemplate;
+  }
+
+  /** Helper function for checking the rows of the destination Spanner tables. */
+  public static void checkSpannerTables(
+      SpannerResourceManager spannerResourceManager,
+      List<String> tableNames,
+      Map<String, List<Map<String, Object>>> cdcEvents,
+      List<String> cols) {
+    tableNames.forEach(
+        tableName -> {
+          SpannerAsserts.assertThatStructs(spannerResourceManager.readTableRecords(tableName, cols))
+              .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName));
+        });
   }
 }

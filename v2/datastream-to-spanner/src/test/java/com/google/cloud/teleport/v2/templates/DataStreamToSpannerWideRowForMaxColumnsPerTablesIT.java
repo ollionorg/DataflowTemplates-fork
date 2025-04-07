@@ -52,7 +52,6 @@ import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerTemplateITBase;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
-import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
@@ -84,6 +83,14 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
   private PubsubResourceManager pubsubResourceManager;
 
   private GcsResourceManager gcsResourceManager;
+
+  private static final List<String> COLUMNS = new ArrayList<>();
+
+  static {
+    for (int i = 1; i <= NUM_COLUMNS; i++) {
+      COLUMNS.add("col_" + i);
+    }
+  }
 
   @Before
   public void setUp() throws IOException {
@@ -257,7 +264,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
             .waitForConditionAndCancel(createConfig(info, Duration.ofMinutes(20)), conditionCheck);
 
     // Assert
-    checkSpannerTables(tableNames, cdcEvents);
+    checkSpannerTables(spannerResourceManager, tableNames, cdcEvents, COLUMNS);
     assertThatResult(result).meetsConditions();
   }
 
@@ -297,9 +304,9 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
       colType.put("Type", "NUMERIC");
       colType.put("Len", 0);
       colType.put("IsArray", false);
-      colType.put("Name", "col_" + j);
+      colType.put("Name", COLUMNS.get(j - 1));
       colType.put("NotNull", (j == 1));
-      colType.put("Comment", "From: col_" + j + " MEDIUMTEXT");
+      colType.put("Comment", "From: " + COLUMNS.get(j - 1) + " MEDIUMTEXT");
       colTypeConfigs.add(colType);
     }
     return colTypeConfigs;
@@ -320,39 +327,16 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
     return primaryKeys;
   }
 
-  /** Creates a schema entry for a table. */
-  private static Map<String, Object> createSchemaEntry(
-      String tableName,
-      List<String> colIds,
-      Map<String, Object> colDefs,
-      List<Map<String, Object>> primaryKeys,
-      String tableId,
-      String comment) {
-    Map<String, Object> schemaEntry = new LinkedHashMap<>();
-    schemaEntry.put("Name", tableName);
-    schemaEntry.put("ColIds", colIds);
-    schemaEntry.put("ShardIdColumn", "");
-    schemaEntry.put("ColDefs", colDefs);
-    schemaEntry.put("PrimaryKeys", primaryKeys);
-    schemaEntry.put("ForeignKeys", null);
-    schemaEntry.put("Indexes", null);
-    schemaEntry.put("ParentId", "");
-    schemaEntry.put("Comment", comment);
-    schemaEntry.put("Id", tableId);
-
-    return schemaEntry;
-  }
-
   private String getJDBCSchema(String tableName) {
     StringBuilder sb = new StringBuilder();
     sb.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append(" (");
     for (int i = 1; i <= NUM_COLUMNS; i++) {
-      sb.append("col_").append(i).append(" NUMERIC NOT NULL");
+      sb.append(COLUMNS.get(i - 1)).append(" NUMERIC NOT NULL");
       if (i != NUM_COLUMNS) {
         sb.append(", ");
       }
     }
-    sb.append(", PRIMARY KEY (").append("col_1").append("))");
+    sb.append(", PRIMARY KEY (").append(COLUMNS.get(0)).append("))");
     return sb.toString();
   }
 
@@ -373,15 +357,16 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
   private void createSpannerTables(List<String> tableNames) {
     for (String tableName : tableNames) {
       List<String> columns = new ArrayList<>();
-      columns.add("col_1 INT64 NOT NULL");
+      columns.add(COLUMNS.get(0) + " INT64 NOT NULL");
 
       for (int i = 2; i <= NUM_COLUMNS; i++) {
-        columns.add("col_" + i + " INT64");
+        columns.add(COLUMNS.get(i - 1) + " INT64");
       }
 
       String ddlStatement =
           String.format(
-              "CREATE TABLE %s (%s) PRIMARY KEY (col_1)", tableName, String.join(", ", columns));
+              "CREATE TABLE %s (%s) PRIMARY KEY (%s)",
+              tableName, String.join(", ", columns), COLUMNS.get(0));
 
       spannerResourceManager.executeDdlStatement(ddlStatement);
     }
@@ -415,28 +400,13 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
 
         // Next, make sure in-place mutations were applied.
         try {
-          checkSpannerTables(tableNames, cdcEvents);
+          checkSpannerTables(spannerResourceManager, tableNames, cdcEvents, COLUMNS);
           return new CheckResult(true, "Spanner tables contain expected rows.");
         } catch (AssertionError error) {
           return new CheckResult(false, "Spanner tables do not contain expected rows.");
         }
       }
     };
-  }
-
-  /** Helper function for checking the rows of the destination Spanner tables. */
-  private void checkSpannerTables(
-      List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
-    tableNames.forEach(
-        tableName -> {
-          List<String> columns = new ArrayList<>();
-          for (int i = 1; i <= NUM_COLUMNS; i++) {
-            columns.add("Col_" + i);
-          }
-          SpannerAsserts.assertThatStructs(
-                  spannerResourceManager.readTableRecords(tableName, columns))
-              .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName));
-        });
   }
 
   /**

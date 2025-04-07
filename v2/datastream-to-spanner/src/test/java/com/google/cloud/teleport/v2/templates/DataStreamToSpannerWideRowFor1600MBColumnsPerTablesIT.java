@@ -54,7 +54,6 @@ import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerTemplateITBase;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
-import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
@@ -75,7 +74,7 @@ public class DataStreamToSpannerWideRowFor1600MBColumnsPerTablesIT extends Spann
   private static final Integer NUM_TABLES = 1;
   private static final Integer NUM_COLUMNS = 801;
   private static final int STRING_LENGTH = 2_621_440;
-
+  private static final List<String> COLUMNS = new ArrayList<>();
   private static final Random RANDOM_GENERATOR = new Random();
 
   private String gcsPrefix;
@@ -90,6 +89,12 @@ public class DataStreamToSpannerWideRowFor1600MBColumnsPerTablesIT extends Spann
   private PubsubResourceManager pubsubResourceManager;
 
   private GcsResourceManager gcsResourceManager;
+
+  static {
+    for (int i = 1; i <= NUM_COLUMNS; i++) {
+      COLUMNS.add("col_" + i);
+    }
+  }
 
   @Before
   public void setUp() throws IOException {
@@ -271,7 +276,7 @@ public class DataStreamToSpannerWideRowFor1600MBColumnsPerTablesIT extends Spann
             .waitForConditionAndCancel(createConfig(info, Duration.ofMinutes(20)), conditionCheck);
 
     // Assert
-    checkSpannerTables(tableNames, cdcEvents);
+    checkSpannerTables(spannerResourceManager, tableNames, cdcEvents, COLUMNS);
     assertThatResult(result).meetsConditions();
   }
 
@@ -362,15 +367,15 @@ public class DataStreamToSpannerWideRowFor1600MBColumnsPerTablesIT extends Spann
     sb.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append(" (");
     for (int i = 1; i <= NUM_COLUMNS; i++) {
       if (i == 1) {
-        sb.append("col_").append(i).append(" NUMERIC NOT NULL");
+        sb.append(COLUMNS.get(0)).append(" NUMERIC NOT NULL");
       } else {
-        sb.append("col_").append(i).append(" MEDIUMTEXT NOT NULL");
+        sb.append(COLUMNS.get(i - 1)).append(" MEDIUMTEXT NOT NULL");
       }
       if (i != NUM_COLUMNS) {
         sb.append(", ");
       }
     }
-    sb.append(", PRIMARY KEY (").append("col_1").append("))");
+    sb.append(", PRIMARY KEY (").append(COLUMNS.get(0)).append("))");
     return sb.toString();
   }
 
@@ -391,10 +396,10 @@ public class DataStreamToSpannerWideRowFor1600MBColumnsPerTablesIT extends Spann
   private void createSpannerTables(List<String> tableNames) {
     for (String tableName : tableNames) {
       List<String> columns = new ArrayList<>();
-      columns.add("col_1 INT64 NOT NULL");
+      columns.add(COLUMNS.get(0) + " INT64 NOT NULL");
 
       for (int i = 2; i <= NUM_COLUMNS; i++) {
-        columns.add("col_" + i + " STRING(MAX)");
+        columns.add(COLUMNS.get(i - 1) + " STRING(MAX)");
       }
 
       String ddlStatement =
@@ -433,28 +438,13 @@ public class DataStreamToSpannerWideRowFor1600MBColumnsPerTablesIT extends Spann
 
         // Next, make sure in-place mutations were applied.
         try {
-          checkSpannerTables(tableNames, cdcEvents);
+          checkSpannerTables(spannerResourceManager, tableNames, cdcEvents, COLUMNS);
           return new CheckResult(true, "Spanner tables contain expected rows.");
         } catch (AssertionError error) {
           return new CheckResult(false, "Spanner tables do not contain expected rows.");
         }
       }
     };
-  }
-
-  /** Helper function for checking the rows of the destination Spanner tables. */
-  private void checkSpannerTables(
-      List<String> tableNames, Map<String, List<Map<String, Object>>> cdcEvents) {
-    tableNames.forEach(
-        tableName -> {
-          List<String> columns = new ArrayList<>();
-          for (int i = 1; i <= NUM_COLUMNS; i++) {
-            columns.add("col_" + i);
-          }
-          SpannerAsserts.assertThatStructs(
-                  spannerResourceManager.readTableRecords(tableName, columns))
-              .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName));
-        });
   }
 
   /**
@@ -482,9 +472,9 @@ public class DataStreamToSpannerWideRowFor1600MBColumnsPerTablesIT extends Spann
             Map<String, Object> values = new HashMap<>();
             for (int ci = 1; ci <= NUM_COLUMNS; ci++) {
               if (ci == 1) {
-                values.put("col_" + ci, ci);
+                values.put(COLUMNS.get(0), ci);
               } else {
-                values.put("col_" + ci, generateRandomString());
+                values.put(COLUMNS.get(i - 1), generateRandomString());
               }
             }
             rows.add(values);

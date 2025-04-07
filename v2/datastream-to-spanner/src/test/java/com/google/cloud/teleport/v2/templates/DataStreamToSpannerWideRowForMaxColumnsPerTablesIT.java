@@ -281,91 +281,28 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
   }
 
   public static Map<String, Object> createSessionTemplate() {
-    Map<String, Object> sessionTemplate = new LinkedHashMap<>();
-    sessionTemplate.put("SessionName", "NewSession");
-    sessionTemplate.put("EditorName", "");
-    sessionTemplate.put("DatabaseType", "mysql");
-    sessionTemplate.put("DatabaseName", "SP_DATABASE");
-    sessionTemplate.put("Dialect", "google_standard_sql");
-    sessionTemplate.put("Notes", null);
-    sessionTemplate.put("Tags", null);
-    sessionTemplate.put("TimezoneOffset", "+00:00");
-    sessionTemplate.put("SpDialect", "google_standard_sql");
-    sessionTemplate.put("IsSharded", false);
-    sessionTemplate.put("SpRegion", "");
-    sessionTemplate.put("ResourceValidation", false);
-    sessionTemplate.put("UI", false);
-
-    // Initialize schema maps
-    sessionTemplate.put("SpSchema", new LinkedHashMap<>());
-    sessionTemplate.put("SyntheticPKeys", new LinkedHashMap<>());
-    sessionTemplate.put("SrcSchema", new LinkedHashMap<>());
-    sessionTemplate.put("SchemaIssues", new LinkedHashMap<>());
-    sessionTemplate.put("Location", new LinkedHashMap<>());
-    sessionTemplate.put("UniquePKey", new LinkedHashMap<>());
-    sessionTemplate.put("Rules", new ArrayList<>());
-
-    for (int i = 1; i <= NUM_TABLES; i++) {
-      String tableName = "TABLE" + i;
-
-      // Generate column IDs
-      List<String> colIds = new ArrayList<>();
-      for (int ci = 1; ci <= NUM_COLUMNS; ci++) {
-        colIds.add("c" + ci);
-      }
-
-      // Create column definitions
-      Map<String, Object> colDefs = createColumnDefinitions(colIds);
-
-      // Create primary keys
-      List<Map<String, Object>> primaryKeys = createPrimaryKeys(colIds);
-
-      // Create schema entries for Spanner & Source
-      Map<String, Object> spSchemaEntry =
-          createSchemaEntry(
-              tableName,
-              colIds,
-              colDefs,
-              primaryKeys,
-              "t" + i,
-              "Spanner schema for source table " + tableName);
-      ((Map<String, Object>) sessionTemplate.get("SpSchema")).put("t" + i, spSchemaEntry);
-
-      Map<String, Object> srcSchemaEntry = new LinkedHashMap<>(spSchemaEntry);
-      srcSchemaEntry.put("Schema", "SRC_DATABASE");
-      ((Map<String, Object>) sessionTemplate.get("SrcSchema")).put("t" + i, srcSchemaEntry);
-
-      // Initialize Schema Issues
-      Map<String, Object> schemaIssuesEntry = new LinkedHashMap<>();
-      schemaIssuesEntry.put("ColumnLevelIssues", new LinkedHashMap<>());
-      schemaIssuesEntry.put("TableLevelIssues", null);
-      ((Map<String, Object>) sessionTemplate.get("SchemaIssues")).put("t" + i, schemaIssuesEntry);
+    List<String> colIds = new ArrayList<>();
+    for (int ci = 1; ci <= NUM_COLUMNS; ci++) {
+      colIds.add("c" + ci);
     }
-
-    return sessionTemplate;
+    return createSessionTemplate(
+        NUM_TABLES, createColumnDefinitions(colIds), createPrimaryKeys(colIds));
   }
 
   /** Creates column definitions based on column IDs. */
-  private static Map<String, Object> createColumnDefinitions(List<String> colIds) {
-    Map<String, Object> colDefs = new LinkedHashMap<>();
-
+  private static List<Map<String, Object>> createColumnDefinitions(List<String> colIds) {
+    List<Map<String, Object>> colTypeConfigs = new ArrayList<>();
     for (int j = 1; j <= colIds.size(); j++) {
       Map<String, Object> colType = new LinkedHashMap<>();
-      colType.put("Name", "NUMERIC");
+      colType.put("Type", "NUMERIC");
       colType.put("Len", 0);
       colType.put("IsArray", false);
-
-      Map<String, Object> column = new LinkedHashMap<>();
-      column.put("Name", "col_" + j);
-      column.put("T", colType);
-      column.put("NotNull", (j == 1)); // First column is NOT NULL
-      column.put("Comment", "From: col_" + j + " decimal(10)");
-      column.put("Id", colIds.get(j - 1));
-
-      colDefs.put(colIds.get(j - 1), column);
+      colType.put("Name", "col_" + j);
+      colType.put("NotNull", (j == 1));
+      colType.put("Comment", "From: col_" + j + " MEDIUMTEXT");
+      colTypeConfigs.add(colType);
     }
-
-    return colDefs;
+    return colTypeConfigs;
   }
 
   /** Creates a list of primary key definitions. */

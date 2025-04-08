@@ -30,11 +30,7 @@ import com.google.pubsub.v1.SubscriptionName;
 import com.google.pubsub.v1.TopicName;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
@@ -65,11 +61,11 @@ import org.junit.runners.Parameterized;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(Parameterized.class)
-public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerTemplateITBase {
+public class DataStreamToSpannerWideRowForMaxTableNameIT extends SpannerTemplateITBase {
 
   private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 1;
-  private static final Integer NUM_COLUMNS = 1017;
+  private static final Integer NUM_COLUMNS = 2;
 
   private String gcsPrefix;
   private String dlqGcsPrefix;
@@ -120,30 +116,30 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
   }
 
   @Test
-  public void testDataStreamMySqlToSpannerFor1017ColumnsPerTables() throws IOException {
-    simpleMaxMySqlColumnsPerTablesToSpannerTest(
+  public void testDataStreamMySqlToSpannerForMaxTableName() throws IOException {
+    simpleMaxMySqlColumnsPerTablesToSpannerMaxTableNameTest(
         DatastreamResourceManager.DestinationOutputFormat.AVRO_FILE_FORMAT,
         Dialect.GOOGLE_STANDARD_SQL,
         Function.identity());
   }
 
   @Test
-  public void testDataStreamMySqlToSpannerStreamingEngine() throws IOException {
-    simpleMaxMySqlColumnsPerTablesToSpannerTest(
+  public void testDataStreamMySqlToSpannerMaxTableNameStreamingEngine() throws IOException {
+    simpleMaxMySqlColumnsPerTablesToSpannerMaxTableNameTest(
         DatastreamResourceManager.DestinationOutputFormat.AVRO_FILE_FORMAT,
         Dialect.GOOGLE_STANDARD_SQL,
         config -> config.addEnvironment("enableStreamingEngine", true));
   }
 
   @Test
-  public void testDataStreamMySqlToSpannerJson() throws IOException {
-    simpleMaxMySqlColumnsPerTablesToSpannerTest(
+  public void testDataStreamMySqlToSpannerMaxTableNameJson() throws IOException {
+    simpleMaxMySqlColumnsPerTablesToSpannerMaxTableNameTest(
         DatastreamResourceManager.DestinationOutputFormat.JSON_FILE_FORMAT,
         Dialect.GOOGLE_STANDARD_SQL,
         Function.identity());
   }
 
-  private void simpleMaxMySqlColumnsPerTablesToSpannerTest(
+  private void simpleMaxMySqlColumnsPerTablesToSpannerMaxTableNameTest(
       DatastreamResourceManager.DestinationOutputFormat fileFormat,
       Dialect spannerDialect,
       Function<LaunchConfig.Builder, LaunchConfig.Builder> paramsAdder)
@@ -177,7 +173,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends SpannerT
     // Generate 5000 table names
     List<String> tableNames = new ArrayList<>();
     for (int i = 1; i <= NUM_TABLES; i++) {
-      tableNames.add("DataStreamToSpanner_" + i + "_" + RandomStringUtils.randomAlphanumeric(5));
+      tableNames.add("DataStreamToSpanner_" + i + "_" + RandomStringUtils.randomAlphanumeric(30));
     }
 
     gcsResourceManager.createArtifact(

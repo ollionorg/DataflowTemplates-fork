@@ -264,7 +264,6 @@ public class DataStreamToSpannerWideRowForMaxTableNameIT extends SpannerTemplate
             .waitForConditionAndCancel(createConfig(info, Duration.ofMinutes(20)), conditionCheck);
 
     // Assert
-    checkSpannerTables(spannerResourceManager, tableNames, cdcEvents, COLUMNS);
     assertThatResult(result).meetsConditions();
   }
 

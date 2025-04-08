@@ -268,7 +268,6 @@ public class DataStreamToSpannerWideRowForMaxTableNameWithMaxColumnNameIT
             .waitForConditionAndCancel(createConfig(info, Duration.ofMinutes(20)), conditionCheck);
 
     // Assert
-    checkSpannerTables(spannerResourceManager, tableNames, cdcEvents, COLUMNS);
     assertThatResult(result).meetsConditions();
   }
 

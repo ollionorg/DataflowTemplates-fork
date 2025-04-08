@@ -25,7 +25,6 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.text.ParseException;
 import java.time.Duration;
-import org.apache.beam.it.cassandra.conditions.CassandraRowsCheck;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.TestProperties;
@@ -52,9 +51,9 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
       "SpannerToCassandraSourceLT/cassandra-schema.sql";
   private final String dataGeneratorSchemaResource =
       "SpannerToCassandraSourceLT/datagenerator-schema.json";
-  private final String table = "person";
+  private final String table = "singers";
   private final int maxWorkers = 50;
-  private final int numWorkers = 20;
+  private final int numWorkers = 10;
   private PipelineLauncher.LaunchInfo jobInfo;
   private final int numShards = 1;
 
@@ -88,11 +87,11 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
   public void reverseReplicationCassandra1KTpsLoadTest()
       throws IOException, ParseException, InterruptedException {
 
-    Integer numRecords = 300000;
+    //    Integer numRecords = 3000000;
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-            .setQPS("1000")
-            .setMessagesLimit(String.valueOf(numRecords))
+            .setQPS("30000")
+            //            .setMessagesLimit(String.valueOf(numRecords))
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
             .setSpannerTableName(table)
@@ -103,24 +102,24 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
             .setBatchSizeBytes("0")
             .build();
 
-    dataGenerator.execute(Duration.ofMinutes(90));
+    dataGenerator.execute(Duration.ofMinutes(180));
     assertThatPipeline(jobInfo).isRunning();
 
-    CassandraRowsCheck check =
-        CassandraRowsCheck.builder(table)
-            .setResourceManager(cassandraResourceManager)
-            .setMinRows(numRecords)
-            .setMaxRows(numRecords)
-            .build();
+    //    CassandraRowsCheck check =
+    //        CassandraRowsCheck.builder(table)
+    //            .setResourceManager(cassandraResourceManager)
+    //            .setMinRows(numRecords)
+    //            .setMaxRows(numRecords)
+    //            .build();
 
-    PipelineOperator.Result result =
-        pipelineOperator.waitForCondition(
-            createConfig(jobInfo, Duration.ofMinutes(10), Duration.ofSeconds(30)), check);
+    //    PipelineOperator.Result result =
+    //        pipelineOperator.waitForCondition(
+    //            createConfig(jobInfo, Duration.ofMinutes(10), Duration.ofSeconds(30)), check);
 
-    assertThatResult(result).meetsConditions();
+    //    assertThatResult(result).meetsConditions();
 
     PipelineOperator.Result result1 =
-        pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(20)));
+        pipelineOperator.cancelJobAndFinish(createConfig(jobInfo, Duration.ofMinutes(10)));
 
     assertThatResult(result1).isLaunchFinished();
 

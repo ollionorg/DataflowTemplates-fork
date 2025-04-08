@@ -1,12 +1,10 @@
-CREATE TABLE `person` (
-    `first_name1` STRING(500),
-    `last_name1` STRING(500),
-    `first_name2` STRING(500),
-    `last_name2` STRING(500),
-    `first_name3` STRING(500),
-    `last_name3` STRING(500),
-    `id` STRING(100) NOT NULL,
-)  PRIMARY KEY(id);
+CREATE TABLE singers (
+  singerid INT64 NOT NULL,
+  firstname STRING(MAX),
+  lastname STRING(MAX),
+  shardid STRING(20),
+  update_ts TIMESTAMP,
+) PRIMARY KEY(singerid);
 
 CREATE CHANGE STREAM allstream
   FOR ALL OPTIONS (

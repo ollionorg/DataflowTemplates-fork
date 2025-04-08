@@ -88,11 +88,8 @@ public class DataStreamToSpannerWideRowForMaxTableNameWithMaxColumnNameIT
   private static final List<String> COLUMNS = new ArrayList<>();
 
   static {
-    for (int i = 1; i <= NUM_COLUMNS; i++) {
-      COLUMNS.add("col_" + i);
-    }
-    COLUMNS.add(
-        NUM_COLUMNS - 1, "col_" + (NUM_COLUMNS - 1) + RandomStringUtils.randomAlphanumeric(30));
+    COLUMNS.add("col_1");
+    COLUMNS.add("col_" + (NUM_COLUMNS) + RandomStringUtils.randomAlphanumeric(30));
   }
 
   @Before

@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS singers (
-    SingerId int PRIMARY KEY,
-    FirstName text,
-    LastName text,
-    shardId text,
+    singerid int PRIMARY KEY,
+    firstname text,
+    lastname text,
+    shardid text,
     update_ts timestamp,
 );

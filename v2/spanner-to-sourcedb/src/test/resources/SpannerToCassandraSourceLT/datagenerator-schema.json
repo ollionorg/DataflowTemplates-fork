@@ -1,7 +1,7 @@
 {
-  "SingerId": "{{integer(1, 100000030)}}",
-  "FirstName": "name1",
-  "LastName": "lastname",
-  "shardId": "shard1",
+  "singerid": "{{integer(1, 100000030)}}",
+  "firstname": "name1",
+  "lastname": "lastname",
+  "shardid": "shard1",
   "update_ts": "2024-11-26T14:30:00Z"
 }

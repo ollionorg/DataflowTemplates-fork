@@ -1,7 +1,7 @@
 {
   "singerid": "{{integer(1, 100000030)}}",
-  "firstname": "name1",
-  "lastname": "lastname",
+  "firstname": "{{alphaNumeric(460,500)}}",
+  "lastname": "{{alphaNumeric(460,500)}}",
   "shardid": "shard1",
   "update_ts": "2024-11-26T14:30:00Z"
 }

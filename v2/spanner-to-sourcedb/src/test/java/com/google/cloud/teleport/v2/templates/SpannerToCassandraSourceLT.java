@@ -90,13 +90,13 @@ public class SpannerToCassandraSourceLT extends SpannerToCassandraLTBase {
     //    Integer numRecords = 3000000;
     DataGenerator dataGenerator =
         DataGenerator.builderWithSchemaLocation(testName, generatorSchemaPath)
-            .setQPS("10000")
+            .setQPS("30000")
             //            .setMessagesLimit(String.valueOf(numRecords))
             .setSpannerInstanceName(spannerResourceManager.getInstanceId())
             .setSpannerDatabaseName(spannerResourceManager.getDatabaseId())
             .setSpannerTableName(table)
-            .setNumWorkers("10")
-            .setMaxNumWorkers("20")
+            .setNumWorkers("50")
+            .setMaxNumWorkers("100")
             .setSinkType("SPANNER")
             .setProjectId(project)
             .setBatchSizeBytes("0")

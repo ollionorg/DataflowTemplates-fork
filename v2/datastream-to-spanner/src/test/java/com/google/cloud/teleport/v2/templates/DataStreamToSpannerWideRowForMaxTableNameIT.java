@@ -97,7 +97,7 @@ public class DataStreamToSpannerWideRowForMaxTableNameIT extends SpannerTemplate
     datastreamResourceManager =
         DatastreamResourceManager.builder(testName, PROJECT, REGION)
             .setCredentialsProvider(credentialsProvider)
-            .setPrivateConnectivity("datastream-private-connect-us-central1")
+            //            .setPrivateConnectivity("datastream-private-connect-us-central1")
             .build();
 
     gcsResourceManager = setUpSpannerITGcsResourceManager();

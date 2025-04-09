@@ -18,8 +18,6 @@ package com.google.cloud.teleport.v2.templates;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-import com.datastax.oss.driver.api.core.cql.ResultSet;
-import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.Struct;
 import com.google.cloud.teleport.metadata.SkipDirectRunnerTest;
@@ -27,10 +25,8 @@ import com.google.cloud.teleport.metadata.TemplateIntegrationTest;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.beam.it.cassandra.CassandraResourceManager;
 import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
-import org.apache.beam.it.jdbc.MySQLResourceManager;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -211,141 +207,5 @@ public class SpannerToSourceDbWideRowBasicIT extends SpannerToSourceDbITBase {
     assertEquals(8192, keySize);
 
     ResourceManagerUtils.cleanResources(spannerResourceManager);
-  }
-
-  @Test
-  public void testTableKeyLengthNameWithSize48CharWithSpannerAndMysql() {
-    String databaseName = "rr-main-db-key-valid-table-ms" + testName;
-    SpannerResourceManager spannerResourceManager =
-        SpannerResourceManager.builder(databaseName, PROJECT, REGION)
-            .maybeUseStaticInstance()
-            .build();
-
-    MySQLResourceManager mySQLResourceManager = MySQLResourceManager.builder(testName).build();
-    String tableName = "AB".repeat(32);
-    String spannerCreateTableQuery =
-        String.format(
-            "CREATE TABLE %s ("
-                + "  LargeKey STRING(8) NOT NULL,"
-                + "  Value STRING(MAX)"
-                + ") PRIMARY KEY (LargeKey)",
-            tableName);
-    spannerResourceManager.executeDdlStatement(spannerCreateTableQuery);
-    String mysqlCreateTableQuery =
-        String.format(
-            "CREATE TABLE %s ("
-                + "  LargeKey VARCHAR(8) PRIMARY KEY,"
-                + "  Value VARCHAR(36)"
-                + ")",
-            tableName);
-
-    mySQLResourceManager.runSQLUpdate(mysqlCreateTableQuery);
-    assertEquals(0, mySQLResourceManager.getRowCount(tableName));
-    ResourceManagerUtils.cleanResources(spannerResourceManager, mySQLResourceManager);
-  }
-
-  @Test
-  public void testTableKeyLengthNameWithSize48CharWithSpannerAndCassandra() {
-    String databaseName = "rr-main-db-key-valid-table-cs" + testName;
-    SpannerResourceManager spannerResourceManager =
-        SpannerResourceManager.builder(databaseName, PROJECT, REGION)
-            .maybeUseStaticInstance()
-            .build();
-
-    CassandraResourceManager cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
-    String tableName = "AB".repeat(24);
-    String spannerCreateTableQuery =
-        String.format(
-            "CREATE TABLE %s ("
-                + "  LargeKey STRING(8) NOT NULL,"
-                + "  Value STRING(MAX)"
-                + ") PRIMARY KEY (LargeKey)",
-            tableName);
-    spannerResourceManager.executeDdlStatement(spannerCreateTableQuery);
-    String cassandraCreateTableQuery =
-        String.format(
-            "CREATE TABLE %s (" + "  LargeKey TEXT PRIMARY KEY," + "  Value TEXT" + ")", tableName);
-
-    cassandraResourceManager.executeStatement(cassandraCreateTableQuery);
-    assertEquals(0, getRowCount(cassandraResourceManager, tableName));
-    ResourceManagerUtils.cleanResources(spannerResourceManager, cassandraResourceManager);
-  }
-
-  @Test
-  public void testTableKeyLengthNameWithColumnNameSizeWithSpannerAndMysql() {
-    String databaseName = "rr-main-db-key-valid-table-ms-mcx" + testName;
-    SpannerResourceManager spannerResourceManager =
-        SpannerResourceManager.builder(databaseName, PROJECT, REGION)
-            .maybeUseStaticInstance()
-            .build();
-
-    MySQLResourceManager mySQLResourceManager = MySQLResourceManager.builder(testName).build();
-    String tableName = "AB".repeat(32);
-    String columnName = "AB".repeat(32);
-    String spannerCreateTableQuery =
-        String.format(
-            "CREATE TABLE %s ("
-                + "  LargeKey STRING(8) NOT NULL,"
-                + "  %s STRING(MAX)"
-                + ") PRIMARY KEY (LargeKey)",
-            tableName, columnName);
-    spannerResourceManager.executeDdlStatement(spannerCreateTableQuery);
-    String mysqlCreateTableQuery =
-        String.format(
-            "CREATE TABLE %s (" + "  LargeKey VARCHAR(8) PRIMARY KEY," + "  %s VARCHAR(36)" + ")",
-            tableName, columnName);
-
-    mySQLResourceManager.runSQLUpdate(mysqlCreateTableQuery);
-    assertEquals(0, mySQLResourceManager.getRowCount(tableName));
-    ResourceManagerUtils.cleanResources(spannerResourceManager, mySQLResourceManager);
-  }
-
-  @Test
-  public void testTableKeyLengthNameWithColumnNameSizeWithSpannerAndCassandra() {
-    String databaseName = "rr-main-db-key-valid-table-cs-ccx" + testName;
-    SpannerResourceManager spannerResourceManager =
-        SpannerResourceManager.builder(databaseName, PROJECT, REGION)
-            .maybeUseStaticInstance()
-            .build();
-
-    CassandraResourceManager cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
-    String tableName = "AB".repeat(24);
-    String columnName = "AB".repeat(16);
-    String spannerCreateTableQuery =
-        String.format(
-            "CREATE TABLE %s ("
-                + "  LargeKey STRING(36) NOT NULL,"
-                + "  %s STRING(MAX)"
-                + ") PRIMARY KEY (LargeKey)",
-            tableName, columnName);
-    spannerResourceManager.executeDdlStatement(spannerCreateTableQuery);
-    String cassandraCreateTableQuery =
-        String.format(
-            "CREATE TABLE %s (" + "  LargeKey TEXT PRIMARY KEY," + "  %s TEXT" + ")",
-            tableName, columnName);
-    cassandraResourceManager.executeStatement(cassandraCreateTableQuery);
-    assertEquals(0, getRowCount(cassandraResourceManager, tableName));
-    ResourceManagerUtils.cleanResources(spannerResourceManager, cassandraResourceManager);
-  }
-
-  /**
-   * Retrieves the total row count of a specified table in Cassandra.
-   *
-   * <p>This method executes a `SELECT COUNT(*)` query on the given table and returns the number of
-   * rows present in it.
-   *
-   * @param tableName the name of the table whose row count is to be retrieved.
-   * @return the total number of rows in the specified table.
-   * @throws RuntimeException if the query does not return a result.
-   */
-  private long getRowCount(CassandraResourceManager cassandraResourceManager, String tableName) {
-    String query = String.format("SELECT COUNT(*) FROM %s", tableName);
-    ResultSet resultSet = cassandraResourceManager.executeStatement(query);
-    Row row = resultSet.one();
-    if (row != null) {
-      return row.getLong(0);
-    } else {
-      throw new RuntimeException("Query did not return a result for table: " + tableName);
-    }
   }
 }

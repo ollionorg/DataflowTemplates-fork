@@ -53,8 +53,6 @@ import org.slf4j.LoggerFactory;
 @RunWith(JUnit4.class)
 public class SpannerToCassandraSourceDbMaxColumnNameWithTableNameIT
     extends SpannerToSourceDbITBase {
-  private static final String TABLE1 =
-      "testtable_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO";
   private static final Logger LOG =
       LoggerFactory.getLogger(SpannerToCassandraSourceDbMaxColumnNameWithTableNameIT.class);
 
@@ -65,7 +63,8 @@ public class SpannerToCassandraSourceDbMaxColumnNameWithTableNameIT
   private static final String CASSANDRA_CONFIG_FILE_RESOURCE =
       "SpannerToSourceDbWideRowMaxColumnNameWithMaxTableNameIT/cassandra-config-template.conf";
 
-  private static final String TEST_TABLE = "TestTable";
+  private static final String TEST_TABLE =
+      "testtable_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO";
   private static final HashSet<SpannerToCassandraSourceDbMaxColumnNameWithTableNameIT>
       testInstances = new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
@@ -161,7 +160,7 @@ public class SpannerToCassandraSourceDbMaxColumnNameWithTableNameIT
   private void writeRowWithMaxColumnsInSpanner() {
     List<Mutation> mutations = new ArrayList<>();
     Mutation.WriteBuilder mutationBuilder =
-        Mutation.newInsertOrUpdateBuilder(TABLE1).set("Id").to("SampleTest");
+        Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("id").to("SampleTest");
     mutationBuilder
         .set("col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO")
         .to("SampleTestValue");

@@ -159,7 +159,7 @@ public class SpannerToMySqlSourceDbWideRowMaxColumnNameWithMaxTableNameIT
   private void writeRowsInSpanner() {
     List<Mutation> mutations = new ArrayList<>();
     Mutation.WriteBuilder mutationBuilder =
-        Mutation.newInsertOrUpdateBuilder(TABLE1).set("Id").to("SampleTest");
+        Mutation.newInsertOrUpdateBuilder(TABLE1).set("id").to("SampleTest");
     mutationBuilder
         .set("col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO")
         .to("SampleTestValue");

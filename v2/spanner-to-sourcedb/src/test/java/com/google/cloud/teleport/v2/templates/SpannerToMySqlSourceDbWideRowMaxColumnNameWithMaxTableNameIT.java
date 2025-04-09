@@ -16,7 +16,6 @@
 package com.google.cloud.teleport.v2.templates;
 
 import static com.google.cloud.teleport.v2.spanner.migrations.constants.Constants.MYSQL_SOURCE_TYPE;
-import static com.google.common.truth.Truth.assertThat;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
@@ -30,7 +29,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.utils.ResourceManagerUtils;
@@ -178,8 +176,5 @@ public class SpannerToMySqlSourceDbWideRowMaxColumnNameWithMaxTableNameIT
                 createConfig(jobInfo, Duration.ofMinutes(10)),
                 () -> jdbcResourceManager.getRowCount(TABLE1) == 1); // only one row is inserted
     assertThatResult(result).meetsConditions();
-
-    List<Map<String, Object>> rows = jdbcResourceManager.readTable(TABLE1);
-    assertThat(rows).hasSize(1);
   }
 }

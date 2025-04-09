@@ -16,7 +16,6 @@
 package com.google.cloud.teleport.v2.templates;
 
 import static com.google.cloud.teleport.v2.spanner.migrations.constants.Constants.CASSANDRA_SOURCE_TYPE;
-import static com.google.common.truth.Truth.assertThat;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
@@ -176,15 +175,6 @@ public class SpannerToCassandraSourceDbMaxColumnNameWithTableNameIT
             .waitForCondition(
                 createConfig(jobInfo, Duration.ofMinutes(15)), () -> getRowCount(TEST_TABLE) == 1);
     assertThatResult(result).meetsConditions();
-
-    Iterable<Row> rows;
-    try {
-      rows = cassandraResourceManager.readTable(TEST_TABLE);
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to read from Cassandra table: " + TEST_TABLE, e);
-    }
-
-    assertThat(rows).hasSize(1);
     LOG.info("Successfully validated columns in Cassandra");
   }
 }

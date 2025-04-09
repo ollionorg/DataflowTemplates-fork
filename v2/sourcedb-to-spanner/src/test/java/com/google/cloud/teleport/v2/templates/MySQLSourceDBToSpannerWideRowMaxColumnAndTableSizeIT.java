@@ -35,7 +35,6 @@ import org.junit.runners.JUnit4;
 
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
-@Ignore("This test is completed")
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SourceDbToSpanner.class)
 @RunWith(JUnit4.class)
@@ -50,7 +49,7 @@ public class MySQLSourceDBToSpannerWideRowMaxColumnAndTableSizeIT extends Source
   private static final String SPANNER_SCHEMA_FILE_RESOURCE =
       "WideRow/RowMaxSizeLimit/spanner-schema.sql";
 
-  private static final String TABLE = "WideRowTable";
+  private static final String TABLE = "testtable_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO";
 
   private static final int MAX_ALLOWED_PACKET = 20 * 1024 * 1024;
 
@@ -88,10 +87,8 @@ public class MySQLSourceDBToSpannerWideRowMaxColumnAndTableSizeIT extends Source
     PipelineOperator.Result result = pipelineOperator().waitUntilDone(createConfig(jobInfo));
     assertThatResult(result).isLaunchFinished();
 
-    // Verify the data in Spanner
-    //    This will also verify the failure as the failed data will not be inserted into Spanner
     ImmutableList<Struct> wideRowData =
-        spannerResourceManager.readTableRecords(TABLE, "id", "max_string_col");
+        spannerResourceManager.readTableRecords(TABLE, "id", "col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO");
     SpannerAsserts.assertThatStructs(wideRowData).hasRows(1);
   }
 }

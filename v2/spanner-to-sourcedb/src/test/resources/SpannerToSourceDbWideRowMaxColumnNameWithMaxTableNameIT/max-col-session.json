@@ -17,7 +17,7 @@
       "ShardIdColumn": "c266",
       "ColDefs": {
         "c165": {
-          "Name": "Id",
+          "Name": "id",
           "T": {
             "Name": "STRING",
             "Len": 32,
@@ -117,7 +117,7 @@
       ],
       "ColDefs": {
         "c165": {
-          "Name": "Id",
+          "Name": "id",
           "Type": {
             "Name": "varchar",
             "Mods": [

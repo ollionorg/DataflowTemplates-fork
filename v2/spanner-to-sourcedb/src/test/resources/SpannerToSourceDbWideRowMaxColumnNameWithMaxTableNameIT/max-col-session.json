@@ -39,7 +39,7 @@
           }
         },
         "c166": {
-          "Name": "Col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO",
+          "Name": "col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvY",
           "T": {
             "Name": "STRING",
             "Len": 10,
@@ -177,7 +177,7 @@
               "Statement": ""
             }
           }
-        },
+        }
       },
       "PrimaryKeys": [
         {

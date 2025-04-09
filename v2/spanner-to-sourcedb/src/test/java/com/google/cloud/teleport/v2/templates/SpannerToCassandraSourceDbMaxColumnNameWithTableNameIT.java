@@ -160,9 +160,7 @@ public class SpannerToCassandraSourceDbMaxColumnNameWithTableNameIT
     List<Mutation> mutations = new ArrayList<>();
     Mutation.WriteBuilder mutationBuilder =
         Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("id").to("SampleTest");
-    mutationBuilder
-        .set("col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK")
-        .to("SampleTestValue");
+    mutationBuilder.set("col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3").to("SampleTestValue");
 
     mutations.add(mutationBuilder.build());
     spannerResourceManager.write(mutations);

@@ -42,7 +42,6 @@ import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -54,7 +53,6 @@ import org.slf4j.LoggerFactory;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
-@Ignore("This test is disabled currently")
 public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceDbITBase {
 
   private static final Logger LOG =
@@ -159,7 +157,7 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
     }
   }
 
-  /** Writes a row with 1,024 columns in Spanner and verifies replication to Cassandra. */
+  /** Writes a row with 159 columns in Spanner and verifies replication to Mysql. */
   @Test
   public void testSpannerToCassandraWithMaxInSizeColumns()
       throws InterruptedException, IOException {
@@ -191,11 +189,11 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
                   mutations.add(mutationBuilder.build());
                   spannerResourceManager.write(mutations);
                   System.out.printf(
-                      "✅ Inserted batch: Columns %d to %d into Spanner%n",
+                      "Inserted batch: Columns %d to %d into Spanner%n",
                       start, Math.min(start + BATCH_SIZE - 1, NUM_COLS));
                 } catch (Exception e) {
                   System.out.printf(
-                      "❌ Failed to insert batch: Columns %d to %d - %s%n",
+                      "Failed to insert batch: Columns %d to %d - %s%n",
                       start, start + BATCH_SIZE - 1, e.getMessage());
                 }
                 return null;
@@ -207,7 +205,7 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
           try {
             future.get();
           } catch (Exception e) {
-            System.out.printf("❌ Error in parallel execution: %s", e.getMessage());
+            System.out.printf("Error in parallel execution: %s", e.getMessage());
             System.out.println(e);
           }
         });

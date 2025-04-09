@@ -150,13 +150,13 @@ public class SpannerToCassandraSourceDbMaxColumnNameWithTableNameIT
 
   /** Writes a row with 1,024 columns in Spanner and verifies replication to Cassandra. */
   @Test
-  public void testSpannerToCassandraWithMaxColumns() throws InterruptedException, IOException {
+  public void testSpannerToCassandraWithMaxColumnsName() throws InterruptedException, IOException {
     assertThatPipeline(jobInfo).isRunning();
-    writeRowWithMaxColumnsInSpanner();
+    writeRowWithMaxColumnsNameAndTableInSpanner();
     assertRowWithMaxColumnsInCassandra();
   }
 
-  private void writeRowWithMaxColumnsInSpanner() {
+  private void writeRowWithMaxColumnsNameAndTableInSpanner() {
     List<Mutation> mutations = new ArrayList<>();
     Mutation.WriteBuilder mutationBuilder =
         Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("id").to("SampleTest");

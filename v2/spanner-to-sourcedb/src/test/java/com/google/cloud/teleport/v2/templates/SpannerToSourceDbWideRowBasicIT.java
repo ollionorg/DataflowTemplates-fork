@@ -226,7 +226,7 @@ public class SpannerToSourceDbWideRowBasicIT extends SpannerToSourceDbITBase {
     String spannerCreateTableQuery =
         String.format(
             "CREATE TABLE %s ("
-                + "  LargeKey STRING(36) NOT NULL,"
+                + "  LargeKey STRING(8) NOT NULL,"
                 + "  Value STRING(MAX)"
                 + ") PRIMARY KEY (LargeKey)",
             tableName);
@@ -234,8 +234,8 @@ public class SpannerToSourceDbWideRowBasicIT extends SpannerToSourceDbITBase {
     String mysqlCreateTableQuery =
         String.format(
             "CREATE TABLE %s ("
-                + "  LargeKey VARCHAR(36) PRIMARY KEY,"
-                + "  Value STRING(MAX)"
+                + "  LargeKey VARCHAR(8) PRIMARY KEY,"
+                + "  Value VARCHAR(36)"
                 + ")",
             tableName);
 
@@ -257,18 +257,14 @@ public class SpannerToSourceDbWideRowBasicIT extends SpannerToSourceDbITBase {
     String spannerCreateTableQuery =
         String.format(
             "CREATE TABLE %s ("
-                + "  LargeKey STRING(36) NOT NULL,"
+                + "  LargeKey STRING(8) NOT NULL,"
                 + "  Value STRING(MAX)"
                 + ") PRIMARY KEY (LargeKey)",
             tableName);
     spannerResourceManager.executeDdlStatement(spannerCreateTableQuery);
     String cassandraCreateTableQuery =
         String.format(
-            "CREATE TABLE %s ("
-                + "  LargeKey STRING(36) NOT NULL,"
-                + "  Value STRING(36)"
-                + ") PRIMARY KEY (LargeKey)",
-            tableName);
+            "CREATE TABLE %s (" + "  LargeKey TEXT PRIMARY KEY," + "  Value TEXT" + ")", tableName);
 
     cassandraResourceManager.executeStatement(cassandraCreateTableQuery);
     assertEquals(0, getRowCount(cassandraResourceManager, tableName));
@@ -289,14 +285,14 @@ public class SpannerToSourceDbWideRowBasicIT extends SpannerToSourceDbITBase {
     String spannerCreateTableQuery =
         String.format(
             "CREATE TABLE %s ("
-                + "  LargeKey STRING(36) NOT NULL,"
+                + "  LargeKey STRING(8) NOT NULL,"
                 + "  %s STRING(MAX)"
                 + ") PRIMARY KEY (LargeKey)",
             tableName, columnName);
     spannerResourceManager.executeDdlStatement(spannerCreateTableQuery);
     String mysqlCreateTableQuery =
         String.format(
-            "CREATE TABLE %s (" + "  LargeKey VARCHAR(36) PRIMARY KEY," + "  %s STRING(MAX)" + ")",
+            "CREATE TABLE %s (" + "  LargeKey VARCHAR(8) PRIMARY KEY," + "  %s VARCHAR(36)" + ")",
             tableName, columnName);
 
     mySQLResourceManager.runSQLUpdate(mysqlCreateTableQuery);
@@ -325,10 +321,7 @@ public class SpannerToSourceDbWideRowBasicIT extends SpannerToSourceDbITBase {
     spannerResourceManager.executeDdlStatement(spannerCreateTableQuery);
     String cassandraCreateTableQuery =
         String.format(
-            "CREATE TABLE %s ("
-                + "  LargeKey STRING(36) NOT NULL,"
-                + "  %s STRING(36)"
-                + ") PRIMARY KEY (LargeKey)",
+            "CREATE TABLE %s (" + "  LargeKey TEXT PRIMARY KEY," + "  %s TEXT" + ")",
             tableName, columnName);
     cassandraResourceManager.executeStatement(cassandraCreateTableQuery);
     assertEquals(0, getRowCount(cassandraResourceManager, tableName));

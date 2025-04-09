@@ -46,7 +46,7 @@
             "IsArray": false
           },
           "NotNull": false,
-          "Comment": "From: Col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO varchar(10)",
+          "Comment": "From: col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvY varchar(10)",
           "Id": "c166",
           "AutoGen": {
             "Name": "",
@@ -148,7 +148,7 @@
           }
         },
         "c166": {
-          "Name": "Col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO",
+          "Name": "col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvY",
           "Type": {
             "Name": "varchar",
             "Mods": [

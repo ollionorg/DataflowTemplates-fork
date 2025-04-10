@@ -29,13 +29,11 @@ import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
 import org.apache.beam.it.jdbc.MySQLResourceManager;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-@Ignore("This test is completed")
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SourceDbToSpanner.class)
 @RunWith(JUnit4.class)
@@ -51,7 +49,6 @@ public class MySQLSourceDBToSpannerWideRowMaxSizeStringIT extends SourceDbToSpan
       "WideRow/RowMaxSizeString/spanner-schema.sql";
 
   private static final String TABLE = "WideRowTable";
-
   private static final int MAX_ALLOWED_PACKET = 20 * 1024 * 1024;
 
   @Before
@@ -89,7 +86,6 @@ public class MySQLSourceDBToSpannerWideRowMaxSizeStringIT extends SourceDbToSpan
     assertThatResult(result).isLaunchFinished();
 
     // Verify the data in Spanner
-    //    This will also verify the failure as the failed data will not be inserted into Spanner
     ImmutableList<Struct> wideRowData =
         spannerResourceManager.readTableRecords(TABLE, "id", "max_string_col");
     SpannerAsserts.assertThatStructs(wideRowData).hasRows(1);

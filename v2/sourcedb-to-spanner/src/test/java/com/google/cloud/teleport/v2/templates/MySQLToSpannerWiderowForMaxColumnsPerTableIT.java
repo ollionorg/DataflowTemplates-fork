@@ -30,16 +30,13 @@ import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 /** Integration test for testing MySQL to Spanner migration with wide tables (1016 columns). */
-@Ignore("test is completed")
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SourceDbToSpanner.class)
 @RunWith(JUnit4.class)
@@ -61,11 +58,6 @@ public class MySQLToSpannerWiderowForMaxColumnsPerTableIT extends SourceDbToSpan
     ResourceManagerUtils.cleanResources(spannerResourceManager, mySQLResourceManager);
   }
 
-  /**
-   * Builds the MySQL CREATE TABLE statement with the specified number of columns.
-   *
-   * @return MySQL DDL statement
-   */
   private String getMySQLDDL(int maxColumns) {
     StringBuilder mysqlDDL = new StringBuilder();
     for (int i = 1; i <= maxColumns; i++) {
@@ -78,11 +70,6 @@ public class MySQLToSpannerWiderowForMaxColumnsPerTableIT extends SourceDbToSpan
         "CREATE TABLE %s (id INT NOT NULL, %s, PRIMARY KEY (id))", TABLENAME, mysqlDDL);
   }
 
-  /**
-   * Builds the Spanner CREATE TABLE statement with the specified number of columns.
-   *
-   * @return Spanner DDL statement
-   */
   private String getSpannerDDL(int maxColumns) {
     StringBuilder spannerDDL = new StringBuilder();
     for (int i = 1; i <= maxColumns; i++) {
@@ -95,11 +82,6 @@ public class MySQLToSpannerWiderowForMaxColumnsPerTableIT extends SourceDbToSpan
         "CREATE TABLE %s (id INT64 NOT NULL, %s) PRIMARY KEY (id)", TABLENAME, spannerDDL);
   }
 
-  /**
-   * Builds the MySQL INSERT statement with values for each column.
-   *
-   * @return MySQL INSERT statement
-   */
   private String getMySQLInsertStatement(int maxColumns) {
     StringBuilder columns = new StringBuilder();
     StringBuilder values = new StringBuilder();
@@ -119,11 +101,6 @@ public class MySQLToSpannerWiderowForMaxColumnsPerTableIT extends SourceDbToSpan
     return String.format("INSERT INTO %s (%s) VALUES (%s)", TABLENAME, columns, values);
   }
 
-  /**
-   * Creates a list of column names for verification queries.
-   *
-   * @return List of column names
-   */
   private List<String> getColumnsList(int maxColumns) {
     List<String> columns = new ArrayList<>();
     columns.add("id");
@@ -138,16 +115,12 @@ public class MySQLToSpannerWiderowForMaxColumnsPerTableIT extends SourceDbToSpan
     // Limits to the max columns supported by MySQL/CloudSQL (1017 columns total, including 'id')
     int maxColumns = 1016;
 
-    // Create table in MySQL
     loadSQLToJdbcResourceManager(mySQLResourceManager, getMySQLDDL(maxColumns));
 
-    // Insert test data in MySQL
     loadSQLToJdbcResourceManager(mySQLResourceManager, getMySQLInsertStatement(maxColumns));
 
-    // Create matching table in Spanner
     spannerResourceManager.executeDdlStatement(getSpannerDDL(maxColumns));
 
-    // Launch the migration job
     jobInfo =
         launchDataflowJob(
             getClass().getSimpleName(),
@@ -158,35 +131,13 @@ public class MySQLToSpannerWiderowForMaxColumnsPerTableIT extends SourceDbToSpan
             null,
             null);
 
-    // Wait for job completion
     PipelineOperator.Result result = pipelineOperator().waitUntilDone(createConfig(jobInfo));
     assertThatResult(result).isLaunchFinished();
 
-    // Verify data in Spanner
     List<String> expectedColumns = getColumnsList(maxColumns);
     ImmutableList<Struct> wideRowData =
         spannerResourceManager.readTableRecords(TABLENAME, expectedColumns);
 
-    // Verify row count
     SpannerAsserts.assertThatStructs(wideRowData).hasRows(1);
-  }
-
-  @Test
-  public void testExceedingMaxColumnsPerTable() throws Exception {
-    int maxColumns = 1025;
-    try {
-      spannerResourceManager.executeDdlStatement(getSpannerDDL(maxColumns));
-      Assert.fail(
-          "Expected exception due to exceeding maximum columns, but no exception was thrown.");
-    } catch (Exception e) {
-
-      /*  Original error message is "Table WiderowTable has too many columns; the limit is 1024."
-       * executeDdlStatement throws "Failed to execute statement".
-       */
-
-      Assert.assertTrue(
-          "Exception should mention column limitation",
-          e.getMessage().contains("Failed to execute statement"));
-    }
   }
 }

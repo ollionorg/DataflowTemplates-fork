@@ -29,23 +29,20 @@ import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
 import org.apache.beam.it.jdbc.MySQLResourceManager;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-@Ignore("This test is completed")
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SourceDbToSpanner.class)
 @RunWith(JUnit4.class)
 public class MySQLSourceDbToSpannerWideRowMaxSizeTableKeyIT extends SourceDbToSpannerITBase {
 
   private static final String TABLE_NAME = "LargePrimaryKeyTable";
-  private static final String MYSQL_DUMP_FILE_RESOURCE =
-      "WideRow/SourceDbToSpannerMaxSizeTableKey/mysql-schema.sql";
+  private static final String MYSQL_DUMP_FILE_RESOURCE = "WideRow/MaxSizeTableKey/mysql-schema.sql";
   private static final String SPANNER_SCHEMA_FILE_RESOURCE =
-      "WideRow/SourceDbToSpannerMaxSizeTableKey/spanner-schema.sql";
+      "WideRow/MaxSizeTableKey/spanner-schema.sql";
 
   private static PipelineLauncher.LaunchInfo jobInfo;
   public static MySQLResourceManager mySQLResourceManager;

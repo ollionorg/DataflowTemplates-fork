@@ -26,21 +26,22 @@ import java.util.List;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
 import org.apache.beam.it.common.utils.ResourceManagerUtils;
-import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
+import org.apache.beam.it.jdbc.MySQLResourceManager;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-@Ignore("This test is completed and tested recently")
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SourceDbToSpanner.class)
 @RunWith(JUnit4.class)
+
+// This test is constrained to 16 columns in the primary key for both Spanner and MySQL, with a
+// MySQL size limit of 3072 bytes.
 public class MySQLSourceDbToSpannerWideRowMaxColumnsTableKeyIT extends SourceDbToSpannerITBase {
   private static final String TABLE_NAME = "LargePrimaryKeyTable";
   private static final String MYSQL_DUMP_FILE_RESOURCE =
@@ -49,12 +50,12 @@ public class MySQLSourceDbToSpannerWideRowMaxColumnsTableKeyIT extends SourceDbT
       "WideRow/MaxColumnsTableKeyIT/spanner-schema.sql";
 
   private static PipelineLauncher.LaunchInfo jobInfo;
-  public static CloudMySQLResourceManager mySQLResourceManager;
+  public static MySQLResourceManager mySQLResourceManager;
   public static SpannerResourceManager spannerResourceManager;
 
   @Before
   public void setUp() throws Exception {
-    mySQLResourceManager = setUpCloudMySQLResourceManager();
+    mySQLResourceManager = setUpMySQLResourceManager();
     spannerResourceManager = setUpSpannerResourceManager();
   }
 
@@ -83,7 +84,7 @@ public class MySQLSourceDbToSpannerWideRowMaxColumnsTableKeyIT extends SourceDbT
     for (int i = 1; i <= 16; i++) {
       columns.add("pk_col" + i);
     }
-    // Verify the data in Spanner
+
     ImmutableList<Struct> wideRowData =
         spannerResourceManager.readTableRecords(TABLE_NAME, columns);
     SpannerAsserts.assertThatStructs(wideRowData).hasRows(1);

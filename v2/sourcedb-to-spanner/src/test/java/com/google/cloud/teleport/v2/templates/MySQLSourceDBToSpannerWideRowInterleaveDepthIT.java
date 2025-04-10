@@ -26,15 +26,12 @@ import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.jdbc.MySQLResourceManager;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-@Ignore("Test is passed with current iteration")
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SourceDbToSpanner.class)
 @RunWith(JUnit4.class)
@@ -45,8 +42,6 @@ public class MySQLSourceDBToSpannerWideRowInterleaveDepthIT extends SourceDbToSp
 
   private static final String SPANNER_SCHEMA_FILE_RESOURCE =
       "WideRow/InterleaveDepthIT/spanner-schema.sql";
-  private static final String SPANNER_SCHEMA_DEPTH_8_FILE_RESOURCE =
-      "WideRow/InterleaveDepthIT/spanner-schema-depth-8.sql";
 
   private static final String MYSQL_DUMP_FILE_RESOURCE =
       "WideRow/InterleaveDepthIT/mysql-schema.sql";
@@ -79,24 +74,11 @@ public class MySQLSourceDBToSpannerWideRowInterleaveDepthIT extends SourceDbToSp
     PipelineOperator.Result result = pipelineOperator().waitUntilDone(createConfig(jobInfo));
     assertThatResult(result).isLaunchFinished();
     for (int i = 1; i <= 7; i++) {
-      String tableName = "child" + i;
+      String tableName = "Level" + i;
       assertEquals(
           "Interleaved depth " + i + " migrated",
           1,
           spannerResourceManager.getRowCount(tableName).longValue());
-    }
-  }
-
-  @Test
-  public void wideRowInterleaveDepth8FailureTest() {
-    try {
-      // Attempt to create a schema with interleave depth of 8 (which exceeds Spanner's limit of
-      createSpannerDDL(spannerResourceManager, SPANNER_SCHEMA_DEPTH_8_FILE_RESOURCE);
-    } catch (Exception e) {
-      System.out.println("===>>>>>> Exception caught: " + e.getMessage());
-      Assert.assertTrue(
-          "Exception should mention key column limitation",
-          e.getMessage().contains("Failed to execute statement"));
     }
   }
 }

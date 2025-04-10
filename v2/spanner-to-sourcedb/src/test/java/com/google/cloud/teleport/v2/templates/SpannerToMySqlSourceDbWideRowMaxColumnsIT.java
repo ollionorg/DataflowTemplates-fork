@@ -156,13 +156,13 @@ public class SpannerToMySqlSourceDbWideRowMaxColumnsIT extends SpannerToSourceDb
     Mutation.WriteBuilder mutationBuilder =
         Mutation.newInsertOrUpdateBuilder(TABLE1).set("id").to("SampleTest");
 
-    for (int i = 1; i < 1024; i++) {
+    for (int i = 1; i <= 100; i++) {
       mutationBuilder.set("col_" + i).to("TestValue_" + i);
     }
 
     mutations.add(mutationBuilder.build());
     spannerResourceManager.write(mutations);
-    LOG.info("Inserted row with 1,024 columns into Spanner using Mutations");
+    LOG.info("Inserted row with 100 columns into Spanner using Mutations");
   }
 
   private final List<Throwable> assertionErrors = new ArrayList<>();

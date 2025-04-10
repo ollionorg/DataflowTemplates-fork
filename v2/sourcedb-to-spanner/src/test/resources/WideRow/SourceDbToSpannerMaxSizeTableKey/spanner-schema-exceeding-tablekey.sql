@@ -1,0 +1,5 @@
+CREATE TABLE TestKeyComposite (
+  pk1 STRING(MAX) NOT NULL,
+  pk2 STRING(MAX) NOT NULL,
+  value STRING(MAX)
+) PRIMARY KEY (pk1, pk2);

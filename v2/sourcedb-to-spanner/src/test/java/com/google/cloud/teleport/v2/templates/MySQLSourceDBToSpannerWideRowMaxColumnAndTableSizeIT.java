@@ -45,10 +45,10 @@ public class MySQLSourceDBToSpannerWideRowMaxColumnAndTableSizeIT extends Source
 
   private static final String MYSQL_DUMP_FILE_RESOURCE = "WideRow/RowMaxSizeLimit/mysql-schema.sql";
   private static final String SPANNER_SCHEMA_FILE_RESOURCE =
-          "WideRow/RowMaxSizeLimit/spanner-schema.sql";
+      "WideRow/RowMaxSizeLimit/spanner-schema.sql";
 
   private static final String TABLE =
-          "testtable_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO";
+      "testtable_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO";
 
   private static final int MAX_ALLOWED_PACKET = 20 * 1024 * 1024;
 
@@ -74,21 +74,21 @@ public class MySQLSourceDBToSpannerWideRowMaxColumnAndTableSizeIT extends Source
     loadSQLFileResource(mySQLResourceManager, MYSQL_DUMP_FILE_RESOURCE);
     createSpannerDDL(spannerResourceManager, SPANNER_SCHEMA_FILE_RESOURCE);
     jobInfo =
-            launchDataflowJob(
-                    getClass().getSimpleName(),
-                    null,
-                    null,
-                    mySQLResourceManager,
-                    spannerResourceManager,
-                    null,
-                    null);
+        launchDataflowJob(
+            getClass().getSimpleName(),
+            null,
+            null,
+            mySQLResourceManager,
+            spannerResourceManager,
+            null,
+            null);
 
     PipelineOperator.Result result = pipelineOperator().waitUntilDone(createConfig(jobInfo));
     assertThatResult(result).isLaunchFinished();
 
     ImmutableList<Struct> wideRowData =
-            spannerResourceManager.readTableRecords(
-                    TABLE, "id", "col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvY");
+        spannerResourceManager.readTableRecords(
+            TABLE, "id", "col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvY");
     SpannerAsserts.assertThatStructs(wideRowData).hasRows(1);
   }
 }

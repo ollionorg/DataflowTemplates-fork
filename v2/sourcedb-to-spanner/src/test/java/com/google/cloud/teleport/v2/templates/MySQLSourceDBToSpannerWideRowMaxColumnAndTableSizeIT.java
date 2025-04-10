@@ -15,6 +15,8 @@
  */
 package com.google.cloud.teleport.v2.templates;
 
+import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
+
 import com.google.cloud.spanner.Struct;
 import com.google.cloud.teleport.metadata.SkipDirectRunnerTest;
 import com.google.cloud.teleport.metadata.TemplateIntegrationTest;
@@ -27,13 +29,10 @@ import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
 import org.apache.beam.it.jdbc.MySQLResourceManager;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
 
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SourceDbToSpanner.class)
@@ -44,12 +43,12 @@ public class MySQLSourceDBToSpannerWideRowMaxColumnAndTableSizeIT extends Source
   public static MySQLResourceManager mySQLResourceManager;
   public static SpannerResourceManager spannerResourceManager;
 
-  private static final String MYSQL_DUMP_FILE_RESOURCE =
-      "WideRow/RowMaxSizeLimit/mysql-schema.sql";
+  private static final String MYSQL_DUMP_FILE_RESOURCE = "WideRow/RowMaxSizeLimit/mysql-schema.sql";
   private static final String SPANNER_SCHEMA_FILE_RESOURCE =
       "WideRow/RowMaxSizeLimit/spanner-schema.sql";
 
-  private static final String TABLE = "testtable_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO";
+  private static final String TABLE =
+      "testtable_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO";
 
   private static final int MAX_ALLOWED_PACKET = 20 * 1024 * 1024;
 
@@ -88,7 +87,10 @@ public class MySQLSourceDBToSpannerWideRowMaxColumnAndTableSizeIT extends Source
     assertThatResult(result).isLaunchFinished();
 
     ImmutableList<Struct> wideRowData =
-        spannerResourceManager.readTableRecords(TABLE, "id", "col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO");
+        spannerResourceManager.readTableRecords(
+            TABLE,
+            "id",
+            "col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO");
     SpannerAsserts.assertThatStructs(wideRowData).hasRows(1);
   }
 }

@@ -88,9 +88,7 @@ public class MySQLSourceDBToSpannerWideRowMaxColumnAndTableSizeIT extends Source
 
     ImmutableList<Struct> wideRowData =
         spannerResourceManager.readTableRecords(
-            TABLE,
-            "id",
-            "col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO");
+            TABLE, "id", "col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvY");
     SpannerAsserts.assertThatStructs(wideRowData).hasRows(1);
   }
 }

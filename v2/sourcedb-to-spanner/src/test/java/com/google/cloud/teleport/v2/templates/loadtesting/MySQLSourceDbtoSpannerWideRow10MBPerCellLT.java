@@ -64,7 +64,6 @@ public class MySQLSourceDbtoSpannerWideRow10MBPerCellLT extends SourceDbToSpanne
           {
             put("workerMachineType", WORKER_MACHINE_TYPE);
             put("fetchSize", FETCH_SIZE);
-            put("additionalExperiments", "disable_runner_v2");
           }
         };
 

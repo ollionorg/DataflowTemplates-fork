@@ -156,6 +156,7 @@ public class SourceDbToSpannerLTBase extends TemplateLoadTestBase {
         LaunchConfig.builder(getClass().getSimpleName(), SPEC_PATH)
             .addEnvironment("maxWorkers", MAX_WORKERS)
             .addEnvironment("numWorkers", NUM_WORKERS)
+            .addEnvironment("additionalExperiments", "disable_runner_v2")
             .setParameters(params);
     environmentOptions.forEach(options::addEnvironment);
 

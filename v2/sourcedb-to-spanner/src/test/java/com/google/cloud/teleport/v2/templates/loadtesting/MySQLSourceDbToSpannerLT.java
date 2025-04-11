@@ -70,7 +70,7 @@ public class MySQLSourceDbToSpannerLT extends SourceDbToSpannerLTBase {
             put("fetchSize", FETCH_SIZE);
           }
         };
-    Map<String, String> env =
+    Map<String, Object> env =
         new HashMap<>() {
           {
             put("launcherMachineType", LAUNCHER_MACHINE_TYPE);

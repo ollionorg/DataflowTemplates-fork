@@ -67,7 +67,7 @@ public class MySQLSourceDbToSpannerWideRow1600MBNonKeyColumnsLT extends SourceDb
           }
         };
 
-    Map<String, String> env = new HashMap<>() {};
+    Map<String, Object> env = new HashMap<>() {};
 
     runLoadTest(expectedCountPerTable, params, env);
   }

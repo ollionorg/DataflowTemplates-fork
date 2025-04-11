@@ -23,10 +23,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineLauncher.LaunchConfig;
@@ -128,7 +125,7 @@ public class SourceDbToSpannerLTBase extends TemplateLoadTestBase {
   public void runLoadTest(
       Map<String, Integer> expectations,
       Map<String, String> templateParameters,
-      Map<String, String> environmentOptions)
+      Map<String, Object> environmentOptions)
       throws IOException, ParseException, InterruptedException {
 
     // Add all parameters for the template
@@ -156,7 +153,6 @@ public class SourceDbToSpannerLTBase extends TemplateLoadTestBase {
         LaunchConfig.builder(getClass().getSimpleName(), SPEC_PATH)
             .addEnvironment("maxWorkers", MAX_WORKERS)
             .addEnvironment("numWorkers", NUM_WORKERS)
-            .addEnvironment("additionalExperiments", "disable_runner_v2")
             .setParameters(params);
     environmentOptions.forEach(options::addEnvironment);
 

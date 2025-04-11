@@ -18,6 +18,7 @@ package com.google.cloud.teleport.v2.templates.loadtesting;
 import com.google.cloud.teleport.metadata.TemplateLoadTest;
 import com.google.cloud.teleport.v2.source.reader.io.jdbc.iowrapper.config.SQLDialect;
 import com.google.cloud.teleport.v2.templates.SourceDbToSpanner;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
@@ -67,7 +68,12 @@ public class MySQLSourceDbtoSpannerWideRow10MBPerCellLT extends SourceDbToSpanne
           }
         };
 
-    Map<String, String> env = new HashMap<>() {};
+    Map<String, Object> env =
+        new HashMap<>() {
+          {
+            put("additionalExperiments", Collections.singletonList("disable_runner_v2"));
+          }
+        };
 
     runLoadTest(expectedCountPerTable, params, env);
   }

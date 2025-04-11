@@ -62,7 +62,7 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
   private static final String SECONDARY_KEY_PREFIX = "col_";
 
   private static final String SPANNER_DDL_RESOURCE =
-      "SpannerToSourceDbWideRowIT/spanner-max-col-schema.sql";
+      "SpannerToSourceDbWideRowIT/spanner-max-col-cassandra-schema.sql";
   private static final String CASSANDRA_SCHEMA_FILE_RESOURCE =
       "SpannerToSourceDbWideRowIT/cassandra-max-col-schema.sql";
   private static final String CASSANDRA_CONFIG_FILE_RESOURCE =

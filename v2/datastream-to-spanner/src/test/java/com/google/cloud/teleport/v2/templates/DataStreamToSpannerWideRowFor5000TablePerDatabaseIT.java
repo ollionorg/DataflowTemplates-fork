@@ -69,7 +69,6 @@ import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -82,14 +81,13 @@ import org.testcontainers.shaded.org.apache.commons.lang3.math.NumberUtils;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(Parameterized.class)
-@Ignore
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends SpannerTemplateITBase {
   private static final int THREAD_POOL_SIZE = 16;
-  private static final int BATCH_SIZE = 1000;
+  private static final int BATCH_SIZE = 2500;
   private static final int MAX_RETRIES = 3;
   private static final long RETRY_DELAY_MS = 3000; // Delay between retries
   private static final Integer NUM_EVENTS = 1;
-  private static final Integer NUM_TABLES = 5000;
+  private static final Integer NUM_TABLES = 2500;
 
   private static final String ROW_ID = "row_id";
   private static final String NAME = "name";

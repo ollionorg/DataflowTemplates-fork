@@ -49,7 +49,7 @@ public class SourceDbToSpannerLTBase extends TemplateLoadTestBase {
 
   private static final String SPEC_PATH =
       "gs://dataflow-templates/latest/flex/Sourcedb_to_Spanner_Flex";
-  private static final int SPANNER_NODE_COUNT = 10;
+  private static final int SPANNER_NODE_COUNT = 5;
 
   private static final int MAX_WORKERS = 100;
 
@@ -128,7 +128,7 @@ public class SourceDbToSpannerLTBase extends TemplateLoadTestBase {
   public void runLoadTest(
       Map<String, Integer> expectations,
       Map<String, String> templateParameters,
-      Map<String, String> environmentOptions)
+      Map<String, Object> environmentOptions)
       throws IOException, ParseException, InterruptedException {
 
     // Add all parameters for the template

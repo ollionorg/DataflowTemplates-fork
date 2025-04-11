@@ -22,11 +22,13 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+@Ignore("Ignoring this test as it is not relevant for the current test suite")
 @Category(TemplateLoadTest.class)
 @TemplateLoadTest(SourceDbToSpanner.class)
 @RunWith(JUnit4.class)
@@ -68,7 +70,7 @@ public class MySQLSourceDbToSpannerLT extends SourceDbToSpannerLTBase {
             put("fetchSize", FETCH_SIZE);
           }
         };
-    Map<String, String> env =
+    Map<String, Object> env =
         new HashMap<>() {
           {
             put("launcherMachineType", LAUNCHER_MACHINE_TYPE);

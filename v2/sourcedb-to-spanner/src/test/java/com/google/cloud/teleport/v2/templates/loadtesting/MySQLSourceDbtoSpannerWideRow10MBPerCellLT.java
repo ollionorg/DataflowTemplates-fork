@@ -43,7 +43,7 @@ public class MySQLSourceDbtoSpannerWideRow10MBPerCellLT extends SourceDbToSpanne
     String password =
         accessSecret(
             "projects/209835939752/secrets/sourcedb-mysql-to-spanner-cloudsql-password/versions/1");
-    String database = "8MiBPerCell";
+    String database = "10MiBPerCell";
     String host =
         accessSecret(
             "projects/209835939752/secrets/sourcedb-mysql-to-spanner-cloudsql-ip-address/versions/1");
@@ -55,7 +55,7 @@ public class MySQLSourceDbtoSpannerWideRow10MBPerCellLT extends SourceDbToSpanne
     Map<String, Integer> expectedCountPerTable =
         new HashMap<>() {
           {
-            put("WideRowTable", 2133);
+            put("WideRowTable", 1706);
           }
         };
 
@@ -64,15 +64,11 @@ public class MySQLSourceDbtoSpannerWideRow10MBPerCellLT extends SourceDbToSpanne
           {
             put("workerMachineType", WORKER_MACHINE_TYPE);
             put("fetchSize", FETCH_SIZE);
-          }
-        };
-
-    Map<String, String> env =
-        new HashMap<>() {
-          {
             put("additionalExperiments", "disable_runner_v2");
           }
         };
+
+    Map<String, String> env = new HashMap<>() {};
 
     runLoadTest(expectedCountPerTable, params, env);
   }

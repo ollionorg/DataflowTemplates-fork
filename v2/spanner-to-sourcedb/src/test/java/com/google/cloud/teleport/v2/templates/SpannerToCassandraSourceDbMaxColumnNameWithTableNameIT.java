@@ -39,7 +39,6 @@ import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,7 +50,6 @@ import org.slf4j.LoggerFactory;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
-@Ignore
 public class SpannerToCassandraSourceDbMaxColumnNameWithTableNameIT
     extends SpannerToSourceDbITBase {
   private static final Logger LOG =
@@ -161,7 +159,7 @@ public class SpannerToCassandraSourceDbMaxColumnNameWithTableNameIT
     List<Mutation> mutations = new ArrayList<>();
     Mutation.WriteBuilder mutationBuilder =
         Mutation.newInsertOrUpdateBuilder(TEST_TABLE).set("id").to("SampleTest");
-    mutationBuilder.set("col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3").to("SampleTestValue");
+    mutationBuilder.set("col_qcbF69RmXTRe3B_03TpCoVF16ED").to("SampleTestValue");
 
     mutations.add(mutationBuilder.build());
     spannerResourceManager.write(mutations);

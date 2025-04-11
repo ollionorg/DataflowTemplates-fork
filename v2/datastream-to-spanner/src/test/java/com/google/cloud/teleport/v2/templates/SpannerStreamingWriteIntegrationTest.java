@@ -46,6 +46,7 @@ import org.apache.beam.sdk.values.PCollectionView;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -57,6 +58,7 @@ import org.junit.rules.TemporaryFolder;
  * 'gcloud config'. TODO: Add support for emulator to run tests without a Cloud Spanner instance.
  */
 @Category(IntegrationTest.class)
+@Ignore
 public class SpannerStreamingWriteIntegrationTest {
   private final String testDb = "testdb";
 

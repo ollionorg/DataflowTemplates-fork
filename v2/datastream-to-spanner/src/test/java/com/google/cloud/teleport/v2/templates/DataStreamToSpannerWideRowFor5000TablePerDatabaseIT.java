@@ -55,7 +55,7 @@ import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -88,10 +88,10 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends DataStr
   private static final List<String> COLUMNS = List.of(ROW_ID, NAME, AGE, MEMBER, ENTRY_ADDED);
   private static final ExecutorService EXECUTOR_SERVICE =
       Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-  private CloudSqlResourceManager cloudSqlResourceManager;
-  private SpannerResourceManager spannerResourceManager;
-  private PubsubResourceManager pubsubResourceManager;
-  private GcsResourceManager gcsResourceManager;
+  private static CloudSqlResourceManager cloudSqlResourceManager;
+  private static SpannerResourceManager spannerResourceManager;
+  private static PubsubResourceManager pubsubResourceManager;
+  private static GcsResourceManager gcsResourceManager;
   private static HashSet<DataStreamToSpannerWideRowFor5000TablePerDatabaseIT> testInstances =
       new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
@@ -142,8 +142,11 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends DataStr
     }
   }
 
-  @After
-  public void cleanUp() {
+  @AfterClass
+  public static void cleanUp() throws IOException {
+    for (DataStreamToSpannerWideRowFor5000TablePerDatabaseIT instance : testInstances) {
+      instance.tearDownBase();
+    }
     EXECUTOR_SERVICE.shutdown();
     ResourceManagerUtils.cleanResources(
         cloudSqlResourceManager, spannerResourceManager, pubsubResourceManager, gcsResourceManager);

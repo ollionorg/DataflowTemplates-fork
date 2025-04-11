@@ -42,7 +42,7 @@ import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -59,11 +59,10 @@ public class DataStreamToSpannerWideRowForMaxTableNameIT extends DataStreamToSpa
   private static final Integer NUM_TABLES = 1;
   private static final Integer NUM_COLUMNS = 2;
 
-  private CloudSqlResourceManager cloudSqlResourceManager;
-  private SpannerResourceManager spannerResourceManager;
-  private PubsubResourceManager pubsubResourceManager;
-
-  private GcsResourceManager gcsResourceManager;
+  private static CloudSqlResourceManager cloudSqlResourceManager;
+  private static SpannerResourceManager spannerResourceManager;
+  private static PubsubResourceManager pubsubResourceManager;
+  private static GcsResourceManager gcsResourceManager;
 
   private static final List<String> COLUMNS = new ArrayList<>();
 
@@ -120,8 +119,11 @@ public class DataStreamToSpannerWideRowForMaxTableNameIT extends DataStreamToSpa
     }
   }
 
-  @After
-  public void cleanUp() {
+  @AfterClass
+  public static void cleanUp() throws IOException {
+    for (DataStreamToSpannerWideRowForMaxTableNameIT instance : testInstances) {
+      instance.tearDownBase();
+    }
     ResourceManagerUtils.cleanResources(
         cloudSqlResourceManager, spannerResourceManager, pubsubResourceManager, gcsResourceManager);
   }

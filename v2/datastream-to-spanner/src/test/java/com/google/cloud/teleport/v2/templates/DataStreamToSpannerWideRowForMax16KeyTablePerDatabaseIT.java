@@ -43,7 +43,7 @@ import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -62,11 +62,10 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT
 
   private static final int NUM_COLUMNS = 16;
   private static final List<String> COLUMNS = new ArrayList<>();
-  private CloudSqlResourceManager cloudSqlResourceManager;
-  private SpannerResourceManager spannerResourceManager;
-  private PubsubResourceManager pubsubResourceManager;
-
-  private GcsResourceManager gcsResourceManager;
+  private static CloudSqlResourceManager cloudSqlResourceManager;
+  private static SpannerResourceManager spannerResourceManager;
+  private static PubsubResourceManager pubsubResourceManager;
+  private static GcsResourceManager gcsResourceManager;
   private static HashSet<DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT> testInstances =
       new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
@@ -120,8 +119,11 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT
     }
   }
 
-  @After
-  public void cleanUp() {
+  @AfterClass
+  public static void cleanUp() throws IOException {
+    for (DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT instance : testInstances) {
+      instance.tearDownBase();
+    }
     ResourceManagerUtils.cleanResources(
         cloudSqlResourceManager, spannerResourceManager, pubsubResourceManager, gcsResourceManager);
   }

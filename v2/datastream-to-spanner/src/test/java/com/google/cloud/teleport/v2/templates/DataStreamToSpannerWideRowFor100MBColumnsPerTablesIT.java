@@ -44,7 +44,7 @@ import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -66,10 +66,10 @@ public class DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT
   private static final List<String> COLUMNS = new ArrayList<>();
   private static final Random RANDOM_GENERATOR = new Random();
   private static final List<String> TABLE_NAMES = new ArrayList<>();
-  private CloudSqlResourceManager cloudSqlResourceManager;
-  private SpannerResourceManager spannerResourceManager;
-  private PubsubResourceManager pubsubResourceManager;
-  private GcsResourceManager gcsResourceManager;
+  private static CloudSqlResourceManager cloudSqlResourceManager;
+  private static SpannerResourceManager spannerResourceManager;
+  private static PubsubResourceManager pubsubResourceManager;
+  private static GcsResourceManager gcsResourceManager;
 
   private static HashSet<DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT> testInstances =
       new HashSet<>();
@@ -123,8 +123,11 @@ public class DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT
     }
   }
 
-  @After
-  public void cleanUp() {
+  @AfterClass
+  public static void cleanUp() throws IOException {
+    for (DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT instance : testInstances) {
+      instance.tearDownBase();
+    }
     ResourceManagerUtils.cleanResources(
         cloudSqlResourceManager, spannerResourceManager, pubsubResourceManager, gcsResourceManager);
   }

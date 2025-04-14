@@ -133,7 +133,7 @@ public class DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT
   }
 
   @Test
-  public void testDataStreamMySqlToSpannerFor1600MBColumnsPerTables() throws IOException {
+  public void testDataStreamMySqlToSpannerFor100MBColumnsPerTables() throws IOException {
     assertThatPipeline(jobInfo).isRunning();
     Map<String, List<Map<String, Object>>> cdcEvents = new HashMap<>();
     ChainedConditionCheck conditionCheck =

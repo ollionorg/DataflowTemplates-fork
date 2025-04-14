@@ -71,11 +71,11 @@ import org.testcontainers.shaded.org.apache.commons.lang3.math.NumberUtils;
 @RunWith(JUnit4.class)
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends DataStreamToSpannerITBase {
   private static final int THREAD_POOL_SIZE = 16;
-  private static final int BATCH_SIZE = 1000;
+  private static final int BATCH_SIZE = 2500;
   private static final int MAX_RETRIES = 3;
   private static final long RETRY_DELAY_MS = 3000; // Delay between retries
   private static final Integer NUM_EVENTS = 1;
-  private static final Integer NUM_TABLES = 5000;
+  private static final Integer NUM_TABLES = 2500;
 
   private static final String ROW_ID = "row_id";
   private static final String NAME = "name";

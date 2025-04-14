@@ -206,7 +206,7 @@ public class SpannerToSourceDbIT extends SpannerToSourceDbITBase {
     List<Map<String, Object>> rows = jdbcResourceManager.readTable(TABLE);
     assertThat(rows).hasSize(1);
     assertThat(rows.get(0).get("id")).isEqualTo(1);
-    assertThat(rows.get(0).get("full_name")).isEqualTo("FF");
+    assertThat(rows.get(0).get("name")).isEqualTo("FF");
     assertThat(rows.get(0).get("from")).isEqualTo("AA");
   }
 

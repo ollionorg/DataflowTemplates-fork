@@ -91,51 +91,48 @@ public class DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT
     skipBaseCleanup = true;
     synchronized (DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT.class) {
       testInstances.add(this);
-      if (jobInfo == null) {
-        datastreamResourceManager =
-            DatastreamResourceManager.builder(testName, PROJECT, REGION)
-                .setCredentialsProvider(credentialsProvider)
-                //
-                // .setPrivateConnectivity("datastream-private-connect-us-central1")
-                .build();
-        spannerResourceManager = setUpSpannerResourceManager();
-        pubsubResourceManager = setUpPubSubResourceManager();
-        gcsResourceManager = setUpSpannerITGcsResourceManager();
-        cloudSqlResourceManager = CloudMySQLResourceManager.builder(testName).build();
-        String sessionContent =
-            generateSessionFile(
-                NUM_TABLES,
-                cloudSqlResourceManager.getDatabaseName(),
-                spannerResourceManager.getDatabaseId(),
-                TABLE_NAMES,
-                generateBaseSchema());
-        setupSchema();
-        jobInfo =
-            launchDataflowJob(
-                getClass().getSimpleName(),
-                null,
-                null,
-                "DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT",
-                spannerResourceManager,
-                pubsubResourceManager,
-                new HashMap<>() {
-                  {
-                    put("inputFileFormat", "json");
-                  }
-                },
-                null,
-                null,
-                gcsResourceManager,
-                sessionContent,
-                MySQLSource.builder(
-                        cloudSqlResourceManager.getHost(),
-                        cloudSqlResourceManager.getUsername(),
-                        cloudSqlResourceManager.getPassword(),
-                        cloudSqlResourceManager.getPort())
-                    .setAllowedTables(
-                        Map.of(cloudSqlResourceManager.getDatabaseName(), TABLE_NAMES))
-                    .build());
-      }
+      datastreamResourceManager =
+          DatastreamResourceManager.builder(testName, PROJECT, REGION)
+              .setCredentialsProvider(credentialsProvider)
+              //
+              // .setPrivateConnectivity("datastream-private-connect-us-central1")
+              .build();
+      spannerResourceManager = setUpSpannerResourceManager();
+      pubsubResourceManager = setUpPubSubResourceManager();
+      gcsResourceManager = setUpSpannerITGcsResourceManager();
+      cloudSqlResourceManager = CloudMySQLResourceManager.builder(testName).build();
+      String sessionContent =
+          generateSessionFile(
+              NUM_TABLES,
+              cloudSqlResourceManager.getDatabaseName(),
+              spannerResourceManager.getDatabaseId(),
+              TABLE_NAMES,
+              generateBaseSchema());
+      setupSchema();
+      jobInfo =
+          launchDataflowJob(
+              getClass().getSimpleName(),
+              null,
+              null,
+              "DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT",
+              spannerResourceManager,
+              pubsubResourceManager,
+              new HashMap<>() {
+                {
+                  put("inputFileFormat", "json");
+                }
+              },
+              null,
+              null,
+              gcsResourceManager,
+              sessionContent,
+              MySQLSource.builder(
+                      cloudSqlResourceManager.getHost(),
+                      cloudSqlResourceManager.getUsername(),
+                      cloudSqlResourceManager.getPassword(),
+                      cloudSqlResourceManager.getPort())
+                  .setAllowedTables(Map.of(cloudSqlResourceManager.getDatabaseName(), TABLE_NAMES))
+                  .build());
     }
   }
 

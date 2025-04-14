@@ -20,9 +20,9 @@ on:
     branches:
       - 'main'
     paths:
-      - 'v2/sourcedb-to-spanner/**.java'
-      - 'v2/sourcedb-to-spanner/**.xml'
-      - 'v2/sourcedb-to-spanner/**.py'
+      - 'v2/spanner-to-sourcedb/**.java'
+      - 'v2/spanner-to-sourcedb/**.xml'
+      - 'v2/spanner-to-sourcedb/**.py'
       - '.github/actions/setup-env/*'
       - '.github/workflows/java-pr.yml'
       - '!v1/**'      
@@ -155,7 +155,7 @@ jobs:
       - name: Run Integration Tests
         run: |
           ./cicd/run-it-tests \
-          --modules-to-build="v2/sourcedb-to-spanner" \
+          --modules-to-build="v2/spanner-to-sourcedb" \
           --it-region="asia-south1" \
           --it-project="daring-fiber-439305-v4" \
           --it-artifact-bucket="ollion-teleport-testing" \

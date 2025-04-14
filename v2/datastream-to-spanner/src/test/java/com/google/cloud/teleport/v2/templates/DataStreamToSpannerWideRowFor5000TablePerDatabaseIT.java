@@ -50,6 +50,8 @@ import org.apache.beam.it.conditions.ChainedConditionCheck;
 import org.apache.beam.it.conditions.ConditionCheck;
 import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
 import org.apache.beam.it.gcp.cloudsql.CloudSqlResourceManager;
+import org.apache.beam.it.gcp.datastream.DatastreamResourceManager;
+import org.apache.beam.it.gcp.datastream.MySQLSource;
 import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
@@ -109,6 +111,12 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends DataStr
     synchronized (DataStreamToSpannerWideRowFor5000TablePerDatabaseIT.class) {
       testInstances.add(this);
       if (jobInfo == null) {
+        datastreamResourceManager =
+            DatastreamResourceManager.builder(testName, PROJECT, REGION)
+                .setCredentialsProvider(credentialsProvider)
+                //
+                // .setPrivateConnectivity("datastream-private-connect-us-central1")
+                .build();
         spannerResourceManager = setUpSpannerResourceManager();
         pubsubResourceManager = setUpPubSubResourceManager();
         gcsResourceManager = setUpSpannerITGcsResourceManager();
@@ -131,13 +139,21 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends DataStr
                 pubsubResourceManager,
                 new HashMap<>() {
                   {
-                    put("inputFileFormat", "avro");
+                    put("inputFileFormat", "json");
                   }
                 },
                 null,
                 null,
                 gcsResourceManager,
-                sessionContent);
+                sessionContent,
+                MySQLSource.builder(
+                        cloudSqlResourceManager.getHost(),
+                        cloudSqlResourceManager.getUsername(),
+                        cloudSqlResourceManager.getPassword(),
+                        cloudSqlResourceManager.getPort())
+                    .setAllowedTables(
+                        Map.of(cloudSqlResourceManager.getDatabaseName(), TABLE_NAMES))
+                    .build());
       }
     }
   }
@@ -149,7 +165,11 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends DataStr
     }
     EXECUTOR_SERVICE.shutdown();
     ResourceManagerUtils.cleanResources(
-        cloudSqlResourceManager, spannerResourceManager, pubsubResourceManager, gcsResourceManager);
+        datastreamResourceManager,
+        cloudSqlResourceManager,
+        spannerResourceManager,
+        pubsubResourceManager,
+        gcsResourceManager);
   }
 
   @Test

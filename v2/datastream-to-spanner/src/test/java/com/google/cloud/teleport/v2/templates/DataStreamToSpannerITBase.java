@@ -486,16 +486,13 @@ public abstract class DataStreamToSpannerITBase extends TemplateTestBase {
       String gcsPrefix,
       JDBCSource jdbcSource,
       DatastreamResourceManager.DestinationOutputFormat destinationOutputFormat) {
-    // Create Datastream JDBC Source Connection profile and config
     SourceConfig sourceConfig =
         datastreamResourceManager.buildJDBCSourceConfig("jdbc-profile", jdbcSource);
 
-    // Create Datastream GCS Destination Connection profile and config
     DestinationConfig destinationConfig =
         datastreamResourceManager.buildGCSDestinationConfig(
             "gcs-profile", gcsResourceManager.getBucket(), gcsPrefix, destinationOutputFormat);
 
-    // Create and start Datastream stream
     Stream stream =
         datastreamResourceManager.createStream("stream1", sourceConfig, destinationConfig);
     datastreamResourceManager.startStream(stream);

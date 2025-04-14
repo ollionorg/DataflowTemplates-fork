@@ -44,7 +44,7 @@ import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -135,8 +135,8 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends DataStre
     }
   }
 
-  @AfterClass
-  public static void cleanUp() throws IOException {
+  @After
+  public void cleanUp() throws IOException {
     for (DataStreamToSpannerWideRowForMaxColumnsPerTablesIT instance : testInstances) {
       instance.tearDownBase();
     }

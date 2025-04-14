@@ -45,7 +45,7 @@ import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -135,8 +135,8 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT
     }
   }
 
-  @AfterClass
-  public static void cleanUp() throws IOException {
+  @After
+  public void cleanUp() throws IOException {
     for (DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT instance : testInstances) {
       instance.tearDownBase();
     }

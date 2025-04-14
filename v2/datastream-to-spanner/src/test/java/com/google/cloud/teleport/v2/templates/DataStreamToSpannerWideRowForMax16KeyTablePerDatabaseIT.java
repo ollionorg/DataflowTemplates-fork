@@ -48,12 +48,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.runners.JUnit4;
 
 /** Integration test for {@link DataStreamToSpanner} Flex template. */
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
-@RunWith(Parameterized.class)
+@RunWith(JUnit4.class)
 public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT
     extends DataStreamToSpannerITBase {
 

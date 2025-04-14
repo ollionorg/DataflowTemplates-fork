@@ -60,7 +60,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.runners.JUnit4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.shaded.org.apache.commons.lang3.math.NumberUtils;
@@ -68,7 +68,7 @@ import org.testcontainers.shaded.org.apache.commons.lang3.math.NumberUtils;
 /** Integration test for {@link DataStreamToSpanner} Flex template. */
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
-@RunWith(Parameterized.class)
+@RunWith(JUnit4.class)
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends DataStreamToSpannerITBase {
   private static final int THREAD_POOL_SIZE = 16;
   private static final int BATCH_SIZE = 1000;

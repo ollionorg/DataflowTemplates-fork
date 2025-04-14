@@ -323,7 +323,7 @@ public class DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT
               if (ci == 1) {
                 values.put(COLUMNS.get(0), ci);
               } else {
-                values.put(COLUMNS.get(i - 1), generateRandomString());
+                values.put(COLUMNS.get(ci - 1), generateRandomString());
               }
             }
             rows.add(values);

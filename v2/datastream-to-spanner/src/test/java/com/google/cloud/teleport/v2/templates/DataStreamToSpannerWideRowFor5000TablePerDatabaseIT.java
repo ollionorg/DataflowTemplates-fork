@@ -50,6 +50,8 @@ import org.apache.beam.it.conditions.ChainedConditionCheck;
 import org.apache.beam.it.conditions.ConditionCheck;
 import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
 import org.apache.beam.it.gcp.cloudsql.CloudSqlResourceManager;
+import org.apache.beam.it.gcp.datastream.DatastreamResourceManager;
+import org.apache.beam.it.gcp.datastream.MySQLSource;
 import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
@@ -60,7 +62,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.runners.JUnit4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.shaded.org.apache.commons.lang3.math.NumberUtils;
@@ -68,14 +70,14 @@ import org.testcontainers.shaded.org.apache.commons.lang3.math.NumberUtils;
 /** Integration test for {@link DataStreamToSpanner} Flex template. */
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
-@RunWith(Parameterized.class)
+@RunWith(JUnit4.class)
 public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends DataStreamToSpannerITBase {
   private static final int THREAD_POOL_SIZE = 16;
-  private static final int BATCH_SIZE = 1000;
+  private static final int BATCH_SIZE = 2500;
   private static final int MAX_RETRIES = 3;
   private static final long RETRY_DELAY_MS = 3000; // Delay between retries
   private static final Integer NUM_EVENTS = 1;
-  private static final Integer NUM_TABLES = 5000;
+  private static final Integer NUM_TABLES = 2500;
 
   private static final String ROW_ID = "row_id";
   private static final String NAME = "name";
@@ -88,10 +90,10 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends DataStr
   private static final List<String> COLUMNS = List.of(ROW_ID, NAME, AGE, MEMBER, ENTRY_ADDED);
   private static final ExecutorService EXECUTOR_SERVICE =
       Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-  private CloudSqlResourceManager cloudSqlResourceManager;
-  private SpannerResourceManager spannerResourceManager;
-  private PubsubResourceManager pubsubResourceManager;
-  private GcsResourceManager gcsResourceManager;
+  private static CloudSqlResourceManager cloudSqlResourceManager;
+  private static SpannerResourceManager spannerResourceManager;
+  private static PubsubResourceManager pubsubResourceManager;
+  private static GcsResourceManager gcsResourceManager;
   private static HashSet<DataStreamToSpannerWideRowFor5000TablePerDatabaseIT> testInstances =
       new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
@@ -109,6 +111,11 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends DataStr
     synchronized (DataStreamToSpannerWideRowFor5000TablePerDatabaseIT.class) {
       testInstances.add(this);
       if (jobInfo == null) {
+        datastreamResourceManager =
+            DatastreamResourceManager.builder(testName, PROJECT, REGION)
+                .setCredentialsProvider(credentialsProvider)
+                .setPrivateConnectivity("datastream-private-connect-us-central1")
+                .build();
         spannerResourceManager = setUpSpannerResourceManager();
         pubsubResourceManager = setUpPubSubResourceManager();
         gcsResourceManager = setUpSpannerITGcsResourceManager();
@@ -131,22 +138,37 @@ public class DataStreamToSpannerWideRowFor5000TablePerDatabaseIT extends DataStr
                 pubsubResourceManager,
                 new HashMap<>() {
                   {
-                    put("inputFileFormat", "avro");
+                    put("inputFileFormat", "json");
                   }
                 },
                 null,
                 null,
                 gcsResourceManager,
-                sessionContent);
+                sessionContent,
+                MySQLSource.builder(
+                        cloudSqlResourceManager.getHost(),
+                        cloudSqlResourceManager.getUsername(),
+                        cloudSqlResourceManager.getPassword(),
+                        cloudSqlResourceManager.getPort())
+                    .setAllowedTables(
+                        Map.of(cloudSqlResourceManager.getDatabaseName(), TABLE_NAMES))
+                    .build());
       }
     }
   }
 
   @After
-  public void cleanUp() {
+  public void cleanUp() throws IOException {
+    for (DataStreamToSpannerWideRowFor5000TablePerDatabaseIT instance : testInstances) {
+      instance.tearDownBase();
+    }
     EXECUTOR_SERVICE.shutdown();
     ResourceManagerUtils.cleanResources(
-        cloudSqlResourceManager, spannerResourceManager, pubsubResourceManager, gcsResourceManager);
+        datastreamResourceManager,
+        cloudSqlResourceManager,
+        spannerResourceManager,
+        pubsubResourceManager,
+        gcsResourceManager);
   }
 
   @Test

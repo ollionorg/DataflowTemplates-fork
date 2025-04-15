@@ -17,6 +17,9 @@ package com.google.cloud.teleport.v2.templates;
 
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
 
+import com.google.cloud.datastream.v1.DestinationConfig;
+import com.google.cloud.datastream.v1.SourceConfig;
+import com.google.cloud.datastream.v1.Stream;
 import com.google.cloud.teleport.v2.spanner.migrations.transformation.CustomTransformation;
 import com.google.common.io.Resources;
 import com.google.pubsub.v1.SubscriptionName;
@@ -37,6 +40,8 @@ import org.apache.beam.it.common.utils.IORedirectUtil;
 import org.apache.beam.it.common.utils.PipelineUtils;
 import org.apache.beam.it.conditions.ConditionCheck;
 import org.apache.beam.it.gcp.TemplateTestBase;
+import org.apache.beam.it.gcp.datastream.DatastreamResourceManager;
+import org.apache.beam.it.gcp.datastream.JDBCSource;
 import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.matchers.SpannerAsserts;
@@ -54,6 +59,7 @@ public abstract class DataStreamToSpannerITBase extends TemplateTestBase {
   public static final String DATA_STREAM_EVENT_FILES_PATH_FORMAT_IN_GCS = "%s/2023/12/20/06/57/%s";
   private static final Logger LOG = LoggerFactory.getLogger(DataStreamToSpannerITBase.class);
   public static final int CUTOVER_MILLIS = 30 * 1000;
+  public static DatastreamResourceManager datastreamResourceManager;
 
   public PubsubResourceManager setUpPubSubResourceManager() throws IOException {
     return PubsubResourceManager.builder(testName, PROJECT, credentialsProvider).build();
@@ -232,6 +238,7 @@ public abstract class DataStreamToSpannerITBase extends TemplateTestBase {
         customTransformation,
         shardingContextFileResourceName,
         gcsResourceManager,
+        null,
         null);
   }
 
@@ -246,7 +253,8 @@ public abstract class DataStreamToSpannerITBase extends TemplateTestBase {
       CustomTransformation customTransformation,
       String shardingContextFileResourceName,
       GcsResourceManager gcsResourceManager,
-      String sessionResourceContent)
+      String sessionResourceContent,
+      JDBCSource jdbcSource)
       throws IOException {
 
     if (sessionFileResourceName != null) {
@@ -302,6 +310,17 @@ public abstract class DataStreamToSpannerITBase extends TemplateTestBase {
             put("inputFileFormat", "avro");
           }
         };
+
+    if (jdbcSource != null) {
+      params.put(
+          "streamName",
+          createDataStream(
+                  gcsResourceManager,
+                  gcsPrefix,
+                  jdbcSource,
+                  DatastreamResourceManager.DestinationOutputFormat.JSON_FILE_FORMAT)
+              .getName());
+    }
 
     if (sessionFileResourceName != null) {
       params.put(
@@ -460,5 +479,23 @@ public abstract class DataStreamToSpannerITBase extends TemplateTestBase {
           SpannerAsserts.assertThatStructs(spannerResourceManager.readTableRecords(tableName, cols))
               .hasRecordsUnorderedCaseInsensitiveColumns(cdcEvents.get(tableName));
         });
+  }
+
+  protected Stream createDataStream(
+      GcsResourceManager gcsResourceManager,
+      String gcsPrefix,
+      JDBCSource jdbcSource,
+      DatastreamResourceManager.DestinationOutputFormat destinationOutputFormat) {
+    SourceConfig sourceConfig =
+        datastreamResourceManager.buildJDBCSourceConfig("jdbc-profile", jdbcSource);
+
+    DestinationConfig destinationConfig =
+        datastreamResourceManager.buildGCSDestinationConfig(
+            "gcs-profile", gcsResourceManager.getBucket(), gcsPrefix, destinationOutputFormat);
+
+    Stream stream =
+        datastreamResourceManager.createStream("stream1", sourceConfig, destinationConfig);
+    datastreamResourceManager.startStream(stream);
+    return stream;
   }
 }

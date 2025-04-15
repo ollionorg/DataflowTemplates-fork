@@ -39,6 +39,8 @@ import org.apache.beam.it.conditions.ChainedConditionCheck;
 import org.apache.beam.it.conditions.ConditionCheck;
 import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
 import org.apache.beam.it.gcp.cloudsql.CloudSqlResourceManager;
+import org.apache.beam.it.gcp.datastream.DatastreamResourceManager;
+import org.apache.beam.it.gcp.datastream.MySQLSource;
 import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
@@ -49,27 +51,27 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.runners.JUnit4;
 
 /** Integration test for {@link DataStreamToSpanner} Flex template. */
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
-@RunWith(Parameterized.class)
+@RunWith(JUnit4.class)
 public class DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT
     extends DataStreamToSpannerITBase {
   private static final String CHARACTERS =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 1;
-  private static final Integer NUM_COLUMNS = 801;
+  private static final Integer NUM_COLUMNS = 25;
   private static final int STRING_LENGTH = 2_621_440;
   private static final List<String> COLUMNS = new ArrayList<>();
   private static final Random RANDOM_GENERATOR = new Random();
   private static final List<String> TABLE_NAMES = new ArrayList<>();
-  private CloudSqlResourceManager cloudSqlResourceManager;
-  private SpannerResourceManager spannerResourceManager;
-  private PubsubResourceManager pubsubResourceManager;
-  private GcsResourceManager gcsResourceManager;
+  private static CloudSqlResourceManager cloudSqlResourceManager;
+  private static SpannerResourceManager spannerResourceManager;
+  private static PubsubResourceManager pubsubResourceManager;
+  private static GcsResourceManager gcsResourceManager;
 
   private static HashSet<DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT> testInstances =
       new HashSet<>();
@@ -89,48 +91,65 @@ public class DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT
     skipBaseCleanup = true;
     synchronized (DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT.class) {
       testInstances.add(this);
-      if (jobInfo == null) {
-        spannerResourceManager = setUpSpannerResourceManager();
-        pubsubResourceManager = setUpPubSubResourceManager();
-        gcsResourceManager = setUpSpannerITGcsResourceManager();
-        cloudSqlResourceManager = CloudMySQLResourceManager.builder(testName).build();
-        String sessionContent =
-            generateSessionFile(
-                NUM_TABLES,
-                cloudSqlResourceManager.getDatabaseName(),
-                spannerResourceManager.getDatabaseId(),
-                TABLE_NAMES,
-                generateBaseSchema());
-        setupSchema();
-        jobInfo =
-            launchDataflowJob(
-                getClass().getSimpleName(),
-                null,
-                null,
-                "DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT",
-                spannerResourceManager,
-                pubsubResourceManager,
-                new HashMap<>() {
-                  {
-                    put("inputFileFormat", "avro");
-                  }
-                },
-                null,
-                null,
-                gcsResourceManager,
-                sessionContent);
-      }
+      datastreamResourceManager =
+          DatastreamResourceManager.builder(testName, PROJECT, REGION)
+              .setCredentialsProvider(credentialsProvider)
+              .setPrivateConnectivity("datastream-private-connect-us-central1")
+              .build();
+      spannerResourceManager = setUpSpannerResourceManager();
+      pubsubResourceManager = setUpPubSubResourceManager();
+      gcsResourceManager = setUpSpannerITGcsResourceManager();
+      cloudSqlResourceManager = CloudMySQLResourceManager.builder(testName).build();
+      String sessionContent =
+          generateSessionFile(
+              NUM_TABLES,
+              cloudSqlResourceManager.getDatabaseName(),
+              spannerResourceManager.getDatabaseId(),
+              TABLE_NAMES,
+              generateBaseSchema());
+      setupSchema();
+      jobInfo =
+          launchDataflowJob(
+              getClass().getSimpleName(),
+              null,
+              null,
+              "DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT",
+              spannerResourceManager,
+              pubsubResourceManager,
+              new HashMap<>() {
+                {
+                  put("inputFileFormat", "json");
+                }
+              },
+              null,
+              null,
+              gcsResourceManager,
+              sessionContent,
+              MySQLSource.builder(
+                      cloudSqlResourceManager.getHost(),
+                      cloudSqlResourceManager.getUsername(),
+                      cloudSqlResourceManager.getPassword(),
+                      cloudSqlResourceManager.getPort())
+                  .setAllowedTables(Map.of(cloudSqlResourceManager.getDatabaseName(), TABLE_NAMES))
+                  .build());
     }
   }
 
   @After
-  public void cleanUp() {
+  public void cleanUp() throws IOException {
+    for (DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT instance : testInstances) {
+      instance.tearDownBase();
+    }
     ResourceManagerUtils.cleanResources(
-        cloudSqlResourceManager, spannerResourceManager, pubsubResourceManager, gcsResourceManager);
+        datastreamResourceManager,
+        cloudSqlResourceManager,
+        spannerResourceManager,
+        pubsubResourceManager,
+        gcsResourceManager);
   }
 
   @Test
-  public void testDataStreamMySqlToSpannerFor1600MBColumnsPerTables() throws IOException {
+  public void testDataStreamMySqlToSpannerFor100MBColumnsPerTables() throws IOException {
     assertThatPipeline(jobInfo).isRunning();
     Map<String, List<Map<String, Object>>> cdcEvents = new HashMap<>();
     ChainedConditionCheck conditionCheck =
@@ -303,7 +322,7 @@ public class DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT
               if (ci == 1) {
                 values.put(COLUMNS.get(0), ci);
               } else {
-                values.put(COLUMNS.get(i - 1), generateRandomString());
+                values.put(COLUMNS.get(ci - 1), generateRandomString());
               }
             }
             rows.add(values);

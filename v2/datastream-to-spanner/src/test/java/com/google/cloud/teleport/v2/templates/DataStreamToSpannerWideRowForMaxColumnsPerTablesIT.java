@@ -37,6 +37,8 @@ import org.apache.beam.it.conditions.ChainedConditionCheck;
 import org.apache.beam.it.conditions.ConditionCheck;
 import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
 import org.apache.beam.it.gcp.cloudsql.CloudSqlResourceManager;
+import org.apache.beam.it.gcp.datastream.DatastreamResourceManager;
+import org.apache.beam.it.gcp.datastream.MySQLSource;
 import org.apache.beam.it.gcp.pubsub.PubsubResourceManager;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
@@ -47,23 +49,22 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.runners.JUnit4;
 
 /** Integration test for {@link DataStreamToSpanner} Flex template. */
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
-@RunWith(Parameterized.class)
+@RunWith(JUnit4.class)
 public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends DataStreamToSpannerITBase {
 
   private static final Integer NUM_EVENTS = 1;
   private static final Integer NUM_TABLES = 1;
   private static final Integer NUM_COLUMNS = 1017;
 
-  private CloudSqlResourceManager cloudSqlResourceManager;
-  private SpannerResourceManager spannerResourceManager;
-  private PubsubResourceManager pubsubResourceManager;
-
-  private GcsResourceManager gcsResourceManager;
+  private static CloudSqlResourceManager cloudSqlResourceManager;
+  private static SpannerResourceManager spannerResourceManager;
+  private static PubsubResourceManager pubsubResourceManager;
+  private static GcsResourceManager gcsResourceManager;
 
   private static final List<String> COLUMNS = new ArrayList<>();
 
@@ -87,6 +88,11 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends DataStre
     synchronized (DataStreamToSpannerWideRowForMaxColumnsPerTablesIT.class) {
       testInstances.add(this);
       if (jobInfo == null) {
+        datastreamResourceManager =
+            DatastreamResourceManager.builder(testName, PROJECT, REGION)
+                .setCredentialsProvider(credentialsProvider)
+                .setPrivateConnectivity("datastream-private-connect-us-central1")
+                .build();
         spannerResourceManager = setUpSpannerResourceManager();
         pubsubResourceManager = setUpPubSubResourceManager();
         gcsResourceManager = setUpSpannerITGcsResourceManager();
@@ -109,21 +115,36 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends DataStre
                 pubsubResourceManager,
                 new HashMap<>() {
                   {
-                    put("inputFileFormat", "avro");
+                    put("inputFileFormat", "json");
                   }
                 },
                 null,
                 null,
                 gcsResourceManager,
-                sessionContent);
+                sessionContent,
+                MySQLSource.builder(
+                        cloudSqlResourceManager.getHost(),
+                        cloudSqlResourceManager.getUsername(),
+                        cloudSqlResourceManager.getPassword(),
+                        cloudSqlResourceManager.getPort())
+                    .setAllowedTables(
+                        Map.of(cloudSqlResourceManager.getDatabaseName(), TABLE_NAMES))
+                    .build());
       }
     }
   }
 
   @After
-  public void cleanUp() {
+  public void cleanUp() throws IOException {
+    for (DataStreamToSpannerWideRowForMaxColumnsPerTablesIT instance : testInstances) {
+      instance.tearDownBase();
+    }
     ResourceManagerUtils.cleanResources(
-        cloudSqlResourceManager, spannerResourceManager, pubsubResourceManager, gcsResourceManager);
+        datastreamResourceManager,
+        cloudSqlResourceManager,
+        spannerResourceManager,
+        pubsubResourceManager,
+        gcsResourceManager);
   }
 
   private void setupSchema() {

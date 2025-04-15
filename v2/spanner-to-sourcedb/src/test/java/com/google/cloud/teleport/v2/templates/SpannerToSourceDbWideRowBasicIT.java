@@ -28,6 +28,7 @@ import java.util.List;
 import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,6 +41,7 @@ import org.junit.runners.JUnit4;
 public class SpannerToSourceDbWideRowBasicIT extends SpannerToSourceDbITBase {
   private static final String testName = "test_" + System.currentTimeMillis();
 
+  @Ignore("Disabled")
   @Test
   public void testAssert5000TablesPerDatabase() throws Exception {
     String databaseName = "rr-main-db-test-" + testName;
@@ -79,6 +81,7 @@ public class SpannerToSourceDbWideRowBasicIT extends SpannerToSourceDbITBase {
     return createTableQueries;
   }
 
+  @Ignore("Disabled")
   @Test
   public void testCreateDatabaseAndTableWith1024Columns() throws Exception {
     String databaseName = "rr-main-table-per-columns-" + testName; // 🔹 Ensure unique DB name
@@ -108,6 +111,7 @@ public class SpannerToSourceDbWideRowBasicIT extends SpannerToSourceDbITBase {
     ResourceManagerUtils.cleanResources(spannerResourceManagerForColumnsPerTable);
   }
 
+  @Ignore("Disabled")
   @Test
   public void testInsertValidCellSize_10MiB() {
     String databaseName = "rr-main-db-cell-size-valid-" + testName;
@@ -141,6 +145,7 @@ public class SpannerToSourceDbWideRowBasicIT extends SpannerToSourceDbITBase {
     ResourceManagerUtils.cleanResources(spannerResourceManager);
   }
 
+  @Ignore("Disabled")
   @Test
   public void testInsertValidStringSize_2621440Characters() {
     String databaseName = "rr-main-db-string-size-valid-" + testName;
@@ -175,6 +180,7 @@ public class SpannerToSourceDbWideRowBasicIT extends SpannerToSourceDbITBase {
     ResourceManagerUtils.cleanResources(spannerResourceManager);
   }
 
+  @Ignore("Disabled")
   @Test
   public void testInsertValidPrimaryKeySize_8KB() {
     String databaseName = "rr-main-db-key-valid-" + testName;

@@ -333,7 +333,7 @@ public abstract class SpannerToSourceDbITBase extends TemplateTestBase {
     StringBuilder ddlBuilder = new StringBuilder();
     ddlBuilder.append("CREATE TABLE ").append(tableName).append(" (\n");
     ddlBuilder.append("    Id INT64 NOT NULL,\n");
-    for (int i = 1; i < n; i++) {
+    for (int i = 1; i <= n; i++) {
       ddlBuilder.append("    Col_").append(i).append(" STRING(").append(stringSize).append("),\n");
     }
 

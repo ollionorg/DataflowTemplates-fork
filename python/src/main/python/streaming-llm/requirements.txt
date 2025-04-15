@@ -672,9 +672,9 @@ jeepney==0.8.0 \
     # via
     #   keyring
     #   secretstorage
-jinja2==3.1.4 \
-    --hash=sha256:4a3aee7acbbe7303aede8e9648d13b8bf88a429282aa6122a993f0ac800cb369 \
-    --hash=sha256:bc5dd2abb727a5319567b7a813e6a2e7318c39f4f487cfe6c89c6f9c7d25197d
+jinja2==3.1.6 \
+    --hash=sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d \
+    --hash=sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67
     # via torch
 jsonpickle==3.3.0 \
     --hash=sha256:287c12143f35571ab00e224fa323aa4b090d5a7f086f5f494d7ee9c7eb1a380a \
@@ -1937,9 +1937,9 @@ tqdm==4.66.5 \
     # via
     #   huggingface-hub
     #   transformers
-transformers==4.44.2 \
-    --hash=sha256:1c02c65e7bfa5e52a634aff3da52138b583fc6f263c1f28d547dc144ba3d412d \
-    --hash=sha256:36aa17cc92ee154058e426d951684a2dab48751b35b49437896f898931270826
+transformers==4.48.0 \
+    --hash=sha256:03fdfcbfb8b0367fb6c9fbe9d1c9aa54dfd847618be9b52400b2811d22799cb1 \
+    --hash=sha256:6d3de6d71cb5f2a10f9775ccc17abce9620195caaf32ec96542bd2a6937f25b0
     # via -r ./../python/src/main/python/streaming-llm/base_requirements.txt
 triton==2.2.0 \
     --hash=sha256:0af58716e721460a61886668b205963dc4d1e4ac20508cc3f623aef0d70283d5 \

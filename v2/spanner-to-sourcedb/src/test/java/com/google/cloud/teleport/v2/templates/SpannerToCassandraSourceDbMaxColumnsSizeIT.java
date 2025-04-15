@@ -70,7 +70,7 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
   private static final String CASSANDRA_CONFIG_FILE_RESOURCE =
       "SpannerToSourceDbWideRowIT/cassandra-config-template.conf";
 
-  private static final String TEST_TABLE = "TestTable";
+  private static final String TEST_TABLE = "testtable";
   private static final HashSet<SpannerToCassandraSourceDbMaxColumnsSizeIT> testInstances =
       new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
@@ -88,7 +88,7 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
     synchronized (SpannerToCassandraSourceDbMaxColumnsSizeIT.class) {
       testInstances.add(this);
       if (jobInfo == null) {
-        spannerResourceManager = createSpannerDBAndTableWithNColumns(159, "MAX");
+        spannerResourceManager = createSpannerDBAndTableWithNColumns(TEST_TABLE, 159, "MAX");
         spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
         cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();

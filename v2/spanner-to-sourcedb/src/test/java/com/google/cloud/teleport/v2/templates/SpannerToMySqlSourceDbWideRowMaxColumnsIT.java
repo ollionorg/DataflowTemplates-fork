@@ -82,7 +82,7 @@ public class SpannerToMySqlSourceDbWideRowMaxColumnsIT extends SpannerToSourceDb
     synchronized (SpannerToMySqlSourceDbWideRowMaxColumnsIT.class) {
       testInstances.add(this);
       if (jobInfo == null) {
-        spannerResourceManager = createSpannerDBAndTableWithNColumns(100, "100");
+        spannerResourceManager = createSpannerDBAndTableWithNColumns(TABLE1, 100, "100");
         spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
         jdbcResourceManager = MySQLResourceManager.builder(testName).build();

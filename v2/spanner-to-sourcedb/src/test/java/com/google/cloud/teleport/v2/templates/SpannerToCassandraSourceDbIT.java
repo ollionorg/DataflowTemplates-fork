@@ -94,6 +94,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
   private static final String ALL_DATA_TYPES_TABLE = "AllDatatypeColumns";
   private static final String ALL_DATA_TYPES_CUSTOM_CONVERSION_TABLE = "AllDatatypeTransformation";
   private static final String BOUNDARY_CONVERSION_TABLE = "BoundaryConversionTestTable";
+  private static final String BOUNDARY_SIZE_TABLE = "testtable_03tpcovf16ed0klxm3v808ch3btgq0uk";
   private static final HashSet<SpannerToCassandraSourceDbIT> testInstances = new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
   public static SpannerResourceManager spannerResourceManager;
@@ -163,6 +164,36 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         spannerMetadataResourceManager,
         gcsResourceManager,
         pubsubResourceManager);
+  }
+
+  @Test
+  public void testSpannerToCassandraWithMaxColumnsAndTableName()
+      throws InterruptedException, IOException {
+    assertThatPipeline(jobInfo).isRunning();
+    writeRowWithMaxColumnsNameAndTableInSpanner();
+    assertRowWithMaxColumnsInCassandra();
+  }
+
+  private void writeRowWithMaxColumnsNameAndTableInSpanner() {
+    List<Mutation> mutations = new ArrayList<>();
+    Mutation.WriteBuilder mutationBuilder =
+        Mutation.newInsertOrUpdateBuilder(BOUNDARY_SIZE_TABLE).set("id").to("SampleTest");
+    mutationBuilder.set("col_qcbf69rmxtre3b_03tpcovf16ed").to("SampleTestValue");
+
+    mutations.add(mutationBuilder.build());
+    spannerResourceManager.write(mutations);
+    LOG.info("Inserted row into Spanner using Mutations");
+  }
+
+  private void assertRowWithMaxColumnsInCassandra() {
+
+    PipelineOperator.Result result =
+        pipelineOperator()
+            .waitForCondition(
+                createConfig(jobInfo, Duration.ofMinutes(15)),
+                () -> getRowCount(BOUNDARY_SIZE_TABLE) == 1);
+    assertThatResult(result).meetsConditions();
+    LOG.info("Successfully validated columns in Cassandra");
   }
 
   /**
@@ -733,11 +764,11 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("inet_column")
             .to("192.168.1.10")
             .set("timeuuid_column")
-            .to("f47ac10b-58cc-11e1-b86c-0800200c9a66") // Assume this is a valid time-based UUID
+            .to("f47ac10b-58cc-11e1-b86c-0800200c9a66")
             .set("duration_column")
-            .to("P1DT2H3M4S") // ISO-8601 duration format (1 day, 2 hours, 3 minutes, 4 seconds)
+            .to("P1DT2H3M4S")
             .set("uuid_column")
-            .to("123e4567-e89b-12d3-a456-426614174000") // Assume this is a valid UUID
+            .to("123e4567-e89b-12d3-a456-426614174000")
             .set("ascii_column")
             .to("SimpleASCIIText")
             .set("list_text_column_from_array")
@@ -1198,13 +1229,13 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("varint_column")
             .to("123456789")
             .set("inet_column")
-            .to("192.168.1.100") // Example IPv4 address
+            .to("192.168.1.100")
             .set("timeuuid_column")
-            .to("f47ac10b-58cc-11e1-b86c-0800200c9a66") // Example UUID
+            .to("f47ac10b-58cc-11e1-b86c-0800200c9a66")
             .set("duration_column")
             .to("P2D") // Example ISO-8601 duration
             .set("uuid_column")
-            .to("123e4567-e89b-12d3-a456-426614174000") // Example UUID
+            .to("123e4567-e89b-12d3-a456-426614174000")
             .set("ascii_column")
             .to("SampleASCII")
             .set("bytes_column")
@@ -1298,13 +1329,13 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("varint_column")
             .to("123456789")
             .set("inet_column")
-            .to("192.168.1.101") // Different example IPv4 address
+            .to("192.168.1.101")
             .set("timeuuid_column")
-            .to("f2c74f2e-1c4a-11ec-9621-0242ac130002") // Another Example UUID
+            .to("f2c74f2e-1c4a-11ec-9621-0242ac130002")
             .set("duration_column")
-            .to("PT5H10M") // Another example ISO-8601 duration
+            .to("PT5H10M")
             .set("uuid_column")
-            .to("0e3f2a1c-dc40-4e73-9e0d-2d7d0ef7be7f") // Another Example UUID
+            .to("0e3f2a1c-dc40-4e73-9e0d-2d7d0ef7be7f")
             .set("ascii_column")
             .to("SampleASCII2")
             .set("bytes_column")
@@ -1398,13 +1429,13 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
             .set("varint_column")
             .to("123456789")
             .set("inet_column")
-            .to("10.0.0.1") // Updated example IPv4 address
+            .to("10.0.0.1")
             .set("timeuuid_column")
-            .to("e2f94108-1c4a-11ec-8b57-0242ac130003") // Updated Example UUID
+            .to("e2f94108-1c4a-11ec-8b57-0242ac130003")
             .set("duration_column")
-            .to("P4DT12H30M5S") // Updated example ISO-8601 duration
+            .to("P4DT12H30M5S")
             .set("uuid_column")
-            .to("f03e2a1c-dc40-4e73-9e0d-2d7d0ef7ae7e") // Updated Example UUID
+            .to("f03e2a1c-dc40-4e73-9e0d-2d7d0ef7ae7e")
             .set("ascii_column")
             .to("UpdatedSampleASCII")
             .set("bytes_column")

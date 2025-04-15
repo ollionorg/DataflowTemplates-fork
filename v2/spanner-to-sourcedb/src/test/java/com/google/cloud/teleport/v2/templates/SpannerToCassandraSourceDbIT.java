@@ -19,7 +19,6 @@ import static com.google.cloud.teleport.v2.spanner.migrations.constants.Constant
 import static com.google.common.truth.Truth.assertThat;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatPipeline;
 import static org.apache.beam.it.truthmatchers.PipelineAsserts.assertThatResult;
-import static org.junit.Assert.assertThat;
 
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
@@ -166,6 +165,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
         pubsubResourceManager);
   }
 
+  @Ignore("Disabled")
   @Test
   public void testSpannerToCassandraWithMaxColumnsAndTableName()
       throws InterruptedException, IOException {

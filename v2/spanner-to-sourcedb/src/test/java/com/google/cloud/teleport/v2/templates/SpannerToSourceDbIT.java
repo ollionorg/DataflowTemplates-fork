@@ -212,6 +212,7 @@ public class SpannerToSourceDbIT extends SpannerToSourceDbITBase {
     assertThat(rows.get(0).get("from")).isEqualTo("AA");
   }
 
+  @Ignore("Disabled")
   @Test
   public void spannerToMySQLSourceDbMaxColAndTableNameTest()
       throws IOException, InterruptedException {

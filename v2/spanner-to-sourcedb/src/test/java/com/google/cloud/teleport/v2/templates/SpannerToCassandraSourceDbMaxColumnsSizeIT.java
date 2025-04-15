@@ -83,7 +83,7 @@ public class SpannerToCassandraSourceDbMaxColumnsSizeIT extends SpannerToSourceD
   private final List<Throwable> assertionErrors = new ArrayList<>();
 
   @Before
-  public void setUp() throws IOException {
+  public void setUp() throws Exception {
     skipBaseCleanup = true;
     synchronized (SpannerToCassandraSourceDbMaxColumnsSizeIT.class) {
       testInstances.add(this);

@@ -59,6 +59,8 @@ public class SpannerToMySqlSourceDbWideRowMaxColumnsIT extends SpannerToSourceDb
   private static final String SESSION_FILE_RESOURCE =
       "SpannerToSourceDbWideRowIT/max-col-session.json";
   private static final String TABLE1 = "testtable";
+  private static final int NUM_NON_KEY_COLS = 100;
+  private static final String COLUMN_SIZE = "100";
   private static final String MYSQL_SCHEMA_FILE_RESOURCE =
       "SpannerToSourceDbWideRowIT/mysql-max-col-schema.sql";
 
@@ -82,12 +84,13 @@ public class SpannerToMySqlSourceDbWideRowMaxColumnsIT extends SpannerToSourceDb
     synchronized (SpannerToMySqlSourceDbWideRowMaxColumnsIT.class) {
       testInstances.add(this);
       if (jobInfo == null) {
-        spannerResourceManager = createSpannerDBAndTableWithNColumns(100, "100");
+        spannerResourceManager =
+            createSpannerDBAndTableWithNColumns(TABLE1, NUM_NON_KEY_COLS, COLUMN_SIZE);
         spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
         jdbcResourceManager = MySQLResourceManager.builder(testName).build();
 
-        createMySQLTableWithNColumns(jdbcResourceManager, TABLE1, 100, "100");
+        createMySQLTableWithNColumns(jdbcResourceManager, TABLE1, NUM_NON_KEY_COLS, COLUMN_SIZE);
 
         gcsResourceManager =
             GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)

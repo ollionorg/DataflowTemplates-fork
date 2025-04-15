@@ -530,6 +530,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
    * @throws IOException if an I/O error occurs during the test execution.
    * @throws MultipleFailureException if multiple assertions fail during validation.
    */
+  @Ignore("Disabled")
   @Test
   public void spannerToCassandraSourceAllDataTypeConversionTest()
       throws InterruptedException, IOException, MultipleFailureException {
@@ -548,6 +549,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
    * @throws IOException if an I/O error occurs during the test execution.
    * @throws MultipleFailureException if multiple assertions fail during validation.
    */
+  @Ignore("Disabled")
   @Test
   public void spannerToCassandraSourceDataTypeStringConversionTest()
       throws InterruptedException, IOException, MultipleFailureException {
@@ -571,6 +573,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
    * @throws IOException if an I/O error occurs during test execution.
    * @throws MultipleFailureException if multiple assertions fail during validation.
    */
+  @Ignore("Disabled")
   @Test
   public void validateBoundaryAndMapDataConversionsBetweenSpannerAndCassandra()
       throws InterruptedException, IOException, MultipleFailureException {

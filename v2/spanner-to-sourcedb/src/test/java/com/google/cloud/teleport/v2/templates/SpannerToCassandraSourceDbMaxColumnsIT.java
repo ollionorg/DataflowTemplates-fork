@@ -61,14 +61,12 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
   private static final String PRIMARY_KEY = "id";
   private static final String SECONDARY_KEY_PREFIX = "col_";
 
-  private static final String SPANNER_DDL_RESOURCE =
-      "SpannerToSourceDbWideRowIT/spanner-max-col-cassandra-schema.sql";
   private static final String CASSANDRA_SCHEMA_FILE_RESOURCE =
       "SpannerToSourceDbWideRowIT/cassandra-max-col-schema.sql";
   private static final String CASSANDRA_CONFIG_FILE_RESOURCE =
       "SpannerToSourceDbWideRowIT/cassandra-config-template.conf";
 
-  private static final String TEST_TABLE = "TestTable";
+  private static final String TEST_TABLE = "testtable";
   private static final HashSet<SpannerToCassandraSourceDbMaxColumnsIT> testInstances =
       new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
@@ -81,12 +79,12 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
   private final List<Throwable> assertionErrors = new ArrayList<>();
 
   @Before
-  public void setUp() throws IOException {
+  public void setUp() throws Exception {
     skipBaseCleanup = true;
     synchronized (SpannerToCassandraSourceDbMaxColumnsIT.class) {
       testInstances.add(this);
       if (jobInfo == null) {
-        spannerResourceManager = createSpannerDatabase(SPANNER_DDL_RESOURCE);
+        spannerResourceManager = createSpannerDBAndTableWithNColumns(TEST_TABLE, 1023, "100");
         spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
         cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
@@ -95,7 +93,7 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
                 .build();
         createAndUploadCassandraConfigToGcs(
             gcsResourceManager, cassandraResourceManager, CASSANDRA_CONFIG_FILE_RESOURCE);
-        createCassandraSchema(cassandraResourceManager, CASSANDRA_SCHEMA_FILE_RESOURCE);
+        createCassandraTableWithNColumns(cassandraResourceManager, TEST_TABLE, 1023);
         pubsubResourceManager = setUpPubSubResourceManager();
         subscriptionName =
             createPubsubResources(

@@ -32,10 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -314,12 +312,15 @@ public abstract class SpannerToSourceDbITBase extends TemplateTestBase {
 
   protected SpannerResourceManager createSpannerDBAndTableWithNColumns(
       String tableName, int n, String stringSize) throws Exception {
+    // Validate the table name
     if (tableName == null || tableName.isBlank()) {
       throw new IllegalArgumentException("Table name must be specified and non-blank");
     }
+
     if (n < 1) {
       throw new IllegalArgumentException("Number of columns must be at least 1");
     }
+
     if (stringSize == null || stringSize.isBlank()) {
       throw new IllegalArgumentException("String size must be specified and non-blank");
     }
@@ -329,33 +330,34 @@ public abstract class SpannerToSourceDbITBase extends TemplateTestBase {
             .maybeUseStaticInstance()
             .build();
 
-    // Construct the CREATE TABLE DDL statement
-    StringBuilder ddlTableBuilder = new StringBuilder();
-    ddlTableBuilder.append("CREATE TABLE ").append(tableName).append(" (\n");
-    ddlTableBuilder.append("    id STRING(100) NOT NULL,\n");
+    StringBuilder ddlBuilder = new StringBuilder();
+    ddlBuilder.append("CREATE TABLE ").append(tableName).append(" (\n");
+    ddlBuilder.append("    id STRING(100) NOT NULL,\n");
     for (int i = 1; i <= n; i++) {
-      ddlTableBuilder
-          .append("    col_")
-          .append(i)
-          .append(" STRING(")
-          .append(stringSize)
-          .append("),\n");
+      ddlBuilder.append("    col_").append(i).append(" STRING(").append(stringSize).append("),\n");
     }
-    ddlTableBuilder.setLength(ddlTableBuilder.length() - 2); // Remove the trailing comma
-    ddlTableBuilder.append("\n) PRIMARY KEY (id);");
 
-    // Construct the CREATE CHANGE STREAM DDL statement
-    String ddlStream =
-        "CREATE CHANGE STREAM allstream FOR ALL OPTIONS (value_capture_type = 'NEW_ROW', retention_period = '7d');";
+    ddlBuilder.setLength(ddlBuilder.length() - 2);
+    ddlBuilder.append("\n) PRIMARY KEY (id)");
 
-    // Add the DDL statements to a list
-    List<String> ddlStatements = Arrays.asList(ddlTableBuilder.toString(), ddlStream);
+    String ddl = ddlBuilder.toString().trim();
+    if (ddl.isBlank()) {
+      throw new IllegalStateException("DDL generation failed for column count: " + n);
+    }
 
     try {
-      // Execute the DDL statements
-      spannerResourceManager.executeDdlStatements(ddlStatements);
+      spannerResourceManager.executeDdlStatement(ddl);
     } catch (Exception e) {
-      throw new RuntimeException("Error executing DDL statements: " + ddlStatements, e);
+      throw new RuntimeException("Error executing DDL statement: " + ddl, e);
+    }
+
+    // Build and execute the DDL for creating the change stream
+    String ddlStream =
+        "CREATE CHANGE STREAM allstream FOR ALL OPTIONS (value_capture_type = 'NEW_ROW', retention_period = '7d')";
+    try {
+      spannerResourceManager.executeDdlStatement(ddlStream);
+    } catch (Exception e) {
+      throw new RuntimeException("Error executing CREATE CHANGE STREAM statement: " + ddlStream, e);
     }
 
     return spannerResourceManager;

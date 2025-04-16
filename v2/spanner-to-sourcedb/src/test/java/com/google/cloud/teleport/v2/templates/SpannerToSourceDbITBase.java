@@ -348,6 +348,7 @@ public abstract class SpannerToSourceDbITBase extends TemplateTestBase {
     }
 
     try {
+      System.out.println(ddl);
       spannerResourceManager.executeDdlStatement(ddl);
     } catch (Exception e) {
       throw new RuntimeException("Error executing DDL statement: " + ddl, e);

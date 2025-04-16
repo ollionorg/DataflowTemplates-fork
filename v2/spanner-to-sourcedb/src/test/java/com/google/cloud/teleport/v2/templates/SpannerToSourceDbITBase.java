@@ -312,6 +312,7 @@ public abstract class SpannerToSourceDbITBase extends TemplateTestBase {
 
   protected SpannerResourceManager createSpannerDBAndTableWithNColumns(
       String tableName, int n, String stringSize) throws Exception {
+    // Validate the table name
     if (tableName == null || tableName.isBlank()) {
       throw new IllegalArgumentException("Table name must be specified and non-blank");
     }
@@ -321,43 +322,37 @@ public abstract class SpannerToSourceDbITBase extends TemplateTestBase {
     if (stringSize == null || stringSize.isBlank()) {
       throw new IllegalArgumentException("String size must be specified and non-blank");
     }
-
     SpannerResourceManager spannerResourceManager =
         SpannerResourceManager.builder("rr-main-table-per-columns-" + testName, PROJECT, REGION)
             .maybeUseStaticInstance()
             .build();
 
-    // Build and execute the DDL for creating the table
-    StringBuilder ddlTableBuilder = new StringBuilder();
-    ddlTableBuilder.append("CREATE TABLE ").append(tableName).append(" (\n");
-    ddlTableBuilder.append("    id STRING(100) NOT NULL,\n");
+    // Build the DDL for creating the table
+    StringBuilder ddlBuilder = new StringBuilder();
+    ddlBuilder.append("CREATE TABLE ").append(tableName).append(" (\n");
+    ddlBuilder.append("    id STRING(100) NOT NULL,\n");
     for (int i = 1; i <= n; i++) {
-      ddlTableBuilder
-          .append("    col_")
-          .append(i)
-          .append(" STRING(")
-          .append(stringSize)
-          .append("),\n");
+      ddlBuilder.append("    col_").append(i).append(" STRING(").append(stringSize).append("),\n");
     }
-    ddlTableBuilder.setLength(ddlTableBuilder.length() - 2);
-    ddlTableBuilder.append("\n) PRIMARY KEY (id);");
+    ddlBuilder.setLength(ddlBuilder.length() - 2);
+    ddlBuilder.append("\n) PRIMARY KEY (id);");
+
+    // Add the CREATE CHANGE STREAM statement
+    ddlBuilder.append(
+        "\n\nCREATE CHANGE STREAM allstream FOR ALL OPTIONS (value_capture_type = 'NEW_ROW', retention_period = '7d');");
+
+    // Convert the StringBuilder to a String and trim any extra spaces
+    String ddl = ddlBuilder.toString().trim();
+    if (ddl.isBlank()) {
+      throw new IllegalStateException("DDL generation failed for column count: " + n);
+    }
 
     try {
-      spannerResourceManager.executeDdlStatement(ddlTableBuilder.toString());
+      System.out.println(ddl);
+      spannerResourceManager.executeDdlStatements(ddl);
     } catch (Exception e) {
-      throw new RuntimeException(
-          "Error executing CREATE TABLE statement: " + ddlTableBuilder.toString(), e);
+      throw new RuntimeException("Error executing DDL statement: " + ddl, e);
     }
-
-    // Build and execute the DDL for creating the change stream
-    String ddlStream =
-        "CREATE CHANGE STREAM allstream FOR ALL OPTIONS (value_capture_type = 'NEW_ROW', retention_period = '7d');";
-    try {
-      spannerResourceManager.executeDdlStatement(ddlStream);
-    } catch (Exception e) {
-      throw new RuntimeException("Error executing CREATE CHANGE STREAM statement: " + ddlStream, e);
-    }
-
     return spannerResourceManager;
   }
 

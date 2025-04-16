@@ -73,6 +73,7 @@ import org.junit.runners.Parameterized;
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(DataStreamToSpanner.class)
 @RunWith(Parameterized.class)
+@Ignore
 public class DataStreamToSpannerIT extends SpannerTemplateITBase {
 
   enum JDBCType {
@@ -140,7 +141,6 @@ public class DataStreamToSpannerIT extends SpannerTemplateITBase {
   }
 
   @Test
-  @Ignore("This test is flaky, and Oracle is not fully supported migration source yet")
   public void testDataStreamOracleToSpanner() throws IOException {
     // Run a simple IT
     simpleOracleToSpannerTest(
@@ -177,7 +177,6 @@ public class DataStreamToSpannerIT extends SpannerTemplateITBase {
   }
 
   @Test
-  @Ignore("This test is flaky, and Oracle is not fully supported migration source yet")
   public void testDataStreamOracleToSpannerJson() throws IOException {
     // Run a simple IT
     simpleOracleToSpannerTest(

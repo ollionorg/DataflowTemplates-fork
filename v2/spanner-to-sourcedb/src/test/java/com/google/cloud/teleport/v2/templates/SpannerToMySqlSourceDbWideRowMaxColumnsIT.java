@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Google LLC
+ * Copyright (C) 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -48,7 +48,7 @@ import org.junit.runners.model.MultipleFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Integration test for {@link SpannerToSourceDb} Flex template for all data types. */
+/** Integration test for {@link SpannerToSourceDb} Flex template for max number of columns. */
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
@@ -59,8 +59,8 @@ public class SpannerToMySqlSourceDbWideRowMaxColumnsIT extends SpannerToSourceDb
   private static final String SESSION_FILE_RESOURCE =
       "SpannerToSourceDbWideRowIT/max-col-session.json";
   private static final String TABLE1 = "testtable";
-  private static final String MYSQL_SCHEMA_FILE_RESOURCE =
-      "SpannerToSourceDbWideRowIT/mysql-max-col-schema.sql";
+  private static final int NUM_NON_KEY_COLS = 100;
+  private static final String COLUMN_SIZE = "100";
 
   private static HashSet<SpannerToMySqlSourceDbWideRowMaxColumnsIT> testInstances = new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
@@ -82,12 +82,13 @@ public class SpannerToMySqlSourceDbWideRowMaxColumnsIT extends SpannerToSourceDb
     synchronized (SpannerToMySqlSourceDbWideRowMaxColumnsIT.class) {
       testInstances.add(this);
       if (jobInfo == null) {
-        spannerResourceManager = createSpannerDBAndTableWithNColumns(TABLE1, 100, "100");
+        spannerResourceManager =
+            createSpannerDBAndTableWithNColumns(TABLE1, NUM_NON_KEY_COLS, COLUMN_SIZE);
         spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
         jdbcResourceManager = MySQLResourceManager.builder(testName).build();
 
-        createMySQLTableWithNColumns(jdbcResourceManager, TABLE1, 100, "100");
+        createMySQLTableWithNColumns(jdbcResourceManager, TABLE1, NUM_NON_KEY_COLS, COLUMN_SIZE);
 
         gcsResourceManager =
             GcsResourceManager.builder(artifactBucketName, getClass().getSimpleName(), credentials)

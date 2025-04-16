@@ -48,7 +48,7 @@ import org.junit.runners.JUnit4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Integration test for {@link SpannerToSourceDb} Flex template for all data types. */
+/** Integration test for {@link SpannerToSourceDb} Flex template with max number of columns. */
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SpannerToSourceDb.class)
 @RunWith(JUnit4.class)
@@ -58,15 +58,14 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
       LoggerFactory.getLogger(SpannerToCassandraSourceDbMaxColumnsIT.class);
 
   private static final int NUM_COLS = 1024;
+  private static final int NUM_NON_KEY_COLS = 1023;
   private static final String PRIMARY_KEY = "id";
   private static final String SECONDARY_KEY_PREFIX = "col_";
-
-  private static final String CASSANDRA_SCHEMA_FILE_RESOURCE =
-      "SpannerToSourceDbWideRowIT/cassandra-max-col-schema.sql";
   private static final String CASSANDRA_CONFIG_FILE_RESOURCE =
       "SpannerToSourceDbWideRowIT/cassandra-config-template.conf";
 
   private static final String TEST_TABLE = "testtable";
+  private static final String COLUMN_SIZE = "100";
   private static final HashSet<SpannerToCassandraSourceDbMaxColumnsIT> testInstances =
       new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
@@ -84,7 +83,8 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
     synchronized (SpannerToCassandraSourceDbMaxColumnsIT.class) {
       testInstances.add(this);
       if (jobInfo == null) {
-        spannerResourceManager = createSpannerDBAndTableWithNColumns(TEST_TABLE, 1023, "100");
+        spannerResourceManager =
+            createSpannerDBAndTableWithNColumns(TEST_TABLE, NUM_NON_KEY_COLS, COLUMN_SIZE);
         spannerMetadataResourceManager = createSpannerMetadataDatabase();
 
         cassandraResourceManager = generateKeyspaceAndBuildCassandraResource();
@@ -93,7 +93,7 @@ public class SpannerToCassandraSourceDbMaxColumnsIT extends SpannerToSourceDbITB
                 .build();
         createAndUploadCassandraConfigToGcs(
             gcsResourceManager, cassandraResourceManager, CASSANDRA_CONFIG_FILE_RESOURCE);
-        createCassandraTableWithNColumns(cassandraResourceManager, TEST_TABLE, 1023);
+        createCassandraTableWithNColumns(cassandraResourceManager, TEST_TABLE, NUM_NON_KEY_COLS);
         pubsubResourceManager = setUpPubSubResourceManager();
         subscriptionName =
             createPubsubResources(

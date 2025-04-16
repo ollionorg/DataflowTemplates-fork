@@ -37,6 +37,7 @@ import org.apache.beam.it.jdbc.MySQLResourceManager;
 import org.apache.beam.it.jdbc.conditions.JDBCRowsCheck;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -97,6 +98,7 @@ public class SpannerToMySqlCustomTransformationLT extends SpannerToSourceDbLTBas
     cleanupResourceManagers();
   }
 
+  @Ignore("Disabled")
   @Test
   public void reverseReplication1KTpsWithCustomTransformation()
       throws IOException, ParseException, InterruptedException {

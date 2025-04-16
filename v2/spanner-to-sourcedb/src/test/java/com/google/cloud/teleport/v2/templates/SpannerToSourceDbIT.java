@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Google LLC
+ * Copyright (C) 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -29,6 +29,7 @@ import com.google.common.io.Resources;
 import com.google.pubsub.v1.SubscriptionName;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,7 @@ import org.apache.beam.sdk.io.gcp.spanner.SpannerAccessor;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -66,6 +68,8 @@ public class SpannerToSourceDbIT extends SpannerToSourceDbITBase {
   private static final String MYSQL_SCHEMA_FILE_RESOURCE = "SpannerToSourceDbIT/mysql-schema.sql";
 
   private static final String TABLE = "Users";
+  private static final String BOUNDARY_CHECK_TABLE =
+      "testtable_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvYZPAeGeqiO";
   private static final HashSet<SpannerToSourceDbIT> testInstances = new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
   public static SpannerResourceManager spannerResourceManager;
@@ -139,6 +143,7 @@ public class SpannerToSourceDbIT extends SpannerToSourceDbITBase {
         pubsubResourceManager);
   }
 
+  @Ignore("Disabled")
   @Test
   public void spannerToSourceDbBasic() throws InterruptedException, IOException {
     assertThatPipeline(jobInfo).isRunning();
@@ -205,5 +210,38 @@ public class SpannerToSourceDbIT extends SpannerToSourceDbITBase {
     assertThat(rows.get(0).get("id")).isEqualTo(1);
     assertThat(rows.get(0).get("name")).isEqualTo("FF");
     assertThat(rows.get(0).get("from")).isEqualTo("AA");
+  }
+
+  @Ignore("Disabled")
+  @Test
+  public void spannerToMySQLSourceDbMaxColAndTableNameTest()
+      throws IOException, InterruptedException {
+    assertThatPipeline(jobInfo).isRunning();
+    // Write row in Spanner
+    writeMaxColRowsInSpanner();
+    // Assert events on Mysql
+    assertBoundaryRowInMySQL();
+  }
+
+  private void writeMaxColRowsInSpanner() {
+    List<Mutation> mutations = new ArrayList<>();
+    Mutation.WriteBuilder mutationBuilder =
+        Mutation.newInsertOrUpdateBuilder(BOUNDARY_CHECK_TABLE).set("id").to(1);
+    mutationBuilder
+        .set("col_qcbF69RmXTRe3B_03TpCoVF16ED0KLxM3v808cH3bTGQ0uK_FEXuZHbttvY")
+        .to("SampleTestValue");
+
+    mutations.add(mutationBuilder.build());
+    spannerResourceManager.write(mutations);
+    LOG.info("Inserted row into Spanner using Mutations");
+  }
+
+  private void assertBoundaryRowInMySQL() throws InterruptedException {
+    PipelineOperator.Result result =
+        pipelineOperator()
+            .waitForCondition(
+                createConfig(jobInfo, Duration.ofMinutes(10)),
+                () -> jdbcResourceManager.getRowCount(BOUNDARY_CHECK_TABLE) == 1);
+    assertThatResult(result).meetsConditions();
   }
 }

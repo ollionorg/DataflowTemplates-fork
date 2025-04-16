@@ -107,7 +107,6 @@ CREATE TABLE AllDatatypeColumns (
     ascii_column ascii,
     list_text_column_from_array list<text>,
     set_text_column_from_array set<text>
-
 );
 
 CREATE TABLE BoundaryConversionTestTable (
@@ -216,3 +215,9 @@ CREATE TABLE EmptyStringJsonTable (
     duration_list_col LIST<TEXT>,
     frozen_ascii_set_col frozen<SET<ASCII>>
 );
+
+CREATE TABLE testtable_03tpcovf16ed0klxm3v808ch3btgq0uk (
+    id TEXT PRIMARY KEY,
+    col_qcbf69rmxtre3b_03tpcovf16ed TEXT
+);
+

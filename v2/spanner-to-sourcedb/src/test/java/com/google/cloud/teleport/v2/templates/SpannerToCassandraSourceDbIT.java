@@ -147,7 +147,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                   {
                     put("network", VPC_NAME);
                     put("subnetwork", SUBNET_NAME);
-                    put("region", VPC_REGION);
+                    put("workerRegion", VPC_REGION);
                   }
                 });
       }

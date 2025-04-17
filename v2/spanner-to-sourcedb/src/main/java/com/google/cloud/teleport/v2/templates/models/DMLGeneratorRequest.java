@@ -15,7 +15,9 @@
  */
 package com.google.cloud.teleport.v2.templates.models;
 
+import com.google.cloud.Timestamp;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
+import java.util.Map;
 import org.json.JSONObject;
 
 /**
@@ -51,6 +53,9 @@ public class DMLGeneratorRequest {
   // The timezone offset of the source database, used for handling timezone-specific data.
   private final String sourceDbTimezoneOffset;
 
+  private Map<String, Object> customTransformationResponse;
+  private final Timestamp commitTimestamp;
+
   public DMLGeneratorRequest(Builder builder) {
     this.modType = builder.modType;
     this.spannerTableName = builder.spannerTableName;
@@ -58,6 +63,12 @@ public class DMLGeneratorRequest {
     this.newValuesJson = builder.newValuesJson;
     this.keyValuesJson = builder.keyValuesJson;
     this.sourceDbTimezoneOffset = builder.sourceDbTimezoneOffset;
+    this.customTransformationResponse = builder.customTransformationResponse;
+    this.commitTimestamp = builder.commitTimestamp;
+  }
+
+  public Timestamp getCommitTimestamp() {
+    return this.commitTimestamp;
   }
 
   public String getModType() {
@@ -84,6 +95,10 @@ public class DMLGeneratorRequest {
     return sourceDbTimezoneOffset;
   }
 
+  public Map<String, Object> getCustomTransformationResponse() {
+    return customTransformationResponse;
+  }
+
   public static class Builder {
     private final String modType;
     private final String spannerTableName;
@@ -91,6 +106,8 @@ public class DMLGeneratorRequest {
     private final JSONObject keyValuesJson;
     private final String sourceDbTimezoneOffset;
     private Schema schema;
+    private Map<String, Object> customTransformationResponse;
+    private Timestamp commitTimestamp;
 
     public Builder(
         String modType,
@@ -107,6 +124,17 @@ public class DMLGeneratorRequest {
 
     public Builder setSchema(Schema schema) {
       this.schema = schema;
+      return this;
+    }
+
+    public Builder setCommitTimestamp(Timestamp commitTimestamp) {
+      this.commitTimestamp = commitTimestamp;
+      return this;
+    }
+
+    public Builder setCustomTransformationResponse(
+        Map<String, Object> customTransformationResponse) {
+      this.customTransformationResponse = customTransformationResponse;
       return this;
     }
 

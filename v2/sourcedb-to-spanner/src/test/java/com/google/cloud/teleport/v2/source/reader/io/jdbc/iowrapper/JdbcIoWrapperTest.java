@@ -43,7 +43,7 @@ import com.google.cloud.teleport.v2.source.reader.io.schema.SourceTableSchema;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.SourceColumnType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import java.math.BigInteger;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import org.apache.beam.sdk.io.jdbc.JdbcIO;
 import org.apache.beam.sdk.transforms.PTransform;
@@ -372,6 +372,16 @@ public class JdbcIoWrapperTest {
     assertThat(
             jdbcIOWrapperWithFeatureEnabled.getTableReaders().values().stream().findFirst().get())
         .isInstanceOf(ReadWithUniformPartitions.class);
+    // We test that setting the fetch size works for both modes. The more detailed testing of the
+    // fetch size getting applied to JdbcIO is covered in {@link ReadWithUniformPartitionTest}
+    assertThat(
+            JdbcIoWrapper.of(configWithFeatureEnabled.toBuilder().setMaxFetchSize(42).build())
+                .getTableReaders())
+        .hasSize(1);
+    assertThat(
+            JdbcIoWrapper.of(configWithFeatureDisabled.toBuilder().setMaxFetchSize(42).build())
+                .getTableReaders())
+        .hasSize(1);
   }
 
   @Test
@@ -457,7 +467,7 @@ public class JdbcIoWrapperTest {
                     .setCardinality(42L)
                     .setIsUnique(true)
                     .build()))
-        .isEqualTo(BigInteger.class);
+        .isEqualTo(BigDecimal.class);
     assertThrows(
         SuitableIndexNotFoundException.class,
         () ->

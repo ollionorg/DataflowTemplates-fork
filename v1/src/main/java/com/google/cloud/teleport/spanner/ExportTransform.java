@@ -26,12 +26,17 @@ import com.google.cloud.teleport.spanner.ddl.Ddl;
 import com.google.cloud.teleport.spanner.ddl.Model;
 import com.google.cloud.teleport.spanner.ddl.NamedSchema;
 import com.google.cloud.teleport.spanner.ddl.Placement;
+import com.google.cloud.teleport.spanner.ddl.PropertyGraph;
 import com.google.cloud.teleport.spanner.ddl.Sequence;
 import com.google.cloud.teleport.spanner.ddl.Table;
 import com.google.cloud.teleport.spanner.proto.ExportProtos;
 import com.google.cloud.teleport.spanner.proto.ExportProtos.Export;
 import com.google.cloud.teleport.spanner.proto.ExportProtos.ProtoDialect;
 import com.google.cloud.teleport.spanner.proto.ExportProtos.TableManifest;
+import com.google.cloud.teleport.spanner.spannerio.ReadOperation;
+import com.google.cloud.teleport.spanner.spannerio.SpannerConfig;
+import com.google.cloud.teleport.spanner.spannerio.SpannerIO;
+import com.google.cloud.teleport.spanner.spannerio.Transaction;
 import com.google.cloud.teleport.templates.common.SpannerConverters.CreateTransactionFnWithTimestamp;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
@@ -79,10 +84,6 @@ import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.io.WriteFilesResult;
 import org.apache.beam.sdk.io.fs.ResolveOptions;
 import org.apache.beam.sdk.io.fs.ResourceId;
-import org.apache.beam.sdk.io.gcp.spanner.LocalSpannerIO;
-import org.apache.beam.sdk.io.gcp.spanner.ReadOperation;
-import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
-import org.apache.beam.sdk.io.gcp.spanner.Transaction;
 import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.transforms.Combine;
 import org.apache.beam.sdk.transforms.Combine.CombineFn;
@@ -184,7 +185,7 @@ public class ExportTransform extends PTransform<PBegin, WriteFilesResult<String>
 
     /*
      * Allow users to specify read timestamp.
-     * CreateTransaction and CreateTransactionFn classes in LocalSpannerIO
+     * CreateTransaction and CreateTransactionFn classes in SpannerIO
      * only take a timestamp object for exact staleness which works when
      * parameters are provided during template compile time. They do not work with
      * a Timestamp valueProvider which can take parameters at runtime. Hence a new
@@ -281,7 +282,7 @@ public class ExportTransform extends PTransform<PBegin, WriteFilesResult<String>
                     c.output(ddl);
                   }
                 }));
-    PCollection<ReadOperation> tables =
+    PCollection<ReadOperation> tableReadOperations =
         ddl.apply("Build table read operations", new BuildReadFromTableOperations(tableNames));
 
     PCollection<KV<String, Void>> allTableAndViewNames =
@@ -316,6 +317,21 @@ public class ExportTransform extends PTransform<PBegin, WriteFilesResult<String>
                     Ddl ddl = c.element();
                     for (Model model : ddl.models()) {
                       c.output(model.name());
+                    }
+                  }
+                }));
+
+    PCollection<String> allPropertyGraphNames =
+        ddl.apply(
+            "List all property graph names",
+            ParDo.of(
+                new DoFn<Ddl, String>() {
+
+                  @ProcessElement
+                  public void processElement(ProcessContext c) {
+                    Ddl ddl = c.element();
+                    for (PropertyGraph graph : ddl.propertyGraphs()) {
+                      c.output(graph.name());
                     }
                   }
                 }));
@@ -439,9 +455,9 @@ public class ExportTransform extends PTransform<PBegin, WriteFilesResult<String>
             .apply("As view", View.asMap());
 
     PCollection<Struct> rows =
-        tables.apply(
+        tableReadOperations.apply(
             "Read all rows from Spanner",
-            LocalSpannerIO.readAll().withTransaction(tx).withSpannerConfig(spannerConfig));
+            SpannerIO.readAll().withTransaction(tx).withSpannerConfig(spannerConfig));
 
     ValueProvider<ResourceId> resource =
         ValueProvider.NestedValueProvider.of(
@@ -512,6 +528,24 @@ public class ExportTransform extends PTransform<PBegin, WriteFilesResult<String>
                     c.output(
                         KV.of(
                             modelName, Collections.singleton(modelName + ".avro-00000-of-00001")));
+                  }
+                }));
+
+    PCollection<KV<String, Iterable<String>>> propertyGraphs =
+        allPropertyGraphNames.apply(
+            "Export property graphs",
+            ParDo.of(
+                new DoFn<String, KV<String, Iterable<String>>>() {
+
+                  @ProcessElement
+                  public void processElement(ProcessContext c) {
+                    String propertyGraphName = c.element();
+                    LOG.info("Exporting property graph: " + propertyGraphName);
+                    // This file will contain the schema definition for the propertyGraph.
+                    c.output(
+                        KV.of(
+                            propertyGraphName,
+                            Collections.singleton(propertyGraphName + ".avro-00000-of-00001")));
                   }
                 }));
 
@@ -596,6 +630,7 @@ public class ExportTransform extends PTransform<PBegin, WriteFilesResult<String>
             .and(sequences)
             .and(namedSchemas)
             .and(placements)
+            .and(propertyGraphs)
             .apply("Combine all empty schema files", Flatten.pCollections());
 
     emptySchemaFiles =

@@ -15,6 +15,9 @@
  */
 package com.google.cloud.teleport.v2.templates;
 
+import static com.google.cloud.teleport.v2.spanner.migrations.constants.Constants.CASSANDRA_SOURCE_TYPE;
+import static com.google.cloud.teleport.v2.spanner.migrations.constants.Constants.MYSQL_SOURCE_TYPE;
+
 import com.google.cloud.Timestamp;
 import com.google.cloud.teleport.metadata.Template;
 import com.google.cloud.teleport.metadata.TemplateCategory;
@@ -26,9 +29,15 @@ import com.google.cloud.teleport.v2.cdc.dlq.StringDeadLetterQueueSanitizer;
 import com.google.cloud.teleport.v2.coders.FailsafeElementCoder;
 import com.google.cloud.teleport.v2.common.UncaughtExceptionLogger;
 import com.google.cloud.teleport.v2.spanner.ddl.Ddl;
+import com.google.cloud.teleport.v2.spanner.migrations.metadata.CassandraSourceMetadata;
+import com.google.cloud.teleport.v2.spanner.migrations.schema.NameAndCols;
 import com.google.cloud.teleport.v2.spanner.migrations.schema.Schema;
+import com.google.cloud.teleport.v2.spanner.migrations.schema.SpannerTable;
+import com.google.cloud.teleport.v2.spanner.migrations.shard.CassandraShard;
 import com.google.cloud.teleport.v2.spanner.migrations.shard.Shard;
 import com.google.cloud.teleport.v2.spanner.migrations.spanner.SpannerSchema;
+import com.google.cloud.teleport.v2.spanner.migrations.transformation.CustomTransformation;
+import com.google.cloud.teleport.v2.spanner.migrations.utils.CassandraConfigFileReader;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SecretManagerAccessorImpl;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.SessionFileReader;
 import com.google.cloud.teleport.v2.spanner.migrations.utils.ShardFileReader;
@@ -42,12 +51,14 @@ import com.google.cloud.teleport.v2.templates.transforms.FilterRecordsFn;
 import com.google.cloud.teleport.v2.templates.transforms.PreprocessRecordsFn;
 import com.google.cloud.teleport.v2.templates.transforms.SourceWriterTransform;
 import com.google.cloud.teleport.v2.templates.transforms.UpdateDlqMetricsFn;
+import com.google.cloud.teleport.v2.templates.utils.CassandraSourceSchemaReader;
 import com.google.cloud.teleport.v2.templates.utils.ShadowTableCreator;
 import com.google.cloud.teleport.v2.transforms.DLQWriteTransform;
 import com.google.cloud.teleport.v2.values.FailsafeElement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineDebugOptions;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineWorkerPoolOptions;
@@ -189,7 +200,7 @@ public class SpannerToSourceDb {
         optional = true,
         description = "Cloud Spanner shadow table prefix.",
         helpText = "The prefix used to name shadow tables. Default: `shadow_`.")
-    @Default.String("shadow_")
+    @Default.String("rev_shadow_")
     String getShadowTablePrefix();
 
     void setShadowTablePrefix(String value);
@@ -361,12 +372,71 @@ public class SpannerToSourceDb {
         order = 24,
         optional = true,
         description = "Source database type, ex: mysql",
-        enumOptions = {@TemplateEnumOption("mysql")},
+        enumOptions = {@TemplateEnumOption("mysql"), @TemplateEnumOption("cassandra")},
         helpText = "The type of source database to reverse replicate to.")
     @Default.String("mysql")
     String getSourceType();
 
     void setSourceType(String value);
+
+    @TemplateParameter.GcsReadFile(
+        order = 25,
+        optional = true,
+        description = "Custom transformation jar location in Cloud Storage",
+        helpText =
+            "Custom jar location in Cloud Storage that contains the custom transformation logic for processing records"
+                + " in reverse replication.")
+    @Default.String("")
+    String getTransformationJarPath();
+
+    void setTransformationJarPath(String value);
+
+    @TemplateParameter.Text(
+        order = 26,
+        optional = true,
+        description = "Custom class name for transformation",
+        helpText =
+            "Fully qualified class name having the custom transformation logic.  It is a"
+                + " mandatory field in case transformationJarPath is specified")
+    @Default.String("")
+    String getTransformationClassName();
+
+    void setTransformationClassName(String value);
+
+    @TemplateParameter.Text(
+        order = 27,
+        optional = true,
+        description = "Custom parameters for transformation",
+        helpText =
+            "String containing any custom parameters to be passed to the custom transformation class.")
+    @Default.String("")
+    String getTransformationCustomParameters();
+
+    void setTransformationCustomParameters(String value);
+
+    @TemplateParameter.Text(
+        order = 28,
+        optional = true,
+        description = "Directory name for holding filtered records",
+        helpText =
+            "Records skipped from reverse replication are written to this directory. Default"
+                + " directory name is skip.")
+    @Default.String("filteredEvents")
+    String getFilterEventsDirectoryName();
+
+    void setFilterEventsDirectoryName(String value);
+
+    @TemplateParameter.Boolean(
+        order = 29,
+        optional = true,
+        description = "Boolean setting if reverse migration is sharded",
+        helpText =
+            "Sets the template to a sharded migration. If source shard template contains more"
+                + " than one shard, the value will be set to true. This value defaults to false.")
+    @Default.Boolean(false)
+    Boolean getIsShardedMigration();
+
+    void setIsShardedMigration(Boolean value);
   }
 
   /**
@@ -424,8 +494,12 @@ public class SpannerToSourceDb {
               + " incease the max shard connections");
     }
 
-    // Read the session file
-    Schema schema = SessionFileReader.read(options.getSessionFilePath());
+    // Read the session file for Mysql Only
+    Schema schema =
+        MYSQL_SOURCE_TYPE.equals(options.getSourceType())
+            ? SessionFileReader.read(
+                options.getSessionFilePath()) // Read from session file for MYSQL source type
+            : new Schema();
 
     // Prepare Spanner config
     SpannerConfig spannerConfig =
@@ -463,19 +537,53 @@ public class SpannerToSourceDb {
 
     shadowTableCreator.createShadowTablesInSpanner();
     Ddl ddl = SpannerSchema.getInformationSchemaAsDdl(spannerConfig);
-    ShardFileReader shardFileReader = new ShardFileReader(new SecretManagerAccessorImpl());
-    List<Shard> shards = shardFileReader.getOrderedShardDetails(options.getSourceShardsFilePath());
-    String shardingMode = Constants.SHARDING_MODE_MULTI_SHARD;
-    if (shards.size() == 1) {
-      shardingMode = Constants.SHARDING_MODE_SINGLE_SHARD;
+    List<Shard> shards;
+    String shardingMode;
+    if (MYSQL_SOURCE_TYPE.equals(options.getSourceType())) {
+      ShardFileReader shardFileReader = new ShardFileReader(new SecretManagerAccessorImpl());
+      shards = shardFileReader.getOrderedShardDetails(options.getSourceShardsFilePath());
+      shardingMode = Constants.SHARDING_MODE_MULTI_SHARD;
 
-      Shard singleShard = shards.get(0);
-      if (singleShard.getLogicalShardId() == null) {
-        singleShard.setLogicalShardId(Constants.DEFAULT_SHARD_ID);
+    } else {
+      CassandraConfigFileReader cassandraConfigFileReader = new CassandraConfigFileReader();
+      shards = cassandraConfigFileReader.getCassandraShard(options.getSourceShardsFilePath());
+      LOG.info("Cassandra config is: {}", shards.get(0));
+      shardingMode = Constants.SHARDING_MODE_SINGLE_SHARD;
+    }
+    if (shards.size() == 1 && !options.getIsShardedMigration()) {
+      shardingMode = Constants.SHARDING_MODE_SINGLE_SHARD;
+      Shard shard = shards.get(0);
+      if (shard.getLogicalShardId() == null) {
+        shard.setLogicalShardId(Constants.DEFAULT_SHARD_ID);
         LOG.info(
             "Logical shard id was not found, hence setting it to : " + Constants.DEFAULT_SHARD_ID);
       }
     }
+
+    if (options.getSourceType().equals(CASSANDRA_SOURCE_TYPE)) {
+      Map<String, SpannerTable> spannerTableMap =
+          SpannerSchema.convertDDLTableToSpannerTable(ddl.allTables());
+      Map<String, NameAndCols> spannerTableNameColsMap =
+          SpannerSchema.convertDDLTableToSpannerNameAndColsTable(ddl.allTables());
+      try {
+        CassandraSourceMetadata cassandraSourceMetadata =
+            new CassandraSourceMetadata.Builder()
+                .setResultSet(
+                    CassandraSourceSchemaReader.getInformationSchemaAsResultSet(
+                        (CassandraShard) shards.get(0)))
+                .build();
+        schema =
+            new Schema(
+                spannerTableMap,
+                null,
+                cassandraSourceMetadata.getSourceTableMap(),
+                spannerTableNameColsMap,
+                cassandraSourceMetadata.getNameAndColsMap());
+      } catch (Exception e) {
+        throw new IllegalArgumentException(e);
+      }
+    }
+
     boolean isRegularMode = "regular".equals(options.getRunMode());
     PCollectionTuple reconsumedElements = null;
     DeadLetterQueueManager dlqManager = buildDlqManager(options);
@@ -541,6 +649,11 @@ public class SpannerToSourceDb {
     } else {
       mergedRecords = dlqRecords;
     }
+    CustomTransformation customTransformation =
+        CustomTransformation.builder(
+                options.getTransformationJarPath(), options.getTransformationClassName())
+            .setCustomParameters(options.getTransformationCustomParameters())
+            .build();
     SourceWriterTransform.Result sourceWriterOutput =
         mergedRecords
             .apply(
@@ -562,7 +675,6 @@ public class SpannerToSourceDb {
                         options.getShardingCustomParameters(),
                         options.getMaxShardConnections()
                             * shards.size()))) // currently assuming that all shards accept the same
-            // number of max connections
             .setCoder(
                 KvCoder.of(
                     VarLongCoder.of(), SerializableCoder.of(TrimmedShardedDataChangeRecord.class)))
@@ -578,7 +690,8 @@ public class SpannerToSourceDb {
                     options.getShadowTablePrefix(),
                     options.getSkipDirectoryName(),
                     connectionPoolSizePerWorker,
-                    options.getSourceType()));
+                    options.getSourceType(),
+                    customTransformation));
 
     PCollection<FailsafeElement<String, String>> dlqPermErrorRecords =
         reconsumedElements

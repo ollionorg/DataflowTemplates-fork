@@ -30,7 +30,7 @@ inputs:
     type: string
     description: 'The version of Java to install'
     required: false
-    default: '11'
+    default: '17'
 outputs:
   cache-hit:
     description: 'Whether or not there was a cache hit'
@@ -57,7 +57,7 @@ runs:
           echo "YESTERDAY=$KEY" >> $GITHUB_ENV
         fi
     - name: Setup Cache
-      uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
+      uses: actions/cache@v4
       id: setup-cache
       with:
         path: |

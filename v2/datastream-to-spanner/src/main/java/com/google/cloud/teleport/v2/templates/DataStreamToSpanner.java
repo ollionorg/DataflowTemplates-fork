@@ -168,7 +168,7 @@ public class DataStreamToSpanner {
         optional = true,
         description = "Datastream output file format (avro/json).",
         helpText =
-            "The format of the output file produced by Datastream. For example `avro,json`. Default, `avro`.")
+            "The format of the output file produced by Datastream. For example `avro,json`. Defaults to `avro`.")
     @Default.String("avro")
     String getInputFileFormat();
 
@@ -230,9 +230,8 @@ public class DataStreamToSpanner {
         optional = true,
         description = "The Pub/Sub subscription being used in a Cloud Storage notification policy.",
         helpText =
-            "The Pub/Sub subscription being used in a Cloud Storage notification policy. The name"
-                + " should be in the format of"
-                + " projects/<project-id>/subscriptions/<subscription-name>.")
+            "The Pub/Sub subscription being used in a Cloud Storage notification policy. For the name,"
+                + " use the format `projects/<PROJECT_ID>/subscriptions/<SUBSCRIPTION_NAME>`.")
     String getGcsPubSubSubscription();
 
     void setGcsPubSubSubscription(String value);
@@ -309,7 +308,7 @@ public class DataStreamToSpanner {
         order = 15,
         optional = true,
         description = "Dead letter queue retry minutes",
-        helpText = "The number of minutes between dead letter queue retries. Defaults to 10.")
+        helpText = "The number of minutes between dead letter queue retries. Defaults to `10`.")
     @Default.Integer(10)
     Integer getDlqRetryMinutes();
 
@@ -320,7 +319,7 @@ public class DataStreamToSpanner {
         optional = true,
         description = "Dead letter queue maximum retry count",
         helpText =
-            "The max number of times temporary errors can be retried through DLQ. Defaults to 500.")
+            "The max number of times temporary errors can be retried through DLQ. Defaults to `500`.")
     @Default.Integer(500)
     Integer getDlqMaxRetryCount();
 
@@ -412,7 +411,7 @@ public class DataStreamToSpanner {
         description = "Priority for Spanner RPC invocations",
         helpText =
             "The request priority for Cloud Spanner calls. The value must be one of:"
-                + " [HIGH,MEDIUM,LOW]. Defaults to HIGH")
+                + " [`HIGH`,`MEDIUM`,`LOW`]. Defaults to `HIGH`.")
     @Default.Enum("HIGH")
     RpcPriority getSpannerPriority();
 
@@ -426,8 +425,8 @@ public class DataStreamToSpanner {
                 + " retry directory when running in regular mode.",
         helpText =
             "The Pub/Sub subscription being used in a Cloud Storage notification policy for DLQ"
-                + " retry directory when running in regular mode. The name should be in the format"
-                + " of projects/<project-id>/subscriptions/<subscription-name>. When set, the"
+                + " retry directory when running in regular mode. For the name, use the format"
+                + " `projects/<PROJECT_ID>/subscriptions/<SUBSCRIPTION_NAME>`. When set, the"
                 + " deadLetterQueueDirectory and dlqRetryMinutes are ignored.")
     String getDlqGcsPubSubSubscription();
 
@@ -438,7 +437,7 @@ public class DataStreamToSpanner {
         optional = true,
         description = "Custom jar location in Cloud Storage",
         helpText =
-            "Custom jar location in Cloud Storage that contains the custom transformation logic for processing records"
+            "Custom JAR file location in Cloud Storage for the file that contains the custom transformation logic for processing records"
                 + " in forward migration.")
     @Default.String("")
     String getTransformationJarPath();
@@ -536,6 +535,30 @@ public class DataStreamToSpanner {
     String getSchemaOverridesFilePath();
 
     void setSchemaOverridesFilePath(String value);
+
+    @TemplateParameter.Text(
+        order = 33,
+        optional = true,
+        groupName = "Target",
+        description = "Cloud Spanner Shadow Table Instance Id.",
+        helpText =
+            "Optional separate instance for shadow tables. If not specified, shadow tables will be created in the main instance. If specified, ensure shadowTableSpannerDatabaseId is specified as well.")
+    @Default.String("")
+    String getShadowTableSpannerInstanceId();
+
+    void setShadowTableSpannerInstanceId(String value);
+
+    @TemplateParameter.Text(
+        order = 33,
+        optional = true,
+        groupName = "Target",
+        description = "Cloud Spanner Shadow Table Database Id.",
+        helpText =
+            "Optional separate database for shadow tables. If not specified, shadow tables will be created in the main database. If specified, ensure shadowTableSpannerInstanceId is specified as well.")
+    @Default.String("")
+    String getShadowTableSpannerDatabaseId();
+
+    void setShadowTableSpannerDatabaseId(String value);
   }
 
   private static void validateSourceType(Options options) {
@@ -644,20 +667,33 @@ public class DataStreamToSpanner {
                     .setMaxRpcTimeout(org.threeten.bp.Duration.ofMinutes(4))
                     .setMaxAttempts(1)
                     .build());
+    // TODO: spannerConfig = SpannerServiceFactoryImpl.createSpannerService(spannerConfig,
+    // <failureinjectionparameter>);
+    SpannerConfig shadowTableSpannerConfig = getShadowTableSpannerConfig(options);
     /* Process information schema
      * 1) Read information schema from destination Cloud Spanner database
      * 2) Check if shadow tables are present and create if necessary
      * 3) Return new information schema
      */
-    PCollection<Ddl> ddl =
+    PCollectionTuple ddlTuple =
         pipeline.apply(
             "Process Information Schema",
             new ProcessInformationSchema(
                 spannerConfig,
+                shadowTableSpannerConfig,
                 options.getShouldCreateShadowTables(),
                 options.getShadowTablePrefix(),
                 options.getDatastreamSourceType()));
-    PCollectionView<Ddl> ddlView = ddl.apply("Cloud Spanner DDL as view", View.asSingleton());
+    PCollectionView<Ddl> ddlView =
+        ddlTuple
+            .get(ProcessInformationSchema.MAIN_DDL_TAG)
+            .apply("Cloud Spanner Main DDL as view", View.asSingleton());
+
+    PCollectionView<Ddl> shadowTableDdlView =
+        ddlTuple
+            .get(ProcessInformationSchema.SHADOW_TABLE_DDL_TAG)
+            .apply("Cloud Spanner shadow tables DDL as view", View.asSingleton());
+
     PCollection<FailsafeElement<String, String>> jsonRecords = null;
     // Elements sent to the Dead Letter Queue are to be reconsumed.
     // A DLQManager is to be created using PipelineOptions, and it is in charge
@@ -782,7 +818,6 @@ public class DataStreamToSpanner {
     /*
      * Stage 4: Write transformed records to Cloud Spanner
      */
-
     SpannerTransactionWriter.Result spannerWriteResults =
         transformedRecords
             .get(DatastreamToSpannerConstants.TRANSFORMED_EVENT_TAG)
@@ -790,7 +825,9 @@ public class DataStreamToSpanner {
                 "Write events to Cloud Spanner",
                 new SpannerTransactionWriter(
                     spannerConfig,
+                    shadowTableSpannerConfig,
                     ddlView,
+                    shadowTableDdlView,
                     options.getShadowTablePrefix(),
                     options.getDatastreamSourceType(),
                     isRegularMode));
@@ -841,6 +878,53 @@ public class DataStreamToSpanner {
                 .build());
     // Execute the pipeline and return the result.
     return pipeline.run();
+  }
+
+  static SpannerConfig getShadowTableSpannerConfig(Options options) {
+    // Validate shadow table Spanner config - both instance and database must be specified together
+    String shadowTableSpannerInstanceId = options.getShadowTableSpannerInstanceId();
+    String shadowTableSpannerDatabaseId = options.getShadowTableSpannerDatabaseId();
+    LOG.info(
+        "Input Shadow table db -  instance {} and database {}",
+        shadowTableSpannerInstanceId,
+        shadowTableSpannerDatabaseId);
+
+    if ((Strings.isNullOrEmpty(shadowTableSpannerInstanceId)
+            && !Strings.isNullOrEmpty(shadowTableSpannerDatabaseId))
+        || (!Strings.isNullOrEmpty(shadowTableSpannerInstanceId)
+            && Strings.isNullOrEmpty(shadowTableSpannerDatabaseId))) {
+      throw new IllegalArgumentException(
+          "Both shadowTableSpannerInstanceId and shadowTableSpannerDatabaseId must be specified together");
+    }
+    // If not specified, use main instance and main database values. The shadow table database
+    // stores the shadow tables and by default, is the same as the main database for backward
+    // compatibility.
+    if (Strings.isNullOrEmpty(shadowTableSpannerInstanceId)
+        && Strings.isNullOrEmpty(shadowTableSpannerDatabaseId)) {
+      shadowTableSpannerInstanceId = options.getInstanceId();
+      shadowTableSpannerDatabaseId = options.getDatabaseId();
+      LOG.info(
+          "Overwrote shadow table instance - {} and db- {}",
+          shadowTableSpannerInstanceId,
+          shadowTableSpannerDatabaseId);
+    }
+    return SpannerConfig.create()
+        .withProjectId(ValueProvider.StaticValueProvider.of(options.getProjectId()))
+        .withHost(ValueProvider.StaticValueProvider.of(options.getSpannerHost()))
+        .withInstanceId(ValueProvider.StaticValueProvider.of(shadowTableSpannerInstanceId))
+        .withDatabaseId(ValueProvider.StaticValueProvider.of(shadowTableSpannerDatabaseId))
+        .withRpcPriority(ValueProvider.StaticValueProvider.of(options.getSpannerPriority()))
+        .withCommitRetrySettings(
+            RetrySettings.newBuilder()
+                .setTotalTimeout(org.threeten.bp.Duration.ofMinutes(4))
+                .setInitialRetryDelay(org.threeten.bp.Duration.ofMinutes(0))
+                .setRetryDelayMultiplier(1)
+                .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(0))
+                .setInitialRpcTimeout(org.threeten.bp.Duration.ofMinutes(4))
+                .setRpcTimeoutMultiplier(1)
+                .setMaxRpcTimeout(org.threeten.bp.Duration.ofMinutes(4))
+                .setMaxAttempts(1)
+                .build());
   }
 
   private static DeadLetterQueueManager buildDlqManager(Options options) {

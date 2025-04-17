@@ -24,8 +24,8 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 
 ### Required parameters
 
-* **inputFilePattern** : The input file pattern to read from. (Example: gs://bucket-name/files/*.json).
-* **outputTopic** : The Pub/Sub input topic to write to. The name must be in the format `projects/<PROJECT_ID>/topics/<TOPIC_NAME>`. (Example: projects/your-project-id/topics/your-topic-name).
+* **inputFilePattern**: The input file pattern to read from. For example, `gs://bucket-name/files/*.json`.
+* **outputTopic**: The Pub/Sub input topic to write to. The name must be in the format `projects/<PROJECT_ID>/topics/<TOPIC_NAME>`. For example, `projects/your-project-id/topics/your-topic-name`.
 
 ### Optional parameters
 
@@ -36,7 +36,7 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 
 ### Requirements
 
-* Java 11
+* Java 17
 * Maven
 * [gcloud CLI](https://cloud.google.com/sdk/gcloud), and execution of the
   following commands:
@@ -196,8 +196,8 @@ resource "google_dataflow_job" "gcs_text_to_cloud_pubsub" {
   region            = var.region
   temp_gcs_location = "gs://bucket-name-here/temp"
   parameters        = {
-    inputFilePattern = "gs://bucket-name/files/*.json"
-    outputTopic = "projects/your-project-id/topics/your-topic-name"
+    inputFilePattern = "<inputFilePattern>"
+    outputTopic = "<outputTopic>"
   }
 }
 ```

@@ -25,9 +25,9 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 
 ### Optional parameters
 
-* **yaml_pipeline** : A yaml description of the pipeline to run.
-* **yaml_pipeline_file** : A file in Cloud Storage containing a yaml description of the pipeline to run.
-* **jinja_variables** : A json dict of variables used when invoking the jinja preprocessor on the provided yaml pipeline.
+* **yaml_pipeline**: A yaml description of the pipeline to run.
+* **yaml_pipeline_file**: A file in Cloud Storage containing a yaml description of the pipeline to run.
+* **jinja_variables**: A json dict of variables used when invoking the jinja preprocessor on the provided yaml pipeline.
 
 
 
@@ -35,7 +35,7 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 
 ### Requirements
 
-* Java 11
+* Java 17
 * Maven
 * [gcloud CLI](https://cloud.google.com/sdk/gcloud), and execution of the
   following commands:

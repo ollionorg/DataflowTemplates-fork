@@ -21,12 +21,12 @@ on [Metadata Annotations](https://github.com/GoogleCloudPlatform/DataflowTemplat
 
 ### Required parameters
 
-<#list spec.metadata.parameters as parameter><#if !parameter.optional!false>* **${parameter.name}** : ${parameter.helpText?ensure_ends_with(".")}
+<#list spec.metadata.parameters as parameter><#if !parameter.optional!false>* **${parameter.name}**: ${parameter.helpText?ensure_ends_with(".")}
 </#if></#list>
 
 ### Optional parameters
 
-<#list spec.metadata.parameters as parameter><#if parameter.optional!false>* **${parameter.name}** : ${parameter.helpText?ensure_ends_with(".")}
+<#list spec.metadata.parameters as parameter><#if parameter.optional!false>* **${parameter.name}**: ${parameter.helpText?ensure_ends_with(".")}
 </#if></#list>
 
 
@@ -47,7 +47,7 @@ for more information about how to create and test those functions.
 
 ### Requirements
 
-* Java 11
+* Java 17
 * Maven
 * [gcloud CLI](https://cloud.google.com/sdk/gcloud), and execution of the
   following commands:

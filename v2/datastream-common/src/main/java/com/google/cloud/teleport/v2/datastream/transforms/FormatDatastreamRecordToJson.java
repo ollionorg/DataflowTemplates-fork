@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -43,6 +44,7 @@ import org.apache.avro.data.TimeConversions.DateConversion;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.transforms.SerializableFunction;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +75,9 @@ public class FormatDatastreamRecordToJson
   private String rowIdColumnName;
   private Map<String, String> renameColumns = new HashMap<String, String>();
   private boolean hashRowId = false;
+
+  private static final Long DATETIME_POSITIVE_INFINITY = 9223372036825200000L;
+  private static final Long DATETIME_NEGATIVE_INFINITY = -9223372036832400000L;
 
   private FormatDatastreamRecordToJson() {}
 
@@ -158,7 +163,6 @@ public class FormatDatastreamRecordToJson
 
     // All Raw Metadata
     outputObject.put("_metadata_source", getSourceMetadataJson(record));
-
     return FailsafeElement.of(outputObject.toString(), outputObject.toString());
   }
 
@@ -384,7 +388,22 @@ public class FormatDatastreamRecordToJson
           jsonObject.put(fieldName, (Boolean) record.get(fieldName));
           break;
         case BYTES:
-          jsonObject.put(fieldName, (byte[]) record.get(fieldName));
+          if (record.get(fieldName) instanceof ByteBuffer) {
+            ByteBuffer byteBuffer = (ByteBuffer) record.get(fieldName);
+            byte[] byteArray = new byte[byteBuffer.remaining()];
+            byteBuffer.get(byteArray);
+            jsonObject.put(fieldName, byteArray);
+          } else if (record.get(fieldName) instanceof byte[]) {
+            jsonObject.put(fieldName, (byte[]) record.get(fieldName));
+          } else {
+            // Handle other types appropriately, possibly throwing an exception
+            // if the type is unexpected. Or log it.
+            throw new IllegalArgumentException(
+                "Unexpected type for field "
+                    + fieldName
+                    + ": "
+                    + record.get(fieldName).getClass().getName());
+          }
           break;
         case FLOAT:
           String value = record.get(fieldName).toString();
@@ -489,12 +508,19 @@ public class FormatDatastreamRecordToJson
                 (ByteBuffer) element.get(fieldName), fieldSchema, fieldSchema.getLogicalType());
         jsonObject.put(fieldName, bigDecimal.toPlainString());
       } else if (fieldSchema.getLogicalType() instanceof LogicalTypes.TimeMicros) {
-        Long nanoseconds = (Long) element.get(fieldName) * TimeUnit.MICROSECONDS.toNanos(1);
-        Duration duration =
-            Duration.ofSeconds(
-                TimeUnit.NANOSECONDS.toSeconds(nanoseconds),
-                nanoseconds % TimeUnit.SECONDS.toNanos(1));
-        jsonObject.put(fieldName, duration.toString());
+        Long microseconds = (Long) element.get(fieldName);
+        if (microseconds.equals(DATETIME_POSITIVE_INFINITY)) {
+          jsonObject.put(fieldName, "infinity");
+        } else if (microseconds.equals(DATETIME_NEGATIVE_INFINITY)) {
+          jsonObject.put(fieldName, "-infinity");
+        } else {
+          Long nanoseconds = microseconds * TimeUnit.MICROSECONDS.toNanos(1);
+          Duration duration =
+              Duration.ofSeconds(
+                  TimeUnit.NANOSECONDS.toSeconds(nanoseconds),
+                  nanoseconds % TimeUnit.SECONDS.toNanos(1));
+          jsonObject.put(fieldName, duration.toString());
+        }
       } else if (fieldSchema.getLogicalType() instanceof LogicalTypes.TimeMillis) {
         Duration duration = Duration.ofMillis(((Long) element.get(fieldName)));
         jsonObject.put(fieldName, duration.toString());
@@ -502,11 +528,17 @@ public class FormatDatastreamRecordToJson
         Long microseconds = (Long) element.get(fieldName);
         Long millis = TimeUnit.MICROSECONDS.toMillis(microseconds);
         Instant instant = Instant.ofEpochMilli(millis);
-        // adding the microsecond after it was removed in the millisecond conversion
-        instant = instant.plusNanos(microseconds % 1000 * 1000L);
-        jsonObject.put(
-            fieldName,
-            instant.atOffset(ZoneOffset.UTC).format(DEFAULT_TIMESTAMP_WITH_TZ_FORMATTER));
+        if (microseconds.equals(DATETIME_POSITIVE_INFINITY)) {
+          jsonObject.put(fieldName, "infinity");
+        } else if (microseconds.equals(DATETIME_NEGATIVE_INFINITY)) {
+          jsonObject.put(fieldName, "-infinity");
+        } else {
+          // adding the microsecond after it was removed in the millisecond conversion
+          instant = instant.plusNanos(microseconds % 1000 * 1000L);
+          jsonObject.put(
+              fieldName,
+              instant.atOffset(ZoneOffset.UTC).format(DEFAULT_TIMESTAMP_WITH_TZ_FORMATTER));
+        }
       } else if (fieldSchema.getLogicalType() instanceof LogicalTypes.TimestampMillis) {
         Instant timestamp = Instant.ofEpochMilli(((Long) element.get(fieldName)));
         jsonObject.put(
@@ -563,9 +595,49 @@ public class FormatDatastreamRecordToJson
                   .withZoneSameInstant(ZoneId.of("UTC"))
                   .format(DEFAULT_TIMESTAMP_WITH_TZ_FORMATTER));
           break;
+          /*
+           * The `intervalNano` maps to nano second precision interval type used by Cassandra Interval.
+           * On spanner this will map to `string` or `Interval` type.
+           * This is added here for DQL retrials for sourcedb-to-spanner.
+           *
+           * TODO(b/383689307):
+           * There's a lot of commonality in handling avro types between {@link FormatDatastreamRecordToJson} and {@link com.google.cloud.teleport.v2.spanner.migrations.avro.GenericRecordTypeConvertor}.
+           * Adding inter-package dependency might not be the best route, and we might eventually want to build a common package for handling common logic between the two.
+           */
+        case "intervalNano":
+          Period period =
+              Period.ZERO
+                  .plusYears(getOrDefault(element, "years", 0L))
+                  .plusMonths(getOrDefault(element, "months", 0L))
+                  .plusDays(getOrDefault(element, "days", 0L));
+          /*
+           * Convert the period to a ISO-8601 period formatted String, such as P6Y3M1D.
+           * A zero period will be represented as zero days, 'P0D'.
+           * Refer to javadoc for Period#toString.
+           */
+          String periodIso8061 = period.toString();
+          java.time.Duration duration =
+              java.time.Duration.ZERO
+                  .plusHours(getOrDefault(element, "hours", 0L))
+                  .plusMinutes(getOrDefault(element, "minutes", 0L))
+                  .plusSeconds(getOrDefault(element, "seconds", 0L))
+                  .plusNanos(getOrDefault(element, "nanos", 0L));
+          /*
+           * Convert the duration to a ISO-8601 period formatted String, such as  PT8H6M12.345S
+           * refer to javadoc for Duration#toString.
+           */
+          String durationIso8610 = duration.toString();
+          // Convert to ISO-8601 period format.
+          String convertedIntervalNano;
+          if (duration.isZero()) {
+            convertedIntervalNano = periodIso8061;
+          } else {
+            convertedIntervalNano =
+                periodIso8061 + StringUtils.removeStartIgnoreCase(durationIso8610, "P");
+          }
+          jsonObject.put(fieldName, convertedIntervalNano);
+          break;
         default:
-          LOG.warn(
-              "Unknown field type {} for field {} in record {}.", fieldSchema, fieldName, element);
           ObjectMapper mapper = new ObjectMapper();
           JsonNode dataInput;
           try {
@@ -577,6 +649,13 @@ public class FormatDatastreamRecordToJson
           }
           break;
       }
+    }
+
+    private static <T> T getOrDefault(GenericRecord element, String name, T def) {
+      if (element.get(name) == null) {
+        return def;
+      }
+      return (T) element.get(name);
     }
   }
 }

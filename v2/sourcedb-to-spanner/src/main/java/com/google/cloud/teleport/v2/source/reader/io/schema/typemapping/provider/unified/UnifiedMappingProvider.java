@@ -21,6 +21,7 @@ import com.google.cloud.teleport.v2.source.reader.io.schema.typemapping.provider
 import com.google.cloud.teleport.v2.source.reader.io.schema.typemapping.provider.unified.CustomLogical.TimeIntervalMicros;
 import com.google.cloud.teleport.v2.source.reader.io.schema.typemapping.provider.unified.CustomSchema.DateTime;
 import com.google.cloud.teleport.v2.source.reader.io.schema.typemapping.provider.unified.CustomSchema.Interval;
+import com.google.cloud.teleport.v2.source.reader.io.schema.typemapping.provider.unified.CustomSchema.IntervalNano;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import org.apache.avro.LogicalTypes;
@@ -62,6 +63,7 @@ public final class UnifiedMappingProvider {
     TIME_WITH_TIME_ZONE,
     VARCHAR,
     UNSUPPORTED,
+    INTERVAL_NANO,
   }
 
   // Implementation Detail, ImmutableMap.of(...) supports only upto 10 arguments.
@@ -93,6 +95,7 @@ public final class UnifiedMappingProvider {
                           .addToSchema(SchemaBuilder.builder().longType()))
                   .put(Type.TIMESTAMP_WITH_TIME_ZONE, CustomSchema.TimeStampTz.SCHEMA)
                   .put(Type.TIME_WITH_TIME_ZONE, CustomSchema.TimeTz.SCHEMA)
+                  .put(Type.INTERVAL_NANO, IntervalNano.SCHEMA)
                   .build()
                   .entrySet()
                   .stream()
@@ -111,6 +114,31 @@ public final class UnifiedMappingProvider {
    */
   public static UnifiedTypeMapping getMapping(Type type) {
     return MAPPING.getOrDefault(type, new Unsupported());
+  }
+
+  /**
+   * Returns the {@link UnifiedTypeMapping} for an array of unified type mapping.
+   *
+   * @param type reference to the unified type to which an avro schema mapping for an array is
+   *     requested.
+   * @return mapping implementation. Default is {@link Unsupported} for unrecognized type.
+   */
+  public static UnifiedTypeMapping getArrayMapping(Type type) {
+    return getArrayMapping(MAPPING.getOrDefault(type, new Unsupported()));
+  }
+
+  /**
+   * Returns the {@link UnifiedTypeMapping} for an array of unified type mapping.
+   *
+   * @param mapping reference to the unified type mapping to which an avro schema mapping for an
+   *     array is requested.
+   * @return mapping implementation. Default is {@link Unsupported} for unrecognized type.
+   */
+  public static UnifiedTypeMapping getArrayMapping(UnifiedTypeMapping mapping) {
+    if (mapping instanceof Unsupported) {
+      return mapping;
+    }
+    return Array.create(mapping);
   }
 
   /** Static final class. * */

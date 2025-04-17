@@ -20,7 +20,10 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class AvroTestingHelper {
   public static final Schema TIMESTAMPTZ_SCHEMA =
       SchemaBuilder.record("timestampTz")
@@ -61,6 +64,33 @@ public class AvroTestingHelper {
           .noDefault()
           .endRecord();
 
+  public static final Schema INTERVAL_NANOS_SCHEMA =
+      SchemaBuilder.builder()
+          .record("intervalNano")
+          .fields()
+          .name("years")
+          .type(SchemaBuilder.builder().longType())
+          .withDefault(0L)
+          .name("months")
+          .type(SchemaBuilder.builder().longType())
+          .withDefault(0L)
+          .name("days")
+          .type(SchemaBuilder.builder().longType())
+          .withDefault(0L)
+          .name("hours")
+          .type(SchemaBuilder.builder().longType())
+          .withDefault(0L)
+          .name("minutes")
+          .type(SchemaBuilder.builder().longType())
+          .withDefault(0L)
+          .name("seconds")
+          .type(SchemaBuilder.builder().longType())
+          .withDefault(0L)
+          .name("nanos")
+          .type(SchemaBuilder.builder().longType())
+          .withDefault(0L)
+          .endRecord();
+
   public static final Schema UNSUPPORTED_SCHEMA =
       SchemaBuilder.record("unsupportedName")
           .fields()
@@ -89,6 +119,19 @@ public class AvroTestingHelper {
     genericRecord.put("months", months);
     genericRecord.put("hours", hours);
     genericRecord.put("micros", micros);
+    return genericRecord;
+  }
+
+  public static GenericRecord createIntervalNanosRecord(
+      Long years, Long months, Long days, Long hours, Long minutes, Long seconds, Long nanos) {
+    GenericRecord genericRecord = new GenericData.Record(INTERVAL_NANOS_SCHEMA);
+    genericRecord.put("years", years);
+    genericRecord.put("months", months);
+    genericRecord.put("days", days);
+    genericRecord.put("hours", hours);
+    genericRecord.put("minutes", minutes);
+    genericRecord.put("seconds", seconds);
+    genericRecord.put("nanos", nanos);
     return genericRecord;
   }
 }

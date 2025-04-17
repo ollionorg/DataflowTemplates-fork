@@ -20,15 +20,20 @@ import org.apache.beam.sdk.options.Default;
 
 /** Interface used by the SourcedbToSpanner pipeline to accept user input. */
 public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
+  String CASSANDRA_SOURCE_DIALECT = "CASSANDRA";
+  String MYSQL_SOURCE_DIALECT = "MYSQL";
+  String PG_SOURCE_DIALECT = "POSTGRESQL";
+
   @TemplateParameter.Enum(
       order = 1,
       optional = true,
       enumOptions = {
-        @TemplateParameter.TemplateEnumOption("MYSQL"),
-        @TemplateParameter.TemplateEnumOption("POSTGRESQL")
+        @TemplateParameter.TemplateEnumOption(CASSANDRA_SOURCE_DIALECT),
+        @TemplateParameter.TemplateEnumOption(MYSQL_SOURCE_DIALECT),
+        @TemplateParameter.TemplateEnumOption(PG_SOURCE_DIALECT)
       },
-      description = "SQL Dialect of the source database",
-      helpText = "Possible values are `MYSQL` and `POSTGRESQL`.")
+      description = "Dialect of the source database",
+      helpText = "Possible values are `CASSANDRA`, `MYSQL` and `POSTGRESQL`.")
   @Default.String("MYSQL")
   String getSourceDbDialect();
 
@@ -117,8 +122,21 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
 
   void setNumPartitions(Integer value);
 
-  @TemplateParameter.Text(
+  @TemplateParameter.Integer(
       order = 9,
+      optional = true,
+      description = "The number of rows to fetch per page read for JDBC source.",
+      helpText =
+          "The number of rows to fetch per page read for JDBC source. If not set, the default of JdbcIO of 50_000 rows gets used. If source dialect is Mysql, please see the note below."
+              + " This ultimately translated to Statement.setFetchSize call at Jdbc layer. It should ONLY be used if the default value throws memory errors."
+              + "Note for MySql Source:  FetchSize is ignored by the Mysql connector unless, `useCursorFetch=true` is also part of the connection properties."
+              + "In case, the fetchSize parameter is explicitly set, for MySql dialect, the pipeline will add `useCursorFetch=true` to the connection properties by default.")
+  Integer getFetchSize();
+
+  void setFetchSize(Integer value);
+
+  @TemplateParameter.Text(
+      order = 10,
       groupName = "Target",
       description = "Cloud Spanner Instance Id.",
       helpText = "The destination Cloud Spanner instance.")
@@ -127,7 +145,7 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   void setInstanceId(String value);
 
   @TemplateParameter.Text(
-      order = 10,
+      order = 11,
       groupName = "Target",
       regexes = {"^[a-z]([a-z0-9_-]{0,28})[a-z0-9]$"},
       description = "Cloud Spanner Database Id.",
@@ -137,7 +155,7 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   void setDatabaseId(String value);
 
   @TemplateParameter.ProjectId(
-      order = 11,
+      order = 12,
       groupName = "Target",
       description = "Cloud Spanner Project Id.",
       helpText = "This is the name of the Cloud Spanner project.")
@@ -146,7 +164,7 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   void setProjectId(String projectId);
 
   @TemplateParameter.Text(
-      order = 12,
+      order = 13,
       optional = true,
       description = "Cloud Spanner Endpoint to call",
       helpText = "The Cloud Spanner endpoint to call in the template.",
@@ -157,7 +175,7 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   void setSpannerHost(String value);
 
   @TemplateParameter.Integer(
-      order = 13,
+      order = 14,
       optional = true,
       description = "Maximum number of connections to Source database per worker",
       helpText =
@@ -169,7 +187,7 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   void setMaxConnections(Integer value);
 
   @TemplateParameter.GcsReadFile(
-      order = 14,
+      order = 15,
       optional = true,
       description =
           "Session File Path in Cloud Storage, to provide mapping information in the form of a session file",
@@ -182,7 +200,7 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   void setSessionFilePath(String value);
 
   @TemplateParameter.GcsReadFile(
-      order = 15,
+      order = 16,
       description = "Output directory for failed/skipped/filtered events",
       helpText =
           "This directory is used to dump the failed/skipped/filtered records in a migration.")
@@ -191,7 +209,7 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   void setOutputDirectory(String value);
 
   @TemplateParameter.GcsReadFile(
-      order = 16,
+      order = 17,
       optional = true,
       description = "Custom jar location in Cloud Storage",
       helpText =
@@ -202,7 +220,7 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   void setTransformationJarPath(String value);
 
   @TemplateParameter.Text(
-      order = 17,
+      order = 18,
       optional = true,
       description = "Custom class name",
       helpText =
@@ -214,7 +232,7 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   void setTransformationClassName(String value);
 
   @TemplateParameter.Text(
-      order = 18,
+      order = 19,
       optional = true,
       description = "Custom parameters for transformation",
       helpText =
@@ -225,7 +243,7 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   void setTransformationCustomParameters(String value);
 
   @TemplateParameter.Text(
-      order = 19,
+      order = 20,
       optional = true,
       description = "Namespace",
       helpText =
@@ -234,4 +252,26 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   String getNamespace();
 
   void setNamespace(String value);
+
+  @TemplateParameter.Text(
+      order = 21,
+      optional = true,
+      description = "Use Inserts instead of Upserts for spanner mutations.",
+      helpText =
+          "By default the pipeline uses Upserts to write rows to spanner. Which means existing rows would get overwritten. If InsertOnly mode is enabled, inserts would be used instead of upserts and existing rows won't be overwritten.")
+  @Default.Boolean(false)
+  Boolean getInsertOnlyModeForSpannerMutations();
+
+  void setInsertOnlyModeForSpannerMutations(Boolean value);
+
+  @TemplateParameter.Text(
+      order = 22,
+      optional = true,
+      description = "BatchSize for Spanner Mutation.",
+      helpText =
+          "BatchSize in bytes for Spanner Mutations. if set less than 0, default of Apache Beam's SpannerIO is used, which is 1MB. Set this to 0 or 10, to disable batching mutations.")
+  @Default.Long(-1)
+  Long getBatchSizeForSpannerMutations();
+
+  void setBatchSizeForSpannerMutations(Long value);
 }

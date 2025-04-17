@@ -20,23 +20,30 @@ import static com.google.cloud.teleport.spanner.AvroUtil.GENERATION_EXPRESSION;
 import static com.google.cloud.teleport.spanner.AvroUtil.GOOGLE_FORMAT_VERSION;
 import static com.google.cloud.teleport.spanner.AvroUtil.GOOGLE_STORAGE;
 import static com.google.cloud.teleport.spanner.AvroUtil.HIDDEN;
+import static com.google.cloud.teleport.spanner.AvroUtil.IDENTITY_COLUMN;
 import static com.google.cloud.teleport.spanner.AvroUtil.INPUT;
 import static com.google.cloud.teleport.spanner.AvroUtil.NOT_NULL;
 import static com.google.cloud.teleport.spanner.AvroUtil.OUTPUT;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_CHANGE_STREAM_FOR_CLAUSE;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_CHECK_CONSTRAINT;
+import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_EDGE_TABLE;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_ENTITY;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_ENTITY_MODEL;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_ENTITY_PLACEMENT;
+import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_ENTITY_PROPERTY_GRAPH;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_FOREIGN_KEY;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_INDEX;
+import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_INTERLEAVE_TYPE;
+import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_LABEL;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_NAME;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_NAMED_SCHEMA;
+import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_NODE_TABLE;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_ON_DELETE_ACTION;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_OPTION;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_PARENT;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_PLACEMENT_KEY;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_PRIMARY_KEY;
+import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_PROPERTY_DECLARATION;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_REMOTE;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_SEQUENCE_COUNTER_START;
 import static com.google.cloud.teleport.spanner.AvroUtil.SPANNER_SEQUENCE_KIND;
@@ -54,14 +61,18 @@ import com.google.cloud.teleport.spanner.common.NumericUtils;
 import com.google.cloud.teleport.spanner.ddl.ChangeStream;
 import com.google.cloud.teleport.spanner.ddl.Column;
 import com.google.cloud.teleport.spanner.ddl.Ddl;
+import com.google.cloud.teleport.spanner.ddl.GraphElementTable;
 import com.google.cloud.teleport.spanner.ddl.IndexColumn;
 import com.google.cloud.teleport.spanner.ddl.Model;
 import com.google.cloud.teleport.spanner.ddl.ModelColumn;
 import com.google.cloud.teleport.spanner.ddl.NamedSchema;
 import com.google.cloud.teleport.spanner.ddl.Placement;
+import com.google.cloud.teleport.spanner.ddl.PropertyGraph;
 import com.google.cloud.teleport.spanner.ddl.Sequence;
 import com.google.cloud.teleport.spanner.ddl.Table;
+import com.google.cloud.teleport.spanner.ddl.Table.InterleaveType;
 import com.google.cloud.teleport.spanner.ddl.View;
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -110,6 +121,9 @@ public class DdlToAvroSchemaConverter {
       recordBuilder.prop(GOOGLE_STORAGE, "CloudSpanner");
       if (table.interleaveInParent() != null) {
         recordBuilder.prop(SPANNER_PARENT, table.interleaveInParent());
+        recordBuilder.prop(
+            SPANNER_INTERLEAVE_TYPE,
+            table.interleaveType() == InterleaveType.IN ? "IN" : "IN PARENT");
         recordBuilder.prop(
             SPANNER_ON_DELETE_ACTION, table.onDeleteCascade() ? "cascade" : "no action");
       }
@@ -167,7 +181,22 @@ public class DdlToAvroSchemaConverter {
           // which are semantically logical entities.
           fieldBuilder.type(SchemaBuilder.builder().nullType()).withDefault(null);
         } else {
-          if (cm.defaultExpression() != null) {
+          if (cm.isIdentityColumn()) {
+            fieldBuilder.prop(IDENTITY_COLUMN, Boolean.toString(cm.isIdentityColumn()));
+            if (cm.sequenceKind() != null) {
+              fieldBuilder.prop(SPANNER_SEQUENCE_KIND, cm.sequenceKind());
+            }
+            if (cm.counterStartValue() != null) {
+              fieldBuilder.prop(
+                  SPANNER_SEQUENCE_COUNTER_START, String.valueOf(cm.counterStartValue()));
+            }
+            if (cm.skipRangeMin() != null) {
+              fieldBuilder.prop(SPANNER_SEQUENCE_SKIP_RANGE_MIN, String.valueOf(cm.skipRangeMin()));
+            }
+            if (cm.skipRangeMax() != null) {
+              fieldBuilder.prop(SPANNER_SEQUENCE_SKIP_RANGE_MAX, String.valueOf(cm.skipRangeMax()));
+            }
+          } else if (cm.defaultExpression() != null) {
             fieldBuilder.prop(DEFAULT_EXPRESSION, cm.defaultExpression());
           }
           Schema avroType = avroType(cm.type(), table.name() + "_" + columnOrdinal++);
@@ -237,6 +266,37 @@ public class DdlToAvroSchemaConverter {
       outputBuilder.endRecord().noDefault();
 
       Schema schema = fieldsAssembler.endRecord();
+      schemas.add(schema);
+    }
+
+    for (PropertyGraph propertyGraph : ddl.propertyGraphs()) {
+      LOG.info("DdlToAvro PropertyGraph {}", propertyGraph.name());
+      SchemaBuilder.RecordBuilder<Schema> recordBuilder =
+          SchemaBuilder.record(generateAvroSchemaName(propertyGraph.name()))
+              .namespace(this.namespace);
+
+      recordBuilder.prop(SPANNER_NAME, propertyGraph.name());
+      recordBuilder.prop(GOOGLE_FORMAT_VERSION, version);
+      recordBuilder.prop(GOOGLE_STORAGE, "CloudSpanner");
+      recordBuilder.prop(SPANNER_ENTITY, SPANNER_ENTITY_PROPERTY_GRAPH);
+
+      // Encode nodeTables
+      for (int i = 0; i < propertyGraph.nodeTables().size(); i++) {
+        encodeNodeTable(recordBuilder, propertyGraph.nodeTables().get(i), i);
+      }
+
+      // Encode edgeTables
+      for (int i = 0; i < propertyGraph.edgeTables().size(); i++) {
+        encodeEdgeTable(recordBuilder, propertyGraph.edgeTables().get(i), i);
+      }
+
+      // Encode propertyDeclarations
+      encodePropertyDeclarations(recordBuilder, propertyGraph.propertyDeclarations());
+
+      // Encode labels
+      encodeLabels(recordBuilder, propertyGraph.labels());
+
+      Schema schema = recordBuilder.fields().endRecord();
       schemas.add(schema);
     }
 
@@ -321,6 +381,89 @@ public class DdlToAvroSchemaConverter {
     return schemas;
   }
 
+  private void encodeNodeTable(
+      SchemaBuilder.RecordBuilder<Schema> recordBuilder, GraphElementTable nodeTable, int i) {
+    encodeElementTable(recordBuilder, nodeTable, i, SPANNER_NODE_TABLE);
+  }
+
+  private void encodeEdgeTable(
+      SchemaBuilder.RecordBuilder<Schema> recordBuilder, GraphElementTable edgeTable, int i) {
+    encodeElementTable(recordBuilder, edgeTable, i, SPANNER_EDGE_TABLE);
+
+    // Encode sourceNodeTable and targetNodeTable (always present for edges)
+    recordBuilder.prop(
+        SPANNER_EDGE_TABLE + "_" + i + "_SOURCE_NODE_TABLE_NAME",
+        edgeTable.sourceNodeTable().nodeTableName);
+    recordBuilder.prop(
+        SPANNER_EDGE_TABLE + "_" + i + "_SOURCE_NODE_KEY_COLUMNS",
+        String.join(", ", edgeTable.sourceNodeTable().nodeKeyColumns));
+    recordBuilder.prop(
+        SPANNER_EDGE_TABLE + "_" + i + "_SOURCE_EDGE_KEY_COLUMNS",
+        String.join(", ", edgeTable.sourceNodeTable().edgeKeyColumns));
+    recordBuilder.prop(
+        SPANNER_EDGE_TABLE + "_" + i + "_TARGET_NODE_TABLE_NAME",
+        edgeTable.targetNodeTable().nodeTableName);
+    recordBuilder.prop(
+        SPANNER_EDGE_TABLE + "_" + i + "_TARGET_NODE_KEY_COLUMNS",
+        String.join(", ", edgeTable.targetNodeTable().nodeKeyColumns));
+    recordBuilder.prop(
+        SPANNER_EDGE_TABLE + "_" + i + "_TARGET_EDGE_KEY_COLUMNS",
+        String.join(", ", edgeTable.targetNodeTable().edgeKeyColumns));
+  }
+
+  private void encodeElementTable(
+      SchemaBuilder.RecordBuilder<Schema> recordBuilder,
+      GraphElementTable elementTable,
+      int i,
+      String prefix) {
+    recordBuilder.prop(prefix + "_" + i + "_NAME", elementTable.name());
+    recordBuilder.prop(prefix + "_" + i + "_BASE_TABLE_NAME", elementTable.baseTableName());
+    recordBuilder.prop(prefix + "_" + i + "_KIND", elementTable.kind().toString());
+    // Encode keyColumns
+    recordBuilder.prop(
+        prefix + "_" + i + "_KEY_COLUMNS", String.join(", ", elementTable.keyColumns()));
+
+    // Encode labelToPropertyDefinitions
+    for (int j = 0; j < elementTable.labelToPropertyDefinitions().size(); j++) {
+      GraphElementTable.LabelToPropertyDefinitions labelToPropertyDef =
+          elementTable.labelToPropertyDefinitions().get(j);
+      recordBuilder.prop(prefix + "_" + i + "_LABEL_" + j + "_NAME", labelToPropertyDef.labelName);
+      // Encode propertyDefinitions
+      for (int k = 0; k < labelToPropertyDef.propertyDefinitions.size(); k++) {
+        GraphElementTable.PropertyDefinition propertyDef =
+            labelToPropertyDef.propertyDefinitions.get(k);
+        recordBuilder.prop(
+            prefix + "_" + i + "_LABEL_" + j + "_PROPERTY_" + k + "_NAME", propertyDef.name);
+        recordBuilder.prop(
+            prefix + "_" + i + "_LABEL_" + j + "_PROPERTY_" + k + "_VALUE",
+            propertyDef.valueExpressionString);
+      }
+    }
+  }
+
+  private void encodePropertyDeclarations(
+      SchemaBuilder.RecordBuilder<Schema> recordBuilder,
+      ImmutableList<PropertyGraph.PropertyDeclaration> declarations) {
+    for (int i = 0; i < declarations.size(); i++) {
+      PropertyGraph.PropertyDeclaration declaration = declarations.get(i);
+      recordBuilder.prop(SPANNER_PROPERTY_DECLARATION + "_" + i + "_NAME", declaration.name);
+      recordBuilder.prop(SPANNER_PROPERTY_DECLARATION + "_" + i + "_TYPE", declaration.type);
+    }
+  }
+
+  private void encodeLabels(
+      SchemaBuilder.RecordBuilder<Schema> recordBuilder,
+      ImmutableList<PropertyGraph.GraphElementLabel> labels) {
+    for (int i = 0; i < labels.size(); i++) {
+      PropertyGraph.GraphElementLabel label = labels.get(i);
+      recordBuilder.prop(SPANNER_LABEL + "_" + i + "_NAME", label.name);
+      // Encode properties
+      for (int j = 0; j < label.properties.size(); j++) {
+        recordBuilder.prop(SPANNER_LABEL + "_" + i + "_PROPERTY_" + j, label.properties.get(j));
+      }
+    }
+  }
+
   /**
    * Converts a Spanner type into Avro type.
    *
@@ -354,10 +497,14 @@ public class DdlToAvroSchemaConverter {
       case JSON:
       case PG_JSONB:
         return SchemaBuilder.builder().stringType();
+      case UUID:
+      case PG_UUID:
+        return LogicalTypes.uuid().addToSchema(SchemaBuilder.builder().stringType());
       case BYTES:
       case PG_BYTEA:
       case PROTO:
       case TOKENLIST:
+      case PG_SPANNER_TOKENLIST:
         return SchemaBuilder.builder().bytesType();
       case TIMESTAMP:
       case PG_TIMESTAMPTZ:

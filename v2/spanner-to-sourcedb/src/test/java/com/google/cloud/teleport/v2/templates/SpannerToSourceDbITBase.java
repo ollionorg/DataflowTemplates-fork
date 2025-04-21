@@ -134,7 +134,7 @@ public abstract class SpannerToSourceDbITBase extends TemplateTestBase {
     JsonObject jsObj = new Gson().toJsonTree(shard).getAsJsonObject();
     jsObj.remove("secretManagerUri"); // remove field secretManagerUri
     JsonArray ja = new JsonArray();
-    ja.add(jsObj);
+    ja.add(jsObj); // dummy checkin
     String shardFileContents = ja.toString();
     LOG.info("Shard file contents: {}", shardFileContents);
     gcsResourceManager.createArtifact("input/shard.json", shardFileContents);

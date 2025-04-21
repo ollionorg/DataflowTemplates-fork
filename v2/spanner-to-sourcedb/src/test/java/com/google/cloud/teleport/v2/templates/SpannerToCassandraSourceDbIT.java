@@ -143,13 +143,7 @@ public class SpannerToCassandraSourceDbIT extends SpannerToSourceDbITBase {
                 null,
                 null,
                 CASSANDRA_SOURCE_TYPE,
-                new HashMap<>() {
-                  {
-                    put("network", VPC_NAME);
-                    put("subnetwork", SUBNET_NAME);
-                    put("workerRegion", VPC_REGION);
-                  }
-                });
+                new HashMap<>());
       }
     }
   }

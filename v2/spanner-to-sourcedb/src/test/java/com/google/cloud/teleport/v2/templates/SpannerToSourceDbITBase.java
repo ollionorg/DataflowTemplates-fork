@@ -351,7 +351,6 @@ public abstract class SpannerToSourceDbITBase extends TemplateTestBase {
       throw new RuntimeException("Error executing DDL statement: " + ddl, e);
     }
 
-    // Build and execute the DDL for creating the change stream
     String ddlStream =
         "CREATE CHANGE STREAM allstream FOR ALL OPTIONS (value_capture_type = 'NEW_ROW', retention_period = '7d')";
     try {

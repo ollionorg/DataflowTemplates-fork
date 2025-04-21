@@ -259,6 +259,7 @@ public abstract class SpannerToSourceDbITBase extends TemplateTestBase {
             put("maxShardConnections", "5");
             put("maxNumWorkers", "1");
             put("numWorkers", "1");
+            put("sourceType", sourceType);
           }
         };
 

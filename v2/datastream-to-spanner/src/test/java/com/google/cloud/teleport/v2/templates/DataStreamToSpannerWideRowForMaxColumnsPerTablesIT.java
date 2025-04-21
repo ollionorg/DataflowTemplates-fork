@@ -44,6 +44,7 @@ import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -267,13 +268,14 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends DataStre
   private ConditionCheck checkDestinationRows(Map<String, List<Map<String, Object>>> cdcEvents) {
     return new ConditionCheck() {
       @Override
-      protected String getDescription() {
+      protected @NotNull String getDescription() {
         return "Check Spanner rows.";
       }
 
       @Override
-      protected CheckResult check() {
+      protected @NotNull CheckResult check() {
         // First, check that correct number of rows were deleted.
+        System.out.println("checking checkDestinationRows");
         for (String tableName : TABLE_NAMES) {
           long totalRows = spannerResourceManager.getRowCount(tableName);
           long maxRows = cdcEvents.get(tableName).size();
@@ -285,9 +287,12 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends DataStre
 
         // Next, make sure in-place mutations were applied.
         try {
+          System.out.println("checking spannerResourceManager");
           checkSpannerTables(spannerResourceManager, TABLE_NAMES, cdcEvents, COLUMNS);
+          System.out.println("checked spannerResourceManager");
           return new CheckResult(true, "Spanner tables contain expected rows.");
         } catch (AssertionError error) {
+          System.out.println("Exception spannerResourceManager");
           return new CheckResult(false, "Spanner tables do not contain expected rows.");
         }
       }
@@ -310,6 +315,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends DataStre
       @Override
       protected CheckResult check() {
         boolean success = true;
+        System.out.println("Writing JDBC");
         List<String> messages = new ArrayList<>();
         for (String tableName : TABLE_NAMES) {
 
@@ -323,6 +329,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends DataStre
           }
           cdcEvents.put(tableName, rows);
           success &= cloudSqlResourceManager.write(tableName, rows);
+          System.out.println("JDBC DATA WRITE complete " + success);
           messages.add(String.format("%d rows to %s", rows.size(), tableName));
         }
         return new CheckResult(success, "Sent " + String.join(", ", messages) + ".");

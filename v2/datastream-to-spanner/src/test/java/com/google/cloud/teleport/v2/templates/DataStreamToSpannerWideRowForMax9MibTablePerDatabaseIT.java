@@ -269,6 +269,7 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT
       @Override
       protected CheckResult check() {
         // First, check that correct number of rows were deleted.
+        System.out.println("checking checkDestinationRows");
         for (String tableName : TABLE_NAMES) {
           long totalRows = spannerResourceManager.getRowCount(tableName);
           long maxRows = cdcEvents.get(tableName).size();
@@ -279,9 +280,12 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT
         }
 
         try {
+          System.out.println("checking checkSpannerTables");
           checkSpannerTables(spannerResourceManager, TABLE_NAMES, cdcEvents, COLUMNS);
+          System.out.println("checked checkSpannerTables");
           return new CheckResult(true, "Spanner tables contain expected rows.");
         } catch (AssertionError error) {
+          System.out.println("exception checkSpannerTables");
           return new CheckResult(false, "Spanner tables do not contain expected rows.");
         }
       }
@@ -303,6 +307,7 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT
 
       @Override
       protected CheckResult check() {
+        System.out.println("Trying to write JDBC EVENT");
         boolean success = true;
         List<String> messages = new ArrayList<>();
         Random random = new Random();
@@ -323,9 +328,9 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT
             values.put(COLUMNS.get(5), rowData);
             rows.add(values);
           }
-
+          System.out.println("Trying to write JDBC EVENT via cloud SQL");
           success &= cloudSqlResourceManager.write(tableName, rows);
-
+          System.out.println("Trying to write JDBC EVENT " + success);
           rows.forEach(
               values ->
                   values.put(

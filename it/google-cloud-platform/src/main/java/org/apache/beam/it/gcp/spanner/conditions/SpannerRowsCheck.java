@@ -46,7 +46,9 @@ public abstract class SpannerRowsCheck extends ConditionCheck {
 
   @Override
   public CheckResult check() {
+    System.out.println("Checking Spanner Row Check for " + tableId());
     long totalRows = resourceManager().getRowCount(tableId());
+    System.out.println("Found Spanner Row Check for " + tableId() + " is " + totalRows);
     if (totalRows < minRows()) {
       return new CheckResult(
           false, String.format("Expected %d rows but has only %d", minRows(), totalRows));

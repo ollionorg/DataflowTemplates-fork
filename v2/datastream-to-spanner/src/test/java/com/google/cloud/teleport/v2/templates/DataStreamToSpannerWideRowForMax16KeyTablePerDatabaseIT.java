@@ -287,6 +287,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT
       @Override
       protected @NotNull CheckResult check() {
         // First, check that correct number of rows were deleted.
+        System.out.println("checking checkDestinationRows");
         for (String tableName : TABLE_NAMES) {
           long totalRows = spannerResourceManager.getRowCount(tableName);
           long maxRows = cdcEvents.get(tableName).size();
@@ -298,9 +299,12 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT
 
         // Next, make sure in-place mutations were applied.
         try {
+          System.out.println("checking spannerResourceManager");
           checkSpannerTables(spannerResourceManager, TABLE_NAMES, cdcEvents, COLUMNS);
+          System.out.println("checked spannerResourceManager");
           return new CheckResult(true, "Spanner tables contain expected rows.");
         } catch (AssertionError error) {
+          System.out.println("Exception spannerResourceManager");
           return new CheckResult(false, "Spanner tables do not contain expected rows.");
         }
       }
@@ -324,7 +328,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT
       protected @NotNull CheckResult check() {
         boolean success = true;
         List<String> messages = new ArrayList<>();
-
+        System.out.println("Writing JDBC");
         for (String tableName : TABLE_NAMES) {
           List<Map<String, Object>> rows = new ArrayList<>();
 
@@ -337,7 +341,9 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT
           }
 
           cdcEvents.put(tableName, rows);
+          System.out.println("Writing JDBC via CLOUD");
           success &= cloudSqlResourceManager.write(tableName, rows);
+          System.out.println("Writing JDBC " + success);
           messages.add(String.format("%d rows to %s", rows.size(), tableName));
         }
         return new CheckResult(success, "Sent " + String.join(", ", messages) + ".");

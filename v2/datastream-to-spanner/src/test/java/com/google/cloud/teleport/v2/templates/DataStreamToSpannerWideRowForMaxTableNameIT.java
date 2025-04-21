@@ -44,6 +44,7 @@ import org.apache.beam.it.gcp.spanner.SpannerResourceManager;
 import org.apache.beam.it.gcp.spanner.conditions.SpannerRowsCheck;
 import org.apache.beam.it.gcp.storage.GcsResourceManager;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -267,13 +268,14 @@ public class DataStreamToSpannerWideRowForMaxTableNameIT extends DataStreamToSpa
   private ConditionCheck checkDestinationRows(Map<String, List<Map<String, Object>>> cdcEvents) {
     return new ConditionCheck() {
       @Override
-      protected String getDescription() {
+      protected @NotNull String getDescription() {
         return "Check Spanner rows.";
       }
 
       @Override
-      protected CheckResult check() {
+      protected @NotNull CheckResult check() {
         // First, check that correct number of rows were deleted.
+        System.out.println("checking checkDestinationRows");
         for (String tableName : TABLE_NAMES) {
           long totalRows = spannerResourceManager.getRowCount(tableName);
           long maxRows = cdcEvents.get(tableName).size();
@@ -285,9 +287,12 @@ public class DataStreamToSpannerWideRowForMaxTableNameIT extends DataStreamToSpa
 
         // Next, make sure in-place mutations were applied.
         try {
+          System.out.println("checking spannerResourceManager");
           checkSpannerTables(spannerResourceManager, TABLE_NAMES, cdcEvents, COLUMNS);
+          System.out.println("checked spannerResourceManager");
           return new CheckResult(true, "Spanner tables contain expected rows.");
         } catch (AssertionError error) {
+          System.out.println("Exception spannerResourceManager");
           return new CheckResult(false, "Spanner tables do not contain expected rows.");
         }
       }

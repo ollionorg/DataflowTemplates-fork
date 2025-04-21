@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Google LLC
+ * Copyright (C) 2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -30,6 +30,7 @@ import com.google.pubsub.v1.SubscriptionName;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +121,14 @@ public class SpannerToSourceDbIT extends SpannerToSourceDbITBase {
                 null,
                 null,
                 null,
-                MYSQL_SOURCE_TYPE);
+                MYSQL_SOURCE_TYPE,
+                new HashMap<>() {
+                  {
+                    put("network", VPC_NAME);
+                    put("subnetwork", SUBNET_NAME);
+                    put("workerRegion", VPC_REGION);
+                  }
+                });
       }
     }
   }

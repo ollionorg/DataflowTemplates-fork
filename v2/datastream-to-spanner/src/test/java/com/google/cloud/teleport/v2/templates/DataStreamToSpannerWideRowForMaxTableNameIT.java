@@ -116,7 +116,7 @@ public class DataStreamToSpannerWideRowForMaxTableNameIT extends DataStreamToSpa
                 pubsubResourceManager,
                 new HashMap<>() {
                   {
-                    put("inputFileFormat", "avro");
+                    put("inputFileFormat", "json");
                   }
                 },
                 null,

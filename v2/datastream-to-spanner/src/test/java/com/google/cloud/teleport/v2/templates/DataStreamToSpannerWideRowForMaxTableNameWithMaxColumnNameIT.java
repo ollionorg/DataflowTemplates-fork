@@ -78,7 +78,7 @@ public class DataStreamToSpannerWideRowForMaxTableNameWithMaxColumnNameIT
     for (int i = 1; i <= NUM_TABLES; i++) {
       TABLE_NAMES.add("DataStreamToSpanner_" + i + "_" + RandomStringUtils.randomAlphanumeric(5));
     }
-    for (int i = 1; i <= NUM_COLUMNS; i++) {
+    for (int i = 1; i < NUM_COLUMNS; i++) {
       COLUMNS.add("col_" + i);
     }
     COLUMNS.add(

@@ -164,7 +164,7 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT
   }
 
   @Test
-  public void testDataStreamMySqlToSpannerFor5000TablesPerDatabase() throws IOException {
+  public void testDataStreamMySqlToSpannerFor9MBTablesPerDatabase() throws IOException {
     assertThatPipeline(jobInfo).isRunning();
     Map<String, List<Map<String, Object>>> cdcEvents = new LinkedHashMap<>();
     ChainedConditionCheck conditionCheck =

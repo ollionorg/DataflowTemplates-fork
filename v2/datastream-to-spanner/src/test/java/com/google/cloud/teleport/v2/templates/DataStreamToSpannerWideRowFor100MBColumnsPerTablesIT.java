@@ -34,6 +34,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
+import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.conditions.ChainedConditionCheck;
 import org.apache.beam.it.conditions.ConditionCheck;
 import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
@@ -144,10 +145,12 @@ public class DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT
     for (DataStreamToSpannerWideRowFor100MBColumnsPerTablesIT instance : testInstances) {
       instance.tearDownBase();
     }
-    //    ResourceManagerUtils.cleanResources(
-    //        //        datastreamResourceManager,
-    //        cloudSqlResourceManager, spannerResourceManager, pubsubResourceManager,
-    // gcsResourceManager);
+    ResourceManagerUtils.cleanResources(
+        cloudSqlResourceManager,
+        datastreamResourceManager,
+        spannerResourceManager,
+        pubsubResourceManager,
+        gcsResourceManager);
   }
 
   @Test

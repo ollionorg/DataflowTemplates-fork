@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Random;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
-import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.conditions.ChainedConditionCheck;
 import org.apache.beam.it.conditions.ConditionCheck;
 import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
@@ -80,6 +79,7 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT
   private static SpannerResourceManager spannerResourceManager;
   private static PubsubResourceManager pubsubResourceManager;
   private static GcsResourceManager gcsResourceManager;
+  private static DatastreamResourceManager datastreamResourceManager;
   private static HashSet<DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT> testInstances =
       new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
@@ -131,6 +131,7 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT
                 null,
                 null,
                 gcsResourceManager,
+                datastreamResourceManager,
                 sessionContent,
                 MySQLSource.builder(
                         cloudSqlResourceManager.getHost(),
@@ -149,12 +150,11 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT
     for (DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT instance : testInstances) {
       instance.tearDownBase();
     }
-    ResourceManagerUtils.cleanResources(
-        cloudSqlResourceManager,
-        spannerResourceManager,
-        pubsubResourceManager,
-        gcsResourceManager,
-        datastreamResourceManager);
+    //    ResourceManagerUtils.cleanResources(
+    //        cloudSqlResourceManager, spannerResourceManager, pubsubResourceManager,
+    // gcsResourceManager
+    //        //        datastreamResourceManager
+    //        );
   }
 
   private void setupSchema() {

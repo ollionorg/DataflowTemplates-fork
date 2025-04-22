@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
-import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.conditions.ChainedConditionCheck;
 import org.apache.beam.it.conditions.ConditionCheck;
 import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
@@ -66,6 +65,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends DataStre
   private static SpannerResourceManager spannerResourceManager;
   private static PubsubResourceManager pubsubResourceManager;
   private static GcsResourceManager gcsResourceManager;
+  private static DatastreamResourceManager datastreamResourceManager;
 
   private static final List<String> COLUMNS = new ArrayList<>();
 
@@ -123,6 +123,7 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends DataStre
                 null,
                 null,
                 gcsResourceManager,
+                datastreamResourceManager,
                 sessionContent,
                 MySQLSource.builder(
                         cloudSqlResourceManager.getHost(),
@@ -141,12 +142,9 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends DataStre
     for (DataStreamToSpannerWideRowForMaxColumnsPerTablesIT instance : testInstances) {
       instance.tearDownBase();
     }
-    ResourceManagerUtils.cleanResources(
-        cloudSqlResourceManager,
-        spannerResourceManager,
-        pubsubResourceManager,
-        gcsResourceManager,
-        datastreamResourceManager);
+    //    ResourceManagerUtils.cleanResources(
+    //        cloudSqlResourceManager, spannerResourceManager, pubsubResourceManager,
+    // gcsResourceManager);
   }
 
   private void setupSchema() {

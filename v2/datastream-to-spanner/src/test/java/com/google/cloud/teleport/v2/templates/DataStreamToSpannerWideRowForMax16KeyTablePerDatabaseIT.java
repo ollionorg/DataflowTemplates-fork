@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.beam.it.common.PipelineLauncher;
 import org.apache.beam.it.common.PipelineOperator;
-import org.apache.beam.it.common.utils.ResourceManagerUtils;
 import org.apache.beam.it.conditions.ChainedConditionCheck;
 import org.apache.beam.it.conditions.ConditionCheck;
 import org.apache.beam.it.gcp.cloudsql.CloudMySQLResourceManager;
@@ -72,6 +71,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT
       new HashSet<>();
   private static PipelineLauncher.LaunchInfo jobInfo;
   private static final List<String> TABLE_NAMES = new ArrayList<>();
+  private static DatastreamResourceManager datastreamResourceManager;
 
   static {
     for (int i = 1; i <= NUM_TABLES; i++) {
@@ -122,6 +122,7 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT
                 null,
                 null,
                 gcsResourceManager,
+                datastreamResourceManager,
                 sessionContent,
                 MySQLSource.builder(
                         cloudSqlResourceManager.getHost(),
@@ -140,12 +141,9 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT
     for (DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT instance : testInstances) {
       instance.tearDownBase();
     }
-    ResourceManagerUtils.cleanResources(
-        cloudSqlResourceManager,
-        spannerResourceManager,
-        pubsubResourceManager,
-        gcsResourceManager,
-        datastreamResourceManager);
+    //    ResourceManagerUtils.cleanResources(
+    //        cloudSqlResourceManager, spannerResourceManager, pubsubResourceManager,
+    // gcsResourceManager);
   }
 
   private void setupSchema() {

@@ -141,11 +141,11 @@ public class DataStreamToSpannerWideRowForMax16KeyTablePerDatabaseIT
       instance.tearDownBase();
     }
     ResourceManagerUtils.cleanResources(
-        datastreamResourceManager,
         cloudSqlResourceManager,
         spannerResourceManager,
         pubsubResourceManager,
-        gcsResourceManager);
+        gcsResourceManager,
+        datastreamResourceManager);
   }
 
   private void setupSchema() {

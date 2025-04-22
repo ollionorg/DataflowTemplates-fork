@@ -150,11 +150,11 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT
       instance.tearDownBase();
     }
     ResourceManagerUtils.cleanResources(
-        datastreamResourceManager,
         cloudSqlResourceManager,
         spannerResourceManager,
         pubsubResourceManager,
-        gcsResourceManager);
+        gcsResourceManager,
+        datastreamResourceManager);
   }
 
   private void setupSchema() {
@@ -285,6 +285,7 @@ public class DataStreamToSpannerWideRowForMax9MibTablePerDatabaseIT
           System.out.println("checked checkSpannerTables");
           return new CheckResult(true, "Spanner tables contain expected rows.");
         } catch (AssertionError error) {
+          System.out.println(error);
           System.out.println("exception checkSpannerTables");
           return new CheckResult(false, "Spanner tables do not contain expected rows.");
         }

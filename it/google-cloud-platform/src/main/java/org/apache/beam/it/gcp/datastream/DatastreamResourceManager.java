@@ -523,6 +523,7 @@ public final class DatastreamResourceManager implements ResourceManager {
       }
       LOG.info("Successfully deleted stream(s). ");
     } catch (InterruptedException | ExecutionException e) {
+      LOG.error(String.valueOf(e));
       LOG.error("Failed to delete stream(s).");
       producedError = true;
     }

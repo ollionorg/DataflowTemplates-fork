@@ -142,11 +142,11 @@ public class DataStreamToSpannerWideRowForMaxColumnsPerTablesIT extends DataStre
       instance.tearDownBase();
     }
     ResourceManagerUtils.cleanResources(
-        datastreamResourceManager,
         cloudSqlResourceManager,
         spannerResourceManager,
         pubsubResourceManager,
-        gcsResourceManager);
+        gcsResourceManager,
+        datastreamResourceManager);
   }
 
   private void setupSchema() {

@@ -143,10 +143,10 @@ public class DataStreamToSpannerWideRowForMaxTableNameIT extends DataStreamToSpa
     }
     ResourceManagerUtils.cleanResources(
         cloudSqlResourceManager,
-        datastreamResourceManager,
         spannerResourceManager,
         pubsubResourceManager,
-        gcsResourceManager);
+        gcsResourceManager,
+        datastreamResourceManager);
   }
 
   private void setupSchema() {

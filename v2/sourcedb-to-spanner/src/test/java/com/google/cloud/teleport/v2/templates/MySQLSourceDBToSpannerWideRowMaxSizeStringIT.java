@@ -34,6 +34,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.util.HashMap;
+
 @Category({TemplateIntegrationTest.class, SkipDirectRunnerTest.class})
 @TemplateIntegrationTest(SourceDbToSpanner.class)
 @RunWith(JUnit4.class)
@@ -72,6 +74,14 @@ public class MySQLSourceDBToSpannerWideRowMaxSizeStringIT extends SourceDbToSpan
     increasePacketSize();
     loadSQLFileResource(mySQLResourceManager, MYSQL_DUMP_FILE_RESOURCE);
     createSpannerDDL(spannerResourceManager, SPANNER_SCHEMA_FILE_RESOURCE);
+    ADDITIONAL_JOB_PARAMS.putAll(
+        new HashMap<>() {
+          {
+            put("network", VPC_NAME);
+            put("subnetwork", SUBNET_NAME);
+            put("workerRegion", VPC_REGION);
+          }
+        });
     jobInfo =
         launchDataflowJob(
             getClass().getSimpleName(),

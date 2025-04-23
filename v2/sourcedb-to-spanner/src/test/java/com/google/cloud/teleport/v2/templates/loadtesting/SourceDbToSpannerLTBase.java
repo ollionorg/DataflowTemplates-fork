@@ -44,6 +44,8 @@ import org.apache.beam.it.jdbc.StaticMySQLResource;
 import org.apache.beam.it.jdbc.StaticPostgresqlResource;
 import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.io.Resources;
 import org.junit.After;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SourceDbToSpannerLTBase extends TemplateLoadTestBase {
 
@@ -68,6 +70,12 @@ public class SourceDbToSpannerLTBase extends TemplateLoadTestBase {
   ;
   private final SecretManagerResourceManager secretClient;
   private final String testRootDir;
+
+  private static final Logger LOG = LoggerFactory.getLogger(SourceDbToSpannerLTBase.class);
+  protected static final String VPC_NAME = "spanner-wide-row-pr-test-vpc";
+  protected static final String VPC_REGION = "us-central1";
+  protected static final String SUBNET_NAME = "regions/" + VPC_REGION + "/subnetworks/" + VPC_NAME;
+  protected static final Map<String, String> ADDITIONAL_JOB_PARAMS = new HashMap<>();
 
   public SourceDbToSpannerLTBase() {
     try {
@@ -149,6 +157,7 @@ public class SourceDbToSpannerLTBase extends TemplateLoadTestBase {
             put("jdbcDriverClassName", driverClassName());
           }
         };
+    params.putAll(ADDITIONAL_JOB_PARAMS);
     params.putAll(templateParameters);
 
     // Configure job
